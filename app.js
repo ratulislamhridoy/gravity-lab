@@ -3254,33 +3254,57 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
   if (sheetCols) sheetCols.addEventListener('input', updateSheetTileCount);
   if (sheetRows) sheetRows.addEventListener('input', updateSheetTileCount);
 
-  // File Upload Handlers
+  // Global state for Bulk Multi-Image Icon Sheet Processing
+  let loadedSheetImgs = []; // Holds array of { name: string, img: ImageElement }
+
+  // File Upload Handlers (Supports Single and Bulk Multi-File Selection)
   if (sheetDropzone && sheetFileInput) {
     sheetDropzone.addEventListener('click', () => sheetFileInput.click());
     sheetDropzone.addEventListener('dragover', (e) => e.preventDefault());
     sheetDropzone.addEventListener('drop', (e) => {
       e.preventDefault();
-      if (e.dataTransfer.files.length) loadSheetImageFile(e.dataTransfer.files[0]);
+      if (e.dataTransfer.files && e.dataTransfer.files.length) {
+        loadSheetImageFiles(e.dataTransfer.files);
+      }
     });
     sheetFileInput.addEventListener('change', (e) => {
-      if (e.target.files.length) loadSheetImageFile(e.target.files[0]);
+      if (e.target.files && e.target.files.length) {
+        loadSheetImageFiles(e.target.files);
+      }
     });
   }
 
-  function loadSheetImageFile(file) {
-    if (!file.type.startsWith('image/')) return;
-    if (sheetFileName) sheetFileName.textContent = file.name;
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      const img = new Image();
-      img.onload = () => {
-        loadedSheetImg = img;
-        // Instantly slice & show raw crops
-        processIconSheetSlicingOnly();
+  function loadSheetImageFiles(files) {
+    const validFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+    if (!validFiles.length) return;
+
+    if (sheetFileName) {
+      if (validFiles.length === 1) {
+        sheetFileName.textContent = validFiles[0].name;
+      } else {
+        sheetFileName.textContent = `📦 ${validFiles.length} Icon Sheets Loaded (Bulk Processing Ready)`;
+      }
+    }
+
+    loadedSheetImgs = [];
+    let loadedCount = 0;
+
+    validFiles.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const img = new Image();
+        img.onload = () => {
+          loadedSheetImgs.push({ name: file.name, img: img });
+          loadedCount++;
+          if (loadedCount === validFiles.length) {
+            // Instantly slice & render preview tiles for ALL loaded sheets
+            processIconSheetSlicingOnly();
+          }
+        };
+        img.src = evt.target.result;
       };
-      img.src = evt.target.result;
-    };
-    reader.readAsDataURL(file);
+      reader.readAsDataURL(file);
+    });
   }
 
   // Toggle View Tabs
@@ -3540,145 +3564,161 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     return sortedBoxes;
   }
 
-  // Slice & Show raw crop preview immediately (No vectorization yet)
+  // Slice & Show raw crop preview immediately for ALL loaded icon sheets (Bulk Support)
   function processIconSheetSlicingOnly() {
+    if (!loadedSheetImgs || loadedSheetImgs.length === 0) return;
+
     const cols = parseInt(sheetCols.value) || 5;
     const rows = parseInt(sheetRows.value) || 3;
     const totalTiles = cols * rows;
     const shouldTrim = sheetTrim ? sheetTrim.checked : true;
     const shouldShuffle = sheetShuffle ? sheetShuffle.checked : false;
-
-    const imgW = loadedSheetImg.naturalWidth || loadedSheetImg.width;
-    const imgH = loadedSheetImg.naturalHeight || loadedSheetImg.height;
-
     const detectMode = document.getElementById('sheetDetectMode')?.value || 'grid';
     const isAutoDetect = (detectMode === 'auto');
-
-    let boxes = [];
-    let tileCount = totalTiles;
-
-    if (isAutoDetect) {
-      boxes = autoDetectIconBounds(loadedSheetImg);
-      tileCount = boxes.length;
-    }
-
-    // Smart Gutter Snapping grid detection
-    let gridX = [], gridY = [];
-    if (!isAutoDetect) {
-      try {
-        const scale = Math.min(1, 1000 / Math.max(imgW, imgH));
-        const aw = Math.max(1, Math.round(imgW * scale));
-        const ah = Math.max(1, Math.round(imgH * scale));
-        const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = aw;
-        tempCanvas.height = ah;
-        const tempCtx = tempCanvas.getContext('2d', { willReadFrequently: true });
-        tempCtx.drawImage(loadedSheetImg, 0, 0, aw, ah);
-        const data = tempCtx.getImageData(0, 0, aw, ah).data;
-        const bg = detectGridBackground(data, aw, ah);
-
-        const colInk = new Float64Array(aw);
-        const rowInk = new Float64Array(ah);
-        for (let y = 0; y < ah; y++) {
-          for (let x = 0; x < aw; x++) {
-            const i = (y * aw + x) * 4;
-            const a = data[i + 3];
-            if (a < 16) continue;
-            const dr = data[i] - bg[0];
-            const dg = data[i + 1] - bg[1];
-            const db = data[i + 2] - bg[2];
-            const dist = Math.sqrt(0.299 * dr * dr + 0.587 * dg * dg + 0.114 * db * db);
-            if (a * dist / 255 > 14) {
-              colInk[x]++;
-              rowInk[y]++;
-            }
-          }
-        }
-        gridX = snapAxis(cols, colInk, aw, imgW);
-        gridY = snapAxis(rows, rowInk, ah, imgH);
-      } catch (e) {
-        console.warn('[slicer] Smart boundary snapping failed, falling back to even cuts', e);
-        gridX = [];
-        gridY = [];
-        for (let i = 0; i <= cols; i++) gridX.push(Math.round(i * imgW / cols));
-        for (let i = 0; i <= rows; i++) gridY.push(Math.round(i * imgH / rows));
-      }
-    }
 
     slicedTilesData = [];
     if (tool4TilesGrid) tool4TilesGrid.innerHTML = '';
     if (btnDownloadAssembledSheet) btnDownloadAssembledSheet.disabled = true;
     if (btnSaveToPC) btnSaveToPC.disabled = true;
 
+    const btnZip = document.getElementById('btnDownloadAllZip');
+    if (btnZip) btnZip.style.display = 'none';
+
+    let globalIndex = 0;
+
+    loadedSheetImgs.forEach((sheetObj) => {
+      const img = sheetObj.img;
+      const sheetName = sheetObj.name;
+      const imgW = img.naturalWidth || img.width;
+      const imgH = img.naturalHeight || img.height;
+
+      let boxes = [];
+      let tileCount = totalTiles;
+
+      if (isAutoDetect) {
+        boxes = autoDetectIconBounds(img);
+        tileCount = boxes.length;
+      }
+
+      let gridX = [], gridY = [];
+      if (!isAutoDetect) {
+        try {
+          const scale = Math.min(1, 1000 / Math.max(imgW, imgH));
+          const aw = Math.max(1, Math.round(imgW * scale));
+          const ah = Math.max(1, Math.round(imgH * scale));
+          const tempCanvas = document.createElement('canvas');
+          tempCanvas.width = aw;
+          tempCanvas.height = ah;
+          const tempCtx = tempCanvas.getContext('2d', { willReadFrequently: true });
+          tempCtx.drawImage(img, 0, 0, aw, ah);
+          const data = tempCtx.getImageData(0, 0, aw, ah).data;
+          const bg = detectGridBackground(data, aw, ah);
+
+          const colInk = new Float64Array(aw);
+          const rowInk = new Float64Array(ah);
+          for (let y = 0; y < ah; y++) {
+            for (let x = 0; x < aw; x++) {
+              const i = (y * aw + x) * 4;
+              const a = data[i + 3];
+              if (a < 16) continue;
+              const dr = data[i] - bg[0];
+              const dg = data[i + 1] - bg[1];
+              const db = data[i + 2] - bg[2];
+              const dist = Math.sqrt(0.299 * dr * dr + 0.587 * dg * dg + 0.114 * db * db);
+              if (a * dist / 255 > 14) {
+                colInk[x]++;
+                rowInk[y]++;
+              }
+            }
+          }
+          gridX = snapAxis(cols, colInk, aw, imgW);
+          gridY = snapAxis(rows, rowInk, ah, imgH);
+        } catch (e) {
+          console.warn('[slicer] Smart boundary snapping failed, falling back to even cuts', e);
+          gridX = [];
+          gridY = [];
+          for (let i = 0; i <= cols; i++) gridX.push(Math.round(i * imgW / cols));
+          for (let i = 0; i <= rows; i++) gridY.push(Math.round(i * imgH / rows));
+        }
+      }
+
+      let indices = Array.from({ length: tileCount }, (_, i) => i);
+      if (shouldShuffle) {
+        indices.sort(() => Math.random() - 0.5);
+      }
+
+      for (let i = 0; i < tileCount; i++) {
+        const srcIdx = indices[i];
+        let sx, sw, sy, sh;
+
+        if (isAutoDetect) {
+          const box = boxes[srcIdx];
+          sx = box.x;
+          sw = box.w;
+          sy = box.y;
+          sh = box.h;
+        } else {
+          const c = srcIdx % cols;
+          const r = Math.floor(srcIdx / cols);
+          sx = gridX[c];
+          sw = gridX[c + 1] - sx;
+          sy = gridY[r];
+          sh = gridY[r + 1] - sy;
+        }
+
+        if (sw <= 0 || sh <= 0) continue;
+
+        globalIndex++;
+
+        // Crop tile into offscreen canvas using snapped coordinates (with pre-slice upscale support)
+        const upscaleFactor = vecUpscale ? parseInt(vecUpscale.value) : 4;
+        let canvas = document.createElement('canvas');
+        canvas.width = sw * upscaleFactor;
+        canvas.height = sh * upscaleFactor;
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, sx, sy, sw, sh, 0, 0, sw * upscaleFactor, sh * upscaleFactor);
+
+        if (shouldTrim) {
+          canvas = autoTrimCanvasTile(canvas);
+        }
+
+        const dataUrl = canvas.toDataURL('image/png');
+
+        slicedTilesData.push({
+          idx: globalIndex,
+          sheetName: sheetName,
+          canvas: canvas,
+          svgContent: '',
+          dataUrl: dataUrl,
+          isVectorized: false
+        });
+
+        // Render cell in grid UI as raw image preview
+        if (tool4TilesGrid) {
+          const cellEl = document.createElement('div');
+          cellEl.id = `tool4-tile-card-${globalIndex}`;
+          cellEl.style.cssText = 'background: var(--surface); border: 1px solid var(--outline-variant); border-radius: 14px; padding: 14px; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.15);';
+          cellEl.innerHTML = `
+            <div style="position: absolute; top: 8px; left: 8px; font-size: 10px; font-weight: 800; color: var(--on-surface-variant); background: rgba(255,255,255,0.06); border: 1px solid var(--outline); padding: 3px 8px; border-radius: 6px;">#${globalIndex} ${loadedSheetImgs.length > 1 ? sheetName.substring(0, 10) + '...' : 'Sliced'}</div>
+            <div style="width: 100px; height: 100px; display: flex; align-items: center; justify-content: center; margin-top: 12px;">
+              <img src="${dataUrl}" style="max-width: 84px; max-height: 84px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));" />
+            </div>
+          `;
+          tool4TilesGrid.appendChild(cellEl);
+        }
+      }
+    });
+
     // Update UI Tile Count label
     const tileCountEl = document.getElementById('sheetTileCount');
     if (tileCountEl) {
-      tileCountEl.textContent = tileCount;
+      tileCountEl.textContent = slicedTilesData.length;
     }
 
-    let indices = Array.from({ length: tileCount }, (_, i) => i);
-    if (shouldShuffle) {
-      indices.sort(() => Math.random() - 0.5);
-    }
-
-    for (let i = 0; i < tileCount; i++) {
-      const srcIdx = indices[i];
-      let sx, sw, sy, sh;
-
-      if (isAutoDetect) {
-        const box = boxes[srcIdx];
-        sx = box.x;
-        sw = box.w;
-        sy = box.y;
-        sh = box.h;
-      } else {
-        const c = srcIdx % cols;
-        const r = Math.floor(srcIdx / cols);
-        sx = gridX[c];
-        sw = gridX[c + 1] - sx;
-        sy = gridY[r];
-        sh = gridY[r + 1] - sy;
-      }
-
-      if (sw <= 0 || sh <= 0) continue;
-
-      // Crop tile into offscreen canvas using snapped coordinates (with pre-slice upscale support)
-      const upscaleFactor = vecUpscale ? parseInt(vecUpscale.value) : 4;
-      let canvas = document.createElement('canvas');
-      canvas.width = sw * upscaleFactor;
-      canvas.height = sh * upscaleFactor;
-      const ctx = canvas.getContext('2d', { willReadFrequently: true });
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
-      ctx.drawImage(loadedSheetImg, sx, sy, sw, sh, 0, 0, sw * upscaleFactor, sh * upscaleFactor);
-
-      if (shouldTrim) {
-        canvas = autoTrimCanvasTile(canvas);
-      }
-
-      const dataUrl = canvas.toDataURL('image/png');
-
-      slicedTilesData.push({
-        idx: i + 1,
-        canvas: canvas,
-        svgContent: '', // Will hold the vector path response later
-        dataUrl: dataUrl,
-        isVectorized: false
-      });
-
-      // Render cell in grid UI as raw image preview
-      if (tool4TilesGrid) {
-        const cellEl = document.createElement('div');
-        cellEl.id = `tool4-tile-card-${i + 1}`;
-        cellEl.style.cssText = 'background: var(--surface); border: 1px solid var(--outline-variant); border-radius: 14px; padding: 14px; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.15);';
-        cellEl.innerHTML = `
-          <div style="position: absolute; top: 8px; left: 8px; font-size: 10px; font-weight: 800; color: var(--on-surface-variant); background: rgba(255,255,255,0.06); border: 1px solid var(--outline); padding: 3px 8px; border-radius: 6px;">#${i + 1} Sliced</div>
-          <div style="width: 100px; height: 100px; display: flex; align-items: center; justify-content: center; margin-top: 12px;">
-            <img src="${dataUrl}" style="max-width: 84px; max-height: 84px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));" />
-          </div>
-        `;
-        tool4TilesGrid.appendChild(cellEl);
-      }
+    if (btnSliceVectorize) {
+      btnSliceVectorize.textContent = `⚡ Convert ${slicedTilesData.length} Icons to Vector`;
     }
   }
 
@@ -4135,7 +4175,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     if (vectorizeCompletedCount >= totalTiles) {
       // Re-enable primary action button
       btnSliceVectorize.disabled = false;
-      btnSliceVectorize.textContent = '⚡ Convert to Vector';
+      btnSliceVectorize.textContent = `⚡ Convert ${totalTiles} Icons to Vector`;
 
       // Build presentation sheet SVG
       buildBrandedSvgSheet();
@@ -4143,8 +4183,53 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       // Enable download and save buttons
       if (btnDownloadAssembledSheet) btnDownloadAssembledSheet.disabled = false;
       if (btnSaveToPC) btnSaveToPC.disabled = false;
+
+      // Show Bulk ZIP download button
+      const btnZip = document.getElementById('btnDownloadAllZip');
+      if (btnZip) {
+        btnZip.style.display = 'flex';
+        btnZip.textContent = `📦 Download All ${totalTiles} Vector SVGs (ZIP)`;
+      }
     }
   };
+
+  // Download all vectorized icons as a single ZIP archive
+  function downloadAllSVGsAsZip() {
+    if (!window.JSZip) {
+      alert('JSZip library is loading, please try again in a moment.');
+      return;
+    }
+    const zip = new JSZip();
+    const folder = zip.folder('gravity_vector_icons');
+
+    let count = 0;
+    slicedTilesData.forEach((tile) => {
+      if (tile.svgContent) {
+        const safeSheetName = (tile.sheetName || 'sheet').replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
+        const filename = `${safeSheetName}_icon_${tile.idx}.svg`;
+        folder.file(filename, tile.svgContent);
+        count++;
+      }
+    });
+
+    if (count === 0) {
+      alert('No vectorized SVG icons found to download yet.');
+      return;
+    }
+
+    zip.generateAsync({ type: 'blob' }).then((content) => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(content);
+      a.download = `Gravity_Vector_Icons_${Date.now()}.zip`;
+      a.click();
+      if (window.showCustomAlert) window.showCustomAlert(`Downloaded all ${count} vectorized SVGs in a ZIP archive!`, 'ZIP Downloaded', 'success');
+    });
+  }
+
+  const btnZipEl = document.getElementById('btnDownloadAllZip');
+  if (btnZipEl) {
+    btnZipEl.addEventListener('click', downloadAllSVGsAsZip);
+  }
 
   // Auto-trim whitespace from canvas tile
   function autoTrimCanvasTile(canvas) {
