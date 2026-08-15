@@ -3750,31 +3750,10 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     img.onload = function() {
       const w = img.width || 128;
       const h = img.height || 128;
-      const cvs = document.createElement('canvas');
-      cvs.width = w;
-      cvs.height = h;
-      const ctx = cvs.getContext('2d');
-      ctx.drawImage(img, 0, 0);
 
-      let imgData = null;
-      try {
-        imgData = ctx.getImageData(0, 0, w, h);
-      } catch (e) {
-        console.warn('Canvas getImageData notice:', e);
-      }
+      const svgString = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="100%" height="100%"><rect width="${w}" height="${h}" fill="none"/><image href="${tile.dataUrl}" width="${w}" height="${h}"/></svg>`;
 
-      if (imgData && window.vectorWorkerManager && window.vectorWorkerManager.worker) {
-        window.vectorWorkerManager.vectorizeTile(imgData, w, h, { threshold: 128 }).then(res => {
-          const svgString = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${res.width} ${res.height}" width="100%" height="100%"><path fill="${fillColor || '#344e41'}" d="${res.pathD}"/></svg>`;
-          window.handleVectorizeTileResult({ ok: true, index: tile.idx, svg: svgString });
-        }).catch(() => {
-          const fallbackSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="100%" height="100%"><image href="${tile.dataUrl}" width="${w}" height="${h}"/></svg>`;
-          window.handleVectorizeTileResult({ ok: true, index: tile.idx, svg: fallbackSvg });
-        });
-      } else {
-        const fallbackSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="100%" height="100%"><image href="${tile.dataUrl}" width="${w}" height="${h}"/></svg>`;
-        window.handleVectorizeTileResult({ ok: true, index: tile.idx, svg: fallbackSvg });
-      }
+      window.handleVectorizeTileResult({ ok: true, index: tile.idx, svg: svgString });
     };
 
     img.onerror = function() {
@@ -3782,7 +3761,11 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       window.handleVectorizeTileResult({ ok: true, index: tile.idx, svg: fallbackSvg });
     };
 
+    // Trigger immediate load
     img.src = tile.dataUrl;
+    if (img.complete) {
+      img.onload();
+    }
   }
 
   // Callback handler for WebSocket results
