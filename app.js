@@ -3682,6 +3682,122 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     }
   }
 
+  // Initialize Vectorizer Settings UI with Live Updates, localStorage Save & Reset
+  function initVectorizerSettingsUI() {
+    const elSmoothing = document.getElementById('vecSmoothing');
+    const elSmoothingVal = document.getElementById('vecSmoothingVal');
+    const elCorner = document.getElementById('vecCorner');
+    const elCornerVal = document.getElementById('vecCornerVal');
+    const elSimplify = document.getElementById('vecSimplify');
+    const elSimplifyVal = document.getElementById('vecSimplifyVal');
+    const elSpeckle = document.getElementById('vecSpeckle');
+    const elSpeckleVal = document.getElementById('vecSpeckleVal');
+    const elOptimise = document.getElementById('vecOptimise');
+    const elFillColor = document.getElementById('vecFillColor');
+    const elFillHex = document.getElementById('vecFillHex');
+
+    const btnSave = document.getElementById('btnSaveVecSettings');
+    const btnReset = document.getElementById('btnResetVecSettings');
+
+    // Factory Default Settings (User Specs)
+    const DEFAULT_SETTINGS = {
+      smoothing: 7,
+      corner: 152,
+      simplify: 55,
+      speckle: 3,
+      optimise: true,
+      fillColor: '#344e41'
+    };
+
+    // Synchronize Hex & Color Picker Inputs
+    if (elFillColor && elFillHex) {
+      elFillColor.addEventListener('input', () => { elFillHex.value = elFillColor.value; });
+      elFillHex.addEventListener('input', () => {
+        if (/^#[0-9A-Fa-f]{6}$/.test(elFillHex.value)) {
+          elFillColor.value = elFillHex.value;
+        }
+      });
+    }
+
+    // Live update value spans when sliders move
+    if (elSmoothing && elSmoothingVal) {
+      elSmoothing.addEventListener('input', () => { elSmoothingVal.textContent = elSmoothing.value; });
+    }
+    if (elCorner && elCornerVal) {
+      elCorner.addEventListener('input', () => { elCornerVal.textContent = elCorner.value; });
+    }
+    if (elSimplify && elSimplifyVal) {
+      elSimplify.addEventListener('input', () => { elSimplifyVal.textContent = (parseInt(elSimplify.value) / 10).toFixed(1); });
+    }
+    if (elSpeckle && elSpeckleVal) {
+      elSpeckle.addEventListener('input', () => { elSpeckleVal.textContent = elSpeckle.value; });
+    }
+
+    // Apply Settings Object to UI Controls
+    function applySettingsToUI(s) {
+      if (elSmoothing) { elSmoothing.value = s.smoothing; if (elSmoothingVal) elSmoothingVal.textContent = s.smoothing; }
+      if (elCorner) { elCorner.value = s.corner; if (elCornerVal) elCornerVal.textContent = s.corner; }
+      if (elSimplify) { elSimplify.value = s.simplify; if (elSimplifyVal) elSimplifyVal.textContent = (parseInt(s.simplify) / 10).toFixed(1); }
+      if (elSpeckle) { elSpeckle.value = s.speckle; if (elSpeckleVal) elSpeckleVal.textContent = s.speckle; }
+      if (elOptimise) { elOptimise.checked = !!s.optimise; }
+      if (elFillColor) { elFillColor.value = s.fillColor; }
+      if (elFillHex) { elFillHex.value = s.fillColor; }
+    }
+
+    // Auto-load saved user settings if present in localStorage
+    try {
+      const saved = localStorage.getItem('gravity_vec_settings');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        applySettingsToUI(Object.assign({}, DEFAULT_SETTINGS, parsed));
+      } else {
+        applySettingsToUI(DEFAULT_SETTINGS);
+      }
+    } catch (e) {
+      console.warn('Load vec settings notice:', e);
+    }
+
+    // Save Settings Button Listener
+    if (btnSave) {
+      btnSave.addEventListener('click', () => {
+        const current = {
+          smoothing: elSmoothing ? parseInt(elSmoothing.value) : 7,
+          corner: elCorner ? parseInt(elCorner.value) : 152,
+          simplify: elSimplify ? parseInt(elSimplify.value) : 55,
+          speckle: elSpeckle ? parseInt(elSpeckle.value) : 3,
+          optimise: elOptimise ? elOptimise.checked : true,
+          fillColor: elFillColor ? elFillColor.value : '#344e41'
+        };
+        try {
+          localStorage.setItem('gravity_vec_settings', JSON.stringify(current));
+          const origHtml = btnSave.innerHTML;
+          btnSave.innerHTML = '✓ Saved!';
+          setTimeout(() => { btnSave.innerHTML = origHtml; }, 1800);
+          if (window.showCustomAlert) window.showCustomAlert('Vectorizer settings saved as your custom default!', 'Settings Saved', 'success');
+        } catch (e) {
+          alert('Could not save settings to browser storage');
+        }
+      });
+    }
+
+    // Reset Default Settings Button Listener
+    if (btnReset) {
+      btnReset.addEventListener('click', () => {
+        try {
+          localStorage.removeItem('gravity_vec_settings');
+        } catch (e) {}
+        applySettingsToUI(DEFAULT_SETTINGS);
+        const origHtml = btnReset.innerHTML;
+        btnReset.innerHTML = '✓ Reset!';
+        setTimeout(() => { btnReset.innerHTML = origHtml; }, 1800);
+        if (window.showCustomAlert) window.showCustomAlert('Vectorizer settings reset to default values.', 'Default Restored', 'info');
+      });
+    }
+  }
+
+  // Bind settings initialization
+  initVectorizerSettingsUI();
+
   // Trigger WebSocket server-assisted contour / curve tracing
   if (btnSliceVectorize) {
     btnSliceVectorize.addEventListener('click', () => {
