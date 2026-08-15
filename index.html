@@ -38,8 +38,14 @@
     <div class="home-main">
       <!-- Topbar -->
       <header class="home-topbar">
-        <div class="title-wrap">
-          <span class="title" id="pageTitle">Studio Dashboard</span>
+        <div class="title-wrap" style="display: flex; align-items: center; gap: 10px;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="title" id="pageTitle" style="font-size: 16px; font-weight: 800; color: var(--on-surface);">🎨 Icon Sheet Studio</span>
+              <span class="home-badge" id="pageTitleBadge" style="font-size: 9px; padding: 3px 8px; background: rgba(205, 252, 82, 0.12); color: var(--primary); border-color: rgba(205, 252, 82, 0.3);">v5.2 Bulk</span>
+            </div>
+            <div id="pageTitleSub" style="font-size: 10.5px; color: var(--on-variant); opacity: 0.8; margin-top: 1px;">Slicer, Vectorizer & Presentation</div>
+          </div>
         </div>
         <div class="topbar-right" style="display: flex; gap: 6px; align-items: center;">
           <button class="btn btn-dark small" id="themeToggleBtn">🌙 Dark</button>
@@ -371,14 +377,6 @@
           <!-- Left Control Panel (Sleek Organized Studio Sidebar) -->
           <div class="studio-controls" style="width: 360px; padding: 20px; background: var(--surface-low); border-right: 1px solid var(--outline-variant); display: flex; flex-direction: column; gap: 16px;">
             
-            <!-- Sidebar Header -->
-            <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--outline-variant); padding-bottom: 12px; margin-bottom: 4px;">
-              <div>
-                <h3 style="margin: 0; font-size: 15px; font-weight: 800; color: var(--on-surface); border: none; padding: 0;">🎨 Icon Sheet Studio</h3>
-                <div style="font-size: 10.5px; color: var(--on-variant); opacity: 0.8; margin-top: 2px;">Slicer, Vectorizer & Presentation</div>
-              </div>
-              <span class="home-badge" style="font-size: 9px; padding: 3px 8px; background: rgba(205, 252, 82, 0.12); color: var(--primary); border-color: rgba(205, 252, 82, 0.3);">v5.2 Bulk</span>
-            </div>
 
             <!-- Card 1: Source & Slicing -->
             <div class="sidebar-card" style="background: var(--surface-lowest); border: 1px solid var(--outline-variant); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
