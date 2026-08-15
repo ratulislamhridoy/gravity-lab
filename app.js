@@ -2398,6 +2398,54 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
   const sheetSetName = document.getElementById('sheetSetName');
   const sheetSubtitle = document.getElementById('sheetSubtitle');
   const sheetSaveDir = document.getElementById('sheetSaveDir');
+  const btnBrowseDir = document.getElementById('btnBrowseDir');
+  const sheetDirPicker = document.getElementById('sheetDirPicker');
+
+  async function openFolderPicker() {
+    // 1. Try File System Access API (showDirectoryPicker) if available
+    if ('showDirectoryPicker' in window) {
+      try {
+        const handle = await window.showDirectoryPicker();
+        if (handle) {
+          const selectedPath = handle.name || 'Selected Folder';
+          if (sheetSaveDir) sheetSaveDir.value = selectedPath;
+          return;
+        }
+      } catch (err) {
+        if (err.name === 'AbortError') return; // User cancelled picker dialog
+      }
+    }
+    // 2. Fallback to webkitdirectory file input picker
+    if (sheetDirPicker) {
+      sheetDirPicker.click();
+    }
+  }
+
+  if (btnBrowseDir) {
+    btnBrowseDir.addEventListener('click', openFolderPicker);
+  }
+  if (sheetSaveDir) {
+    sheetSaveDir.addEventListener('click', openFolderPicker);
+  }
+  if (sheetDirPicker) {
+    sheetDirPicker.addEventListener('change', (e) => {
+      if (e.target.files && e.target.files.length > 0) {
+        const file = e.target.files[0];
+        let fullPath = file.path || '';
+        if (fullPath) {
+          const lastSep = Math.max(fullPath.lastIndexOf('/'), fullPath.lastIndexOf('\\'));
+          if (lastSep !== -1) fullPath = fullPath.substring(0, lastSep);
+        } else if (file.webkitRelativePath) {
+          fullPath = file.webkitRelativePath.split('/')[0];
+        } else {
+          fullPath = file.name;
+        }
+        if (sheetSaveDir && fullPath) {
+          sheetSaveDir.value = fullPath;
+        }
+      }
+    });
+  }
   const btnSliceVectorize = document.getElementById('btnSliceVectorize');
   const btnSaveToPC = document.getElementById('btnSaveToPC');
   const btnToggleTilesView = document.getElementById('btnToggleTilesView');
