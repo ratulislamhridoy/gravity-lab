@@ -2401,22 +2401,9 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
   const btnBrowseDir = document.getElementById('btnBrowseDir');
   const sheetDirPicker = document.getElementById('sheetDirPicker');
 
-  async function openFolderPicker() {
-    // 1. Try File System Access API (showDirectoryPicker) if available
-    if ('showDirectoryPicker' in window) {
-      try {
-        const handle = await window.showDirectoryPicker();
-        if (handle) {
-          const selectedPath = handle.name || 'Selected Folder';
-          if (sheetSaveDir) sheetSaveDir.value = selectedPath;
-          return;
-        }
-      } catch (err) {
-        if (err.name === 'AbortError') return; // User cancelled picker dialog
-      }
-    }
-    // 2. Fallback to webkitdirectory file input picker
+  function openFolderPicker() {
     if (sheetDirPicker) {
+      sheetDirPicker.value = '';
       sheetDirPicker.click();
     }
   }
