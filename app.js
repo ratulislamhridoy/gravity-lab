@@ -3751,45 +3751,50 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       const origW = img.width || 128;
       const origH = img.height || 128;
 
-      // 1. High Quality 4x Canvas Upscaling for silky smooth curve resolution
+      // 1. High Quality 4x Canvas Upscaling
       const scale = Math.min(4, 1600 / Math.max(origW, origH));
       const w = Math.round(origW * scale);
       const h = Math.round(origH * scale);
 
+      // 2. Add 32px Canvas Padding so outer curves NEVER touch canvas boundary
+      const pad = 32;
+      const totalW = w + pad * 2;
+      const totalH = h + pad * 2;
+
       const cvs = document.createElement('canvas');
-      cvs.width = w;
-      cvs.height = h;
+      cvs.width = totalW;
+      cvs.height = totalH;
       const ctx = cvs.getContext('2d');
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
-      ctx.drawImage(img, 0, 0, w, h);
 
       let imgData = null;
       try {
-        imgData = ctx.getImageData(0, 0, w, h);
+        ctx.drawImage(img, pad, pad, w, h);
+        imgData = ctx.getImageData(0, 0, totalW, totalH);
       } catch (e) {
         console.warn('Canvas getImageData notice:', e);
       }
 
       if (imgData && window.Potrace && window.Potrace.traceImageData) {
         const pixels = imgData.data;
-        const len = w * h;
+        const len = totalW * totalH;
 
-        // 2. Background Contrast Normalization (Sample tile border pixels)
+        // 3. Background Contrast Normalization
         let bgR = 255, bgG = 255, bgB = 255;
         const borderPixels = [];
-        const stepX = Math.max(1, Math.floor(w / 64));
-        const stepY = Math.max(1, Math.floor(h / 64));
+        const stepX = Math.max(1, Math.floor(totalW / 64));
+        const stepY = Math.max(1, Math.floor(totalH / 64));
 
-        for (let x = 0; x < w; x += stepX) {
+        for (let x = 0; x < totalW; x += stepX) {
           const idxTop = x * 4;
-          const idxBot = ((h - 1) * w + x) * 4;
+          const idxBot = ((totalH - 1) * totalW + x) * 4;
           borderPixels.push([pixels[idxTop], pixels[idxTop+1], pixels[idxTop+2]]);
           borderPixels.push([pixels[idxBot], pixels[idxBot+1], pixels[idxBot+2]]);
         }
-        for (let y = 0; y < h; y += stepY) {
-          const idxLeft = (y * w) * 4;
-          const idxRight = (y * w + w - 1) * 4;
+        for (let y = 0; y < totalH; y += stepY) {
+          const idxLeft = (y * totalW) * 4;
+          const idxRight = (y * totalW + totalW - 1) * 4;
           borderPixels.push([pixels[idxLeft], pixels[idxLeft+1], pixels[idxLeft+2]]);
           borderPixels.push([pixels[idxRight], pixels[idxRight+1], pixels[idxRight+2]]);
         }
@@ -3799,22 +3804,32 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
           bgR = mid[0]; bgG = mid[1]; bgB = mid[2];
         }
 
-        // Calculate perceptual ink distance from background
+        // Fill canvas padding with measured background color
+        ctx.fillStyle = `rgb(${bgR}, ${bgG}, ${bgB})`;
+        ctx.fillRect(0, 0, totalW, pad);
+        ctx.fillRect(0, totalH - pad, totalW, pad);
+        ctx.fillRect(0, 0, pad, totalH);
+        ctx.fillRect(totalW - pad, 0, pad, totalH);
+        ctx.drawImage(img, pad, pad, w, h);
+        const paddedImgData = ctx.getImageData(0, 0, totalW, totalH);
+        const paddedPixels = paddedImgData.data;
+
+        // 4. Calculate perceptual ink distance from background
         let maxInk = 1;
         const inkDistances = new Float32Array(len);
         for (let i = 0; i < len; i++) {
           const offset = i * 4;
-          const a = pixels[offset + 3] / 255;
-          const r = pixels[offset] * a + bgR * (1 - a);
-          const g = pixels[offset + 1] * a + bgG * (1 - a);
-          const b = pixels[offset + 2] * a + bgB * (1 - a);
+          const a = paddedPixels[offset + 3] / 255;
+          const r = paddedPixels[offset] * a + bgR * (1 - a);
+          const g = paddedPixels[offset + 1] * a + bgG * (1 - a);
+          const b = paddedPixels[offset + 2] * a + bgB * (1 - a);
           const dr = r - bgR, dg = g - bgG, db = b - bgB;
           const dist = Math.sqrt(0.299 * dr * dr + 0.587 * dg * dg + 0.114 * db * db);
           inkDistances[i] = dist;
           if (dist > maxInk) maxInk = dist;
         }
 
-        // Stretch ink map to full 0..255 contrast for Potrace 128 threshold
+        // Stretch ink map to full 0..255 contrast
         const normData = new Uint8ClampedArray(len * 4);
         for (let i = 0; i < len; i++) {
           const normInk = Math.min(255, Math.round((inkDistances[i] / maxInk) * 255));
@@ -3829,7 +3844,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
         const alphaMaxVal = Math.max(0, Math.min(1.334, ((corner || 133) / 180) * 1.334));
         const optTolVal = Math.max(0.05, (simplify || 5) * 0.05);
 
-        window.Potrace.traceImageData({ width: w, height: h, data: normData }, {
+        window.Potrace.traceImageData({ width: totalW, height: totalH, data: normData }, {
           threshold: 128,
           color: fillColor || '#344e41',
           turdSize: Math.max(1, Math.round((speckle || 2) * scale)),
@@ -3837,8 +3852,8 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
           optCurve: true,
           optTolerance: optTolVal
         }).then(svgString => {
-          // Re-scale viewBox back to original tile dimensions with 100% SVG fit
-          svgString = svgString.replace(/viewBox="0 0 \d+ \d+"/, `viewBox="0 0 ${w} ${h}"`);
+          // Set viewBox to `pad pad w h` to crop exact icon bounds with 100% 360° rounded curves
+          svgString = svgString.replace(/viewBox="0 0 \d+ \d+"/, `viewBox="${pad} ${pad} ${w} ${h}"`);
           if (fillColor && !svgString.includes('fill=')) {
             svgString = svgString.replace('<path ', `<path fill="${fillColor}" `);
           }
