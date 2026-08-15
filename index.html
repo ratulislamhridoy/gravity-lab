@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gravity AI Studio</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="home-body" id="appBody">
+    <button class="sidebar-toggle" id="sidebarToggle" type="button" title="Toggle sidebar">
+      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>
+    </button>
+    <!-- ===== Sidebar ===== -->
+    <aside class="home-sidebar" id="sidebar">
+      <div class="home-brand">
+        <div class="name">Gravity AI</div>
+        <div class="sub">Creative Studio</div>
+      </div>
+
+      <nav class="home-nav">
+        <button class="nav-item active" data-nav="dashboard">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          <span>Dashboard</span>
+        </button>
+
+        <div style="margin-top: auto; padding-top: 12px; border-top: 1px solid var(--outline-variant, rgba(255,255,255,0.08));">
+          <button class="nav-item" id="openApiKeyModal" style="background: rgba(92, 98, 236, 0.12); border: 1px solid rgba(92, 98, 236, 0.35); color: var(--tertiary); border-radius: 10px;">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--tertiary);"><path d="M21 2l-2 2m-2-2l2 2M3 11l8-8 10 10-8 8-10-10z"/><circle cx="7.5" cy="16.5" r="1.5"/></svg>
+            <span style="font-weight: 700; color: var(--tertiary);">API Key Config</span>
+          </button>
+        </div>
+      </nav>
+
+    </aside>
+
+    <!-- ===== Main Workspace ===== -->
+    <div class="home-main">
+      <!-- Topbar -->
+      <header class="home-topbar">
+        <div class="title-wrap">
+          <span class="title" id="pageTitle">Studio Dashboard</span>
+        </div>
+        <div class="topbar-right" style="display: flex; gap: 6px; align-items: center;">
+          <button class="btn btn-dark small" id="themeToggleBtn">🌙 Dark</button>
+          <button class="btn btn-dark small" id="backToDashBtn" style="display: none;">&larr; Back to Dashboard</button>
+        </div>
+      </header>
+
+      <!-- Dashboard View -->
+      <div class="home-content home-view" id="dashboardView">
+        <section class="welcome">
+          <h1>Gravity AI Studio</h1>
+          <p>Pick a tool below to generate prompts and design assets.</p>
+        </section>
+
+        <!-- Tools Grid -->
+        <div class="tools-grid" id="toolsGrid">
+          <!-- Tool #1 Card -->
+          <div class="tool-card featured">
+            <div class="tool-icon-box">
+              <svg class="ic" viewBox="0 0 24 24" style="width: 22px; height: 22px;"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M17.5 14v7M14 17.5h7"/></svg>
+            </div>
+            <div class="tool-head">
+              <h3>Icon Sheet Prompt Generator</h3>
+            </div>
+            <p class="tool-desc">Use Gemini AI to create complete, production-ready icon grid sheet prompts with customizable row/column sizes, line weight, and spacing.</p>
+            <div class="tool-foot">
+              <span class="tool-plan">Gemini Powered</span>
+              <button class="launch" data-launch="icon-sheet-prompt">Launch Tool →</button>
+            </div>
+          </div>
+
+
+
+          <!-- Tool #3 Card -->
+          <div class="tool-card">
+            <div class="tool-icon-box">
+              <svg class="ic" viewBox="0 0 24 24" style="width: 22px; height: 22px;"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            </div>
+            <div class="tool-head">
+              <h3>Google Flow Generator</h3>
+            </div>
+            <p class="tool-desc">Automate Google AI Studio (Flow) via CDP to generate and download bulk images directly to your workspace.</p>
+            <div class="tool-foot">
+              <span class="tool-plan">Chrome CDP Automation</span>
+              <button class="launch" data-launch="google-flow-gen">Launch Tool →</button>
+            </div>
+          </div>
+
+          <!-- Tool #4 Card: Icon Sheet Generator -->
+          <div class="tool-card">
+            <div class="tool-icon-box">
+              <svg class="ic" viewBox="0 0 24 24" style="width: 22px; height: 22px;"><path d="M6 2v14a2 2 0 002 2h14M18 22V8a2 2 0 00-2-2H2"/></svg>
+            </div>
+            <div class="tool-head">
+              <h3>Icon Sheet Generator</h3>
+            </div>
+            <p class="tool-desc">Slice icon grid sheets into individual tiles, vectorize curves, and export 6000x2600 marketplace presentation sheets.</p>
+            <div class="tool-foot">
+              <span class="tool-plan">Slicer & Vectorizer Engine</span>
+              <button class="launch" data-launch="icon-sheet-slicer">Launch Tool →</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Tool #1 Studio View -->
+      <div class="home-view hidden" id="studioView">
+        <div class="studio-shell">
+          <!-- Left Control Panel -->
+          <div class="studio-controls" id="studioControls" style="width: 360px; max-width: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px;">
+            <h3>Icon Sheet Settings</h3>
+
+
+
+            <!-- Prompts per Niche -->
+            <div class="ctl-group">
+              <label class="ctl-label">Prompts per Niche</label>
+              <input type="number" class="ctl-input" id="promptsPerNiche" value="1" min="1" max="100" placeholder="e.g. 5" />
+            </div>
+
+
+            <!-- Grid Dimensions -->
+            <div class="ctl-row">
+              <div class="ctl-group half">
+                <label class="ctl-label">Rows</label>
+                <input type="number" class="ctl-input" id="rowsInput" min="1" max="10" value="3" />
+              </div>
+              <div class="ctl-group half">
+                <label class="ctl-label">Columns</label>
+                <input type="number" class="ctl-input" id="colsInput" min="1" max="10" value="6" />
+              </div>
+            </div>
+
+            <!-- Total Icon Badge -->
+            <div class="total-badge" id="totalIconBadge">
+              Total Grid Icons: <strong id="totalIconCount">18</strong>
+            </div>
+
+            <!-- Icon Styling -->
+            <div class="ctl-group">
+              <label class="ctl-label">Icon Line Weight</label>
+              <select class="ctl-select" id="lineWeightSelect">
+                <option value="thin line-art outline icons">Thin Line Art</option>
+                <option value="clean medium line-art outline icons" selected>Medium Line Art (Standard)</option>
+                <option value="bold thick line-art icons">Bold Thick Line Art</option>
+                <option value="solid filled glyph icons">Solid Filled Glyph</option>
+                <option value="dual-tone outline icons">Dual-Tone Line Art</option>
+              </select>
+            </div>
+
+            <!-- Icon Text Labels Option -->
+            <div class="ctl-group">
+              <label class="ctl-label">Icon Text Labels</label>
+              <select class="ctl-select" id="textLabelSelect">
+                <option value="none" selected>No Text (Icons Only)</option>
+                <option value="with-text">With Text Labels Underneath</option>
+              </select>
+            </div>
+
+            <div class="ctl-group">
+              <label class="ctl-label">Icon Spacing & Padding</label>
+              <input type="range" class="range-input" id="spacingRange" min="1" max="5" value="3" />
+              <div class="range-val" id="spacingVal">Medium Grid Spacing</div>
+            </div>
+
+            <!-- In-Tool Sidebar API Key Config Button -->
+            <div style="margin-top: 24px; padding-top: 16px; border-top: 1px dashed var(--outline-variant, rgba(255,255,255,0.1));">
+              <button class="btn btn-dark small" id="inToolApiKeyBtn" type="button" style="width: 100%; justify-content: center; gap: 8px; border-color: rgba(92, 98, 236, 0.35); background: rgba(92, 98, 236, 0.12); color: var(--tertiary); font-weight: 700; padding: 10px; border-radius: 10px; cursor: pointer;">
+                🔑 API Keys & Model Config
+              </button>
+            </div>
+          </div>
+
+          <!-- Studio Stage Output -->
+          <div class="studio-stage" id="studioStage" style="padding-bottom: 140px; width: 100%; min-width: 0; box-sizing: border-box;">
+            <!-- Output Header & Batch Actions -->
+            <div class="stage-header" style="width: 100%; max-width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+              <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #fff;">Prompt Generation Output</h3>
+              <div class="output-actions" id="bulkActions" style="display: none; gap: 8px;">
+                <button class="btn btn-primary small" id="sendAllToFlowBtn">☁️ Send All to Flow</button>
+                <button class="btn btn-dark small" id="copyPromptBtn">📋 Copy All</button>
+                <button class="btn btn-dark small" id="downloadPromptBtn">💾 Download All TXT</button>
+                <button class="btn btn-dark small" id="downloadPromptCsvBtn">📊 Download CSV</button>
+              </div>
+            </div>
+
+            <!-- Main Output Area (No empty box, direct card placement) -->
+            <div id="promptResultBox" style="width: 100%; max-width: 100%; box-sizing: border-box;">
+              <!-- Default Empty State -->
+              <div class="empty-state" id="emptyState" style="background: var(--surface); border: 1px dashed var(--outline); padding: 48px; border-radius: 16px; text-align: center; color: var(--on-variant); font-size: 13px; max-width: 600px; margin: 0 auto;">
+                <div style="font-size: 32px; margin-bottom: 12px;">✨</div>
+                <div>No prompts generated yet. Enter niche keywords in the floating bar below and click <strong>Generate</strong>.</div>
+              </div>
+            </div>
+
+            <!-- Floating Prompter Bar -->
+            <div class="floating-prompter" id="floatingPrompter" style="gap: 8px;">
+              <!-- Upload Image Button (Image Icon) -->
+              <button class="btn btn-dark small" id="promptImgUploadBtn" type="button" style="border-radius: 10px; width: 34px; height: 34px; padding: 0; display: flex; align-items: center; justify-content: center; background: transparent; border: 1px solid rgba(128,128,128,0.25); color: var(--prompter-text) !important; flex-shrink: 0;" title="Upload reference style image">
+                <svg class="ic" viewBox="0 0 24 24" style="width: 18px; height: 18px;"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M21 15l-5-5a2 2 0 00-3 0l-4 4L7 12l-4 4"/><circle cx="9" cy="9" r="2"/></svg>
+              </button>
+              <input type="file" id="promptImgInput" accept="image/png,image/jpeg,image/webp" multiple hidden />
+              
+              <!-- Selected Image Preview Container (Dynamic insertion of multiple thumbnails) -->
+              <div id="promptImgPreviewContainer" style="display: none; gap: 6px; flex-shrink: 0; align-items: center;">
+                <!-- Dynamic thumbnail items go here -->
+              </div>
+
+              <textarea class="prompter-textarea" id="iconNicheInput" rows="1" placeholder="Enter Niche Topics (One per line, e.g. Technology, Cyber Security...)" oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"></textarea>
+              <div class="prompter-actions">
+                <button class="btn btn-primary" id="generatePromptBtn" style="border-radius: 12px; padding: 10px 20px;">⚡ Generate</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+
+      <!-- Tool #3 Studio View (Google Flow Generator) -->
+      <div class="home-view hidden" id="tool3View">
+        <div class="studio-shell">
+          <!-- Left Control Panel -->
+          <div class="studio-controls" id="tool3Controls" style="width: 360px; max-width: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px;">
+            <h3>Google Flow Settings</h3>
+
+            <!-- Browser Profile Selector Card -->
+            <div class="ctl-group" style="background: var(--surface-lowest); border: 1px solid var(--outline-variant); padding: 14px; border-radius: 14px; display: flex; flex-direction: column; gap: 10px;">
+              <label class="ctl-label" style="margin: 0; font-size: 11.5px; font-weight: 700; color: var(--on-surface);">BROWSER PROFILE</label>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <select class="ctl-select" id="flowProfileSelect" style="flex: 1; font-size: 12px; height: 38px;">
+                  <!-- Filled dynamically by JS -->
+                </select>
+                <button class="btn btn-dark" id="addProfileBtn" style="padding: 0 12px; font-size: 14px; font-weight: 700; height: 38px; min-width: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center;" title="Add Profile">➕</button>
+              </div>
+            </div>
+
+            <!-- Selected Profile Controls Card -->
+            <div class="ctl-group" id="flowProfileStatusCard" style="background: var(--surface-lowest); border: 1px solid var(--outline-variant); padding: 14px; border-radius: 14px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 4px 14px rgba(0,0,0,0.03);">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <input type="checkbox" id="flowProfileUseCheckbox" style="width: 15px; height: 15px; cursor: pointer; margin: 0; accent-color: var(--tertiary);" />
+                  <span class="ctl-label" style="margin: 0; font-size: 11.5px; font-weight: 700; color: var(--on-surface);">Include in Pool</span>
+                </div>
+                <span id="connectionBadge" class="tag" style="background: rgba(234, 67, 53, 0.15); color: #ea4335; font-size: 10px; padding: 3px 10px; border-radius: 99px; font-weight: 800; display: inline-flex; align-items: center; gap: 4px;">
+                  <span style="width: 6px; height: 6px; border-radius: 50%; background: currentColor; display: inline-block;"></span>
+                  Disconnected
+                </span>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px;">
+                <button class="btn btn-dark small" id="btnFlowOpen" style="font-size: 11px; padding: 7px 4px; font-weight: 700; border-radius: 8px;">🌐 Open</button>
+                <button class="btn btn-dark small" id="btnFlowConnect" style="font-size: 11px; padding: 7px 4px; font-weight: 700; border-radius: 8px;">🔌 Connect</button>
+                <button class="btn btn-dark small" id="btnFlowDisconnect" style="font-size: 11px; padding: 7px 4px; font-weight: 700; border-radius: 8px;" disabled>🛑 Disconnect</button>
+              </div>
+              <div style="font-size: 11px; color: var(--on-variant); line-height: 1.4; background: var(--surface-low); padding: 8px 10px; border-radius: 8px; border: 1px solid var(--outline-variant);" id="connectionDetail">
+                Status: Browser offline
+              </div>
+            </div>
+
+            <!-- Parameters Card -->
+            <div class="ctl-group" style="background: var(--surface-lowest); border: 1px solid var(--outline-variant); padding: 14px; border-radius: 14px; display: flex; flex-direction: column; gap: 12px;">
+              <label class="ctl-label" style="margin: 0; font-size: 11.5px; font-weight: 700; color: var(--on-surface);">GENERATION PARAMETERS</label>
+              
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div>
+                  <label class="ctl-label" style="font-size: 10.5px; margin-bottom: 4px;">ASPECT RATIO</label>
+                  <select class="ctl-select" id="flowAspectRatio" style="font-size: 12px; height: 38px;">
+                    <option value="1:1">1:1 Square</option>
+                    <option value="16:9" selected>16:9 Landscape</option>
+                    <option value="9:16">9:16 Portrait</option>
+                    <option value="4:3">4:3 Landscape</option>
+                    <option value="3:4">3:4 Portrait</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="ctl-label" style="font-size: 10.5px; margin-bottom: 4px;">AI MODEL</label>
+                  <select class="ctl-select" id="flowModel" style="font-size: 12px; height: 38px;">
+                    <option value="NARWHAL" selected>Nano Banana 2</option>
+                    <option value="GEM_PIX_2">Nano Banana Pro</option>
+                    <option value="HARBOR_SEAL">Nano Banana 2 Lite</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label class="ctl-label" style="font-size: 10.5px; margin-bottom: 4px;">IMAGES PER PROMPT</label>
+                <input type="number" class="ctl-input" id="flowImagesPerPrompt" value="1" min="1" max="4" style="font-size: 12px; height: 38px; width: 100%;" />
+              </div>
+            </div>
+
+            <!-- Output Directory & Storage Card -->
+            <div class="ctl-group" style="background: var(--surface-lowest); border: 1px solid var(--outline-variant); padding: 14px; border-radius: 14px; display: flex; flex-direction: column; gap: 10px;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <label class="ctl-label" style="margin: 0; font-size: 11.5px; font-weight: 700; color: var(--on-surface);">OUTPUT LOCATION</label>
+                <label style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--on-surface); cursor: pointer; user-select: none;" title="Toggle Auto-Saving to Disk">
+                  <input type="checkbox" id="flowAutoSaveToggle" checked style="accent-color: var(--tertiary); width: 14px; height: 14px; cursor: pointer; margin: 0;" />
+                  <span style="font-weight: 700;">Auto-Save</span>
+                </label>
+              </div>
+
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <input type="text" class="ctl-input" id="flowOutputDir" value="Downloads/Gravity_Flow" placeholder="Downloads/Gravity_Flow" style="font-size: 12px; flex: 1; height: 38px; cursor: pointer;" title="Click to browse folder or type path" />
+                <button class="btn btn-dark" id="btnBrowseOutputDir" type="button" style="padding: 0 14px; font-size: 12px; height: 38px; border-radius: 10px; font-weight: 700; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px;" title="Browse Folder">
+                  📂 Browse
+                </button>
+                <input type="file" id="flowDirPicker" webkitdirectory directory style="display: none;" />
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Studio Stage Output -->
+          <div class="studio-stage" id="tool3Stage" style="padding-bottom: 140px; width: 100%; min-width: 0; box-sizing: border-box;">
+            <!-- Progress Indicator -->
+            <div style="display: flex; justify-content: flex-end; width: 100%; max-width: 100%; margin-bottom: 8px;">
+              <span id="flowRunProgress" style="font-family: var(--mono); font-size: 12px; font-weight: 700; color: var(--tertiary); background: rgba(92, 98, 236, 0.12); padding: 4px 12px; border-radius: 8px; border: 1px solid rgba(92, 98, 236, 0.2); display: none;">Progress: 0/0</span>
+            </div>
+
+            <!-- Progress Bar -->
+            <div id="flowProgressBar" style="width: 100%; max-width: 100%; height: 4px; background: var(--outline-variant); border-radius: 99px; margin-bottom: 24px; overflow: hidden; display: none;">
+              <div id="flowProgressBarInner" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--tertiary), var(--primary)); border-radius: 99px; transition: width 0.3s ease;"></div>
+            </div>
+
+            <!-- Main Output Area -->
+            <div id="flowResultGallery" style="width: 100%; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; max-width: 100%; box-sizing: border-box;">
+              <!-- Default Empty State -->
+              <div class="empty-state" id="flowEmptyState" style="grid-column: 1 / -1; background: var(--surface); border: 1px dashed var(--outline-variant); padding: 56px 24px; border-radius: 20px; text-align: center; color: var(--on-variant); font-size: 13.5px; max-width: 540px; margin: 20px auto; box-shadow: 0 8px 30px rgba(0,0,0,0.02);">
+                <div style="font-size: 40px; margin-bottom: 16px; display: inline-block; filter: drop-shadow(0 4px 12px rgba(92, 98, 236, 0.2));">⚡</div>
+                <div style="font-size: 16px; font-weight: 700; color: var(--on-surface); margin-bottom: 6px;">Google Flow Engine Idle</div>
+                <div style="line-height: 1.5; opacity: 0.85;">Connect a browser profile, load your target prompts using <strong>Sync Tool #1</strong> or file upload in the floating bar below, then click <strong>Start Flow Engine</strong>.</div>
+              </div>
+            </div>
+
+            <!-- Floating Prompter Bar for Tool #3 (Google Flow Generator) -->
+            <div class="floating-prompter" id="flowFloatingPrompter" style="left: calc(50% + 180px); width: calc(100% - 360px - 64px); display: flex; flex-direction: column; gap: 8px; padding: 12px 18px; border-radius: 22px;">
+              <!-- Top Toolbar Row -->
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--outline-variant); padding-bottom: 6px; width: 100%;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 11.5px; font-weight: 800; color: var(--on-surface); text-transform: uppercase; letter-spacing: 0.5px;">Target Prompts</span>
+                  <span id="promptCountBadge" style="font-size: 10.5px; font-weight: 800; color: var(--tertiary); background: rgba(92, 98, 236, 0.15); padding: 2px 8px; border-radius: 6px;">0 Prompts</span>
+                </div>
+                <div style="display: flex; gap: 6px; align-items: center;">
+                  <button class="btn btn-dark small" id="btnUploadTxt" style="padding: 4px 10px; font-size: 11px; font-weight: 700; border-radius: 8px; gap: 4px;" title="Upload TXT File">📂 Upload</button>
+                  <button class="btn btn-dark small" id="btnSyncFromTool1" style="padding: 4px 10px; font-size: 11px; font-weight: 700; color: var(--tertiary); border-color: rgba(92, 98, 236, 0.3); border-radius: 8px; gap: 4px;" title="Sync Prompts from Tool #1">⚡ Sync Tool #1</button>
+                  <button class="btn btn-dark small" id="btnClearPrompts" style="padding: 4px 8px; font-size: 11px; font-weight: 700; color: var(--on-variant); border-radius: 8px;" title="Clear Prompts">🧹 Clear</button>
+                  <input type="file" id="txtFileInput" accept=".txt,.csv" style="display: none;" />
+                </div>
+              </div>
+
+              <!-- Prompts Textarea & Actions Row -->
+              <div style="display: flex; gap: 12px; align-items: center; width: 100%;">
+                <textarea class="prompter-textarea" id="flowPromptsArea" rows="1" placeholder="Enter prompts (one per line) or click 'Sync Tool #1'..." style="font-size: 13px; min-height: 38px; max-height: 120px;" oninput="this.style.height = ''; this.style.height = Math.min(120, this.scrollHeight) + 'px'"></textarea>
+                
+                <div class="prompter-actions" style="display: flex; gap: 8px; flex-shrink: 0; align-items: center;">
+                  <button class="btn btn-primary" id="btnFlowStart" style="border-radius: 12px; padding: 10px 20px; font-weight: 800; font-size: 13px; white-space: nowrap;" disabled>⚡ Start Flow Engine</button>
+                  <button class="btn btn-dark" id="btnFlowStop" style="border-radius: 12px; padding: 10px 14px; font-weight: 800; font-size: 13px; color: var(--error); border-color: rgba(239, 68, 68, 0.3); white-space: nowrap;" disabled>🛑 Stop</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tool #4 Studio View: Icon Sheet Generator -->
+      <div class="home-view hidden" id="tool4View">
+        <div class="studio-shell">
+          <!-- Left Control Panel -->
+          <div class="studio-controls" style="width: 340px;">
+            <h3>Icon Sheet Slicer & Vectorizer</h3>
+
+            <!-- Source Sheet Dropzone -->
+            <div class="ctl-group">
+              <label class="ctl-label">1. Upload Icon Sheet Image</label>
+              <div id="sheetDropzone" style="border: 2px dashed var(--outline-variant); border-radius: 12px; padding: 18px 14px; text-align: center; cursor: pointer; background: var(--surface); transition: border-color 0.2s;">
+                <div style="font-size: 24px; margin-bottom: 4px;">📂</div>
+                <div style="font-size: 12px; font-weight: 700; color: var(--on-surface);" id="sheetFileName">Choose or Drag Icon Sheet</div>
+                <div style="font-size: 10px; color: var(--on-variant); margin-top: 4px;">PNG, JPG, WebP (Grids of icons)</div>
+              </div>
+              <input type="file" id="sheetFileInput" accept="image/png,image/jpeg,image/webp" hidden />
+            </div>
+
+            <!-- Grid Controls -->
+            <div class="ctl-group">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <label class="ctl-label" style="margin: 0;">2. Grid & Slicing Mode</label>
+                <select class="ctl-select small" id="sheetDetectMode" style="width: 140px; padding: 2px 6px; font-size: 11px; height: 24px; background: var(--surface-low); border: 1px solid var(--outline-variant); color: #fff; border-radius: 6px;">
+                  <option value="grid">Grid Slicing</option>
+                  <option value="auto" selected>Auto-Detect Icons</option>
+                </select>
+              </div>
+              <div class="ctl-row">
+                <div class="ctl-group half">
+                  <label class="ctl-label">Columns</label>
+                  <input type="number" class="ctl-input" id="sheetCols" value="5" min="1" max="20" />
+                </div>
+                <div class="ctl-group half">
+                  <label class="ctl-label">Rows</label>
+                  <input type="number" class="ctl-input" id="sheetRows" value="3" min="1" max="20" />
+                </div>
+              </div>
+              <div style="font-size: 11px; color: var(--accent); font-weight: 700; margin-top: 4px;">
+                Total Icons per Sheet: <span id="sheetTileCount">15</span>
+              </div>
+            </div>
+
+            <div class="ctl-group">
+              <label class="checkbox-row" style="display: flex; align-items: center; gap: 8px; font-size: 12px; cursor: pointer;">
+                <input type="checkbox" id="sheetTrim" checked />
+                <span>Auto-trim whitespace around icons</span>
+              </label>
+              <label class="checkbox-row" style="display: flex; align-items: center; gap: 8px; font-size: 12px; cursor: pointer; margin-top: 6px;">
+                <input type="checkbox" id="sheetShuffle" checked />
+                <span>Shuffle icon positions</span>
+              </label>
+            </div>
+
+            <!-- Vectorizer Controls (Fixed to Line Art B&W Mono) -->
+            <div class="ctl-group" style="display: none;">
+              <label class="ctl-label">3. Vectorization & Smoothing</label>
+              <select class="ctl-select" id="vecMode">
+                <option value="bw" selected>Line Art (B&W Mono)</option>
+                <option value="color">Color Multi-Scan</option>
+              </select>
+            </div>
+
+            <div class="ctl-group">
+              <label class="ctl-label">Edge Smoothing (<span id="vecSmoothingVal">5</span>)</label>
+              <input type="range" class="range-input" id="vecSmoothing" min="0" max="15" value="5" />
+            </div>
+
+            <div class="ctl-group">
+              <label class="ctl-label">Corner Smoothness (<span id="vecCornerVal">133</span>°)</label>
+              <input type="range" class="range-input" id="vecCorner" min="10" max="180" value="133" />
+            </div>
+
+            <div class="ctl-group">
+              <label class="ctl-label">Curve Simplify (<span id="vecSimplifyVal">5.5</span>)</label>
+              <input type="range" class="range-input" id="vecSimplify" min="5" max="100" value="55" />
+            </div>
+
+            <div class="ctl-group">
+              <label class="ctl-label">Speckle Filter (<span id="vecSpeckleVal">3</span> px)</label>
+              <input type="range" class="range-input" id="vecSpeckle" min="1" max="20" value="3" />
+            </div>
+
+            <div class="ctl-group" style="margin-bottom: 12px;">
+              <label class="checkbox-row" style="display: flex; align-items: center; gap: 8px; font-size: 12px; cursor: pointer;">
+                <input type="checkbox" id="vecOptimise" checked />
+                <span>Optimise / smooth curves</span>
+              </label>
+            </div>
+
+            <div class="ctl-group">
+              <label class="ctl-label">Icon Color Fill</label>
+              <div class="ctl-row" style="align-items: center;">
+                <input type="color" id="vecFillColor" value="#344e41" style="width: 44px; height: 32px; border-radius: 8px; border: 1px solid var(--outline-variant); background: transparent; cursor: pointer;" />
+                <input type="text" class="ctl-input" id="vecFillHex" value="#344e41" style="flex: 1;" />
+              </div>
+            </div>
+
+            <div style="font-size: 11px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; margin-top: 14px;">4. Quality & Resolution</div>
+
+            <div class="ctl-group" style="margin-bottom: 10px;">
+              <label class="ctl-label">Pre-slice upscale</label>
+              <div class="segmented-control" style="display: flex; background: var(--surface-low); border-radius: 8px; padding: 3px; border: 1px solid var(--outline-variant);">
+                <button type="button" class="segment-btn upscale-btn" data-val="1" style="flex: 1; border: none; background: transparent; color: #fff; font-size: 10.5px; padding: 5px; cursor: pointer; border-radius: 6px;">Off</button>
+                <button type="button" class="segment-btn upscale-btn" data-val="2" style="flex: 1; border: none; background: transparent; color: #fff; font-size: 10.5px; padding: 5px; cursor: pointer; border-radius: 6px;">2x</button>
+                <button type="button" class="segment-btn upscale-btn active" data-val="4" style="flex: 1; border: none; background: var(--primary); color: var(--on-primary); font-size: 10.5px; padding: 5px; cursor: pointer; border-radius: 6px;">4x</button>
+              </div>
+              <input type="hidden" id="vecUpscale" value="4" />
+            </div>
+
+            <div class="ctl-group" style="margin-bottom: 10px;">
+              <label class="ctl-label">Trace detail</label>
+              <div class="segmented-control" style="display: flex; background: var(--surface-low); border-radius: 8px; padding: 3px; border: 1px solid var(--outline-variant);">
+                <button type="button" class="segment-btn detail-btn" data-val="1200" style="flex: 1; border: none; background: transparent; color: #fff; font-size: 10.5px; padding: 5px; cursor: pointer; border-radius: 6px;">Standard</button>
+                <button type="button" class="segment-btn detail-btn active" data-val="1600" style="flex: 1; border: none; background: var(--primary); color: var(--on-primary); font-size: 10.5px; padding: 5px; cursor: pointer; border-radius: 6px;">High</button>
+                <button type="button" class="segment-btn detail-btn" data-val="2200" style="flex: 1; border: none; background: transparent; color: #fff; font-size: 10.5px; padding: 5px; cursor: pointer; border-radius: 6px;">Ultra</button>
+              </div>
+              <input type="hidden" id="vecTraceDetail" value="1600" />
+            </div>
+
+            <div style="font-size: 11px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; margin-top: 14px;">5. Presentation Layout</div>
+
+            <div class="ctl-group" style="margin-bottom: 10px;">
+              <label class="ctl-label">Layout Mode</label>
+              <div class="segmented-control" style="display: flex; background: var(--surface-low); border-radius: 8px; padding: 3px; border: 1px solid var(--outline-variant);">
+                <button type="button" class="segment-btn layout-btn active" data-val="template" style="flex: 1; border: none; background: var(--primary); color: var(--on-primary); font-size: 10.5px; padding: 5px; cursor: pointer; border-radius: 6px;">Branded sheet</button>
+                <button type="button" class="segment-btn layout-btn" data-val="compact" style="flex: 1; border: none; background: transparent; color: #fff; font-size: 10.5px; padding: 5px; cursor: pointer; border-radius: 6px;">Compact grid</button>
+              </div>
+              <input type="hidden" id="sheetLayout" value="template" />
+            </div>
+
+            <div class="ctl-group">
+              <label class="ctl-label" style="display: flex; justify-content: space-between; align-items: center;">
+                <span>Preset Theme</span>
+                <span style="font-size: 10px; opacity: 0.6;">Custom presets supported</span>
+              </label>
+              <div style="display: flex; gap: 6px; align-items: center;">
+                <select class="ctl-select" id="sheetPresetSelect" style="flex: 1;">
+                  <option value="healthcare" selected>Healthcare Sage Green</option>
+                  <option value="slate">Dark Slate Navy</option>
+                  <option value="purple">Cyber Purple</option>
+                  <option value="dark">Minimal Dark</option>
+                </select>
+                <button type="button" class="btn btn-dark small" id="btnDeletePreset" title="Delete current custom preset" style="height: 38px; width: 38px; display: flex; align-items: center; justify-content: center; padding: 0; flex-shrink: 0;">🗑️</button>
+              </div>
+            </div>
+
+            <div class="ctl-group" style="margin-top: 4px; padding: 10px; background: rgba(255,255,255,0.03); border: 1px dashed var(--outline-variant); border-radius: 8px;">
+              <label class="ctl-label" style="font-size: 11px; margin-bottom: 4px; color: var(--primary);">💾 Save Current Theme as Preset</label>
+              <div style="display: flex; gap: 6px;">
+                <input type="text" class="ctl-input" id="newPresetName" placeholder="e.g. My Emerald Theme" style="flex: 1; font-size: 11px; height: 34px;" />
+                <button type="button" class="btn btn-primary small" id="btnSavePreset" style="height: 34px; font-size: 11px; font-weight: 700; white-space: nowrap;">Save Theme</button>
+              </div>
+            </div>
+
+            <div class="ctl-group">
+              <label class="ctl-label">Icon Set Name</label>
+              <input type="text" class="ctl-input" id="sheetSetName" value="HEALTHCARE ICON" placeholder="e.g. HEALTHCARE ICON" />
+            </div>
+
+            <div class="ctl-group">
+              <label class="ctl-label">Subtitle Line</label>
+              <input type="text" class="ctl-input" id="sheetSubtitle" value="15 ICONS · VECTOR SVG" placeholder="e.g. 15 ICONS" />
+            </div>
+
+            <div class="ctl-group">
+              <label class="ctl-label">Save Directory (Absolute Path)</label>
+              <input type="text" class="ctl-input" id="sheetSaveDir" value="D:\softower making\Gravity Ai\output\icon_sheets" placeholder="e.g. C:\Users\Username\Desktop\Icons" />
+            </div>
+
+            <div class="ctl-group" style="margin-top: 10px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 8px;">
+              <button class="btn btn-primary" id="btnSliceVectorize" style="justify-content: center; height: 42px; font-size: 12px; font-weight: 700; width: 100%;">⚡ Convert to Vector</button>
+              <button class="btn btn-dark" id="btnSaveToPC" style="justify-content: center; height: 42px; font-size: 12px; font-weight: 700; width: 100%;" disabled>💾 Save to PC</button>
+            </div>
+
+          </div>
+
+          <!-- Right Workspace Stage -->
+          <div class="studio-stage" style="padding: 24px;">
+            <div class="output-card" style="max-width: 1200px;">
+              <div class="output-head">
+                <h4>Icon Sheet Studio Output</h4>
+                <div class="output-actions">
+                  <button class="btn btn-dark small" id="btnToggleTilesView">Tiles Grid</button>
+                  <button class="btn btn-dark small" id="btnToggleSheetView">Presentation Sheet</button>
+                  <button class="btn btn-primary small" id="btnDownloadAssembledSheet" disabled>Download Sheet (SVG)</button>
+                </div>
+              </div>
+
+              <!-- Tiles Grid View Container -->
+              <div id="tool4TilesContainer" style="width: 100%;">
+                <div id="tool4TilesGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 14px; margin-top: 16px;">
+                  <div style="grid-column: 1 / -1; background: var(--surface-low); border: 1px dashed var(--outline-variant); padding: 48px; border-radius: 14px; text-align: center; color: var(--on-variant); font-size: 13px;">
+                    Upload an icon sheet image and click <strong>Slice & Vectorize Sheet</strong> to extract clean SVG icons.
+                  </div>
+                </div>
+              </div>
+
+              <!-- Assembled SVG Sheet Preview Container -->
+              <div id="tool4SheetWrap" style="display: none; width: 100%; text-align: center;">
+                <div id="tool4SheetCard" style="background: var(--surface-lowest); border: 1px solid var(--outline-variant); border-radius: 14px; overflow: hidden; padding: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.4);">
+                  <!-- Assembled SVG rendered here -->
+                </div>
+
+                <!-- Live Template Designer Panel (Matches Pixeva AI visual editor) -->
+                <div class="designer-panel" style="margin-top: 24px; display: grid; grid-template-columns: 280px 1fr; gap: 20px; text-align: left; background: var(--surface-low); border: 1px solid var(--outline-variant); border-radius: 14px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.25);">
+                  
+                  <!-- Layers List Column -->
+                  <div style="border-right: 1px solid var(--outline-variant); padding-right: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                      <div style="font-size: 11px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.5px;">Add Elements</div>
+                      <div style="display: flex; gap: 4px;">
+                        <button type="button" class="btn btn-dark small" id="btnUndo" style="height: 24px; font-size: 10px; padding: 0 8px; font-weight: 700;" title="Undo (Ctrl+Z)" disabled>↩</button>
+                        <button type="button" class="btn btn-dark small" id="btnRedo" style="height: 24px; font-size: 10px; padding: 0 8px; font-weight: 700;" title="Redo (Ctrl+Y)" disabled>↪</button>
+                      </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 16px;">
+                      <button type="button" class="btn btn-dark small" id="btnAddRect" style="padding: 6px; font-size: 10px; font-weight: 700; text-align: center; justify-content: center;">[Rect]</button>
+                      <button type="button" class="btn btn-dark small" id="btnAddEllipse" style="padding: 6px; font-size: 10px; font-weight: 700; text-align: center; justify-content: center;">[Ellipse]</button>
+                      <button type="button" class="btn btn-dark small" id="btnAddText" style="padding: 6px; font-size: 10px; font-weight: 700; text-align: center; justify-content: center;">[Text]</button>
+                      <button type="button" class="btn btn-dark small" id="btnAddGrid" style="padding: 6px; font-size: 10px; font-weight: 700; text-align: center; justify-content: center;">[Icons Grid]</button>
+                      <button type="button" class="btn btn-dark small" id="btnAddFeatured" style="padding: 6px; font-size: 10px; font-weight: 700; text-align: center; justify-content: center;">[Featured]</button>
+                      <button type="button" class="btn" id="btnClearCanvas" style="padding: 6px; font-size: 10px; font-weight: 700; text-align: center; justify-content: center; background: #e03131; border: 1px solid #c92a2a; color: #fff;">Clear Canvas</button>
+                    </div>
+
+                    <div style="font-size: 11px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">Layers Tree</div>
+                    <div id="designerLayerList" class="layer-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 380px; overflow-y: auto; padding-right: 4px;">
+                      <!-- Dynamic Buttons loaded via JS -->
+                    </div>
+                  </div>
+
+                  <!-- Properties Inputs Column -->
+                  <div style="display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                      <div style="font-size: 11px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;" id="designerActiveLayerTitle">Properties: Left Sidebar BG</div>
+                      
+                      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;" id="designerPropsGrid">
+                        <!-- Geometry Fields -->
+                        <div class="prop-field">
+                          <label style="display: block; font-size: 10px; color: var(--on-surface-variant); margin-bottom: 4px;">Position X (px)</label>
+                          <input type="number" class="ctl-input" id="propX" value="0" style="height: 34px; padding: 6px 10px; font-size: 12px;" />
+                        </div>
+                        <div class="prop-field">
+                          <label style="display: block; font-size: 10px; color: var(--on-surface-variant); margin-bottom: 4px;">Position Y (px)</label>
+                          <input type="number" class="ctl-input" id="propY" value="0" style="height: 34px; padding: 6px 10px; font-size: 12px;" />
+                        </div>
+                        <div class="prop-field">
+                          <label style="display: block; font-size: 10px; color: var(--on-surface-variant); margin-bottom: 4px;" id="lblPropW">Width W (px)</label>
+                          <input type="number" class="ctl-input" id="propW" value="1600" style="height: 34px; padding: 6px 10px; font-size: 12px;" />
+                        </div>
+                        <div class="prop-field" id="propHField">
+                          <label style="display: block; font-size: 10px; color: var(--on-surface-variant); margin-bottom: 4px;">Height H (px)</label>
+                          <input type="number" class="ctl-input" id="propH" value="2600" style="height: 34px; padding: 6px 10px; font-size: 12px;" />
+                        </div>
+                      </div>
+
+                      <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-top: 14px;">
+                        <!-- Color fields -->
+                        <div class="prop-field" id="propColorField">
+                          <label style="display: block; font-size: 10px; color: var(--on-surface-variant); margin-bottom: 4px;">Fill Color</label>
+                          <div class="ctl-row" style="align-items: center; gap: 8px;">
+                            <input type="color" id="propColor" value="#2a4436" style="width: 44px; height: 34px; border-radius: 8px; border: 1px solid var(--outline-variant); background: transparent; cursor: pointer;" />
+                            <input type="text" class="ctl-input" id="propColorHex" value="#2a4436" style="flex: 1; height: 34px; font-size: 12px;" />
+                          </div>
+                        </div>
+
+                        <!-- Radius Field (only active on rounded items) -->
+                        <div class="prop-field" id="propRadiusField">
+                          <label style="display: block; font-size: 10px; color: var(--on-surface-variant); margin-bottom: 4px;" id="lblPropRadius">Corner Radius (rx)</label>
+                          <input type="number" class="ctl-input" id="propRadius" value="0" style="height: 34px; padding: 6px 10px; font-size: 12px;" />
+                        </div>
+
+                        <!-- Typography Field (Title / subtitle only) -->
+                        <div class="prop-field" id="propFontField" style="grid-column: 1 / -1; display: none;">
+                           <label style="display: block; font-size: 10px; color: var(--on-surface-variant); margin-bottom: 4px;">Font Family</label>
+                           <select class="ctl-select" id="propFont" style="height: 34px; font-size: 12px; padding: 6px 10px;">
+                             <option value="Outfit" selected>Outfit</option>
+                             <option value="Montserrat">Montserrat</option>
+                             <option value="Roboto">Roboto</option>
+                             <option value="Arial">Arial</option>
+                             <option value="Georgia">Georgia</option>
+                             <option value="Impact">Impact</option>
+                           </select>
+                         </div>
+                         
+                         <!-- Typography Text Content -->
+                         <div class="prop-field" id="propTextField" style="grid-column: 1 / -1; display: none;">
+                           <label style="display: block; font-size: 10px; color: var(--on-surface-variant); margin-bottom: 4px;">Text Content</label>
+                           <input type="text" class="ctl-input" id="propText" value="MY TEXT" style="height: 34px; padding: 6px 10px; font-size: 12px;" />
+                         </div>
+                      </div>
+                    </div>
+
+                    <!-- Reset to active preset colors -->
+                    <div style="margin-top: 16px; border-top: 1px dashed var(--outline-variant); padding-top: 12px; display: flex; justify-content: space-between; align-items: center;">
+                      <div style="font-size: 11px; color: var(--on-surface-variant); opacity: 0.8;">💡 Change dimensions live and check the banner preview above.</div>
+                      <button type="button" class="btn btn-dark small" id="btnResetLayoutColors" style="height: 30px; font-size: 11px; padding: 0 12px;">Reset to Theme Defaults</button>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Gemini API Key Modal -->
+  <div class="modal-backdrop hidden" id="apiKeyModal">
+    <div class="modal-box" style="max-width: 580px; max-height: 85vh; display: flex; flex-direction: column;">
+      <h3>🔑 Enter Gemini API Keys</h3>
+      <p style="font-size: 13px; color: var(--on-variant); margin-bottom: 14px;">Add your Gemini API keys below. The app will automatically rotate through all active keys during bulk generation.</p>
+      
+      <!-- Dynamic API Key Rows Container -->
+      <div id="apiKeyRowsContainer" style="display: flex; flex-direction: column; gap: 10px; max-height: 250px; overflow-y: auto; padding-right: 4px; margin-bottom: 8px;">
+        <!-- Input rows dynamically rendered here -->
+      </div>
+
+      <!-- Add Key Button -->
+      <button class="btn btn-dark small" id="addApiKeyRowBtn" type="button" style="align-self: flex-start; gap: 6px; font-weight: 600; color: var(--tertiary); border-color: rgba(0, 229, 255, 0.3);">
+        ➕ Add Another API Key
+      </button>
+
+      <!-- Gemini Model Selection -->
+      <div style="margin-top: 14px; margin-bottom: 6px; display: flex; flex-direction: column; gap: 6px;">
+        <label style="font-size: 11.5px; font-weight: 700; color: var(--on-surface); text-transform: uppercase; letter-spacing: 0.5px;">Default Gemini AI Model</label>
+        <select class="ctl-select" id="modelSelect" style="background: var(--surface-card, #1e1e24); color: var(--on-surface, #ededf0); border: 1px solid var(--border-color, #2a2a32); padding: 9px 12px; border-radius: 8px; font-size: 13px; outline: none; width: 100%; font-family: inherit; cursor: pointer;">
+          <option value="gemini-3.1-flash-lite" selected>Gemini 3.1 Flash Lite (Recommended)</option>
+          <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash Lite</option>
+        </select>
+      </div>
+
+      <div style="font-size: 11.5px; color: var(--on-variant); opacity: 0.8; margin-top: 8px; font-weight: 600;" id="apiKeysCountTxt">0 API Keys configured</div>
+
+      <div class="modal-actions" style="margin-top: 18px; justify-content: space-between;">
+        <a href="https://aistudio.google.com/app/apikey" target="_blank" class="btn btn-dark small">Get API Key (Google AI Studio) →</a>
+        <button class="btn btn-primary" id="saveApiKeyBtn">Save API Keys</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Prompt Images Lightbox Modal -->
+  <div id="promptLightboxModal" class="lightbox-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10, 10, 12, 0.9); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); z-index: 99999; align-items: center; justify-content: center; flex-direction: column;">
+    <!-- Close Button -->
+    <button id="lightboxCloseBtn" style="position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; width: 44px; height: 44px; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); transition: all 0.2s;">✕</button>
+
+    <!-- Main Content Area -->
+    <div style="position: relative; display: flex; align-items: center; justify-content: center; width: 100%; max-width: 800px; height: 60vh;">
+      <!-- Left Arrow -->
+      <button id="lightboxPrevBtn" style="position: absolute; left: 20px; z-index: 10; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; width: 44px; height: 44px; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">‹</button>
+      
+      <!-- Image Grid -->
+      <img id="lightboxImg" src="" style="max-width: 90%; max-height: 100%; object-fit: contain; border-radius: 12px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);" />
+      
+      <!-- Right Arrow -->
+      <button id="lightboxNextBtn" style="position: absolute; right: 20px; z-index: 10; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; width: 44px; height: 44px; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">›</button>
+    </div>
+
+    <!-- Thumbnail Strip Carousel -->
+    <div id="lightboxThumbStrip" style="display: flex; gap: 8px; margin-top: 15px; max-width: 85%; overflow-x: auto; padding: 4px; scrollbar-width: thin; align-items: center; justify-content: center;">
+      <!-- Dynamic list elements rendered via javascript -->
+    </div>
+
+    <!-- Actions and Indicator -->
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 20px;">
+      <div id="lightboxIndicator" style="color: rgba(255,255,255,0.6); font-size: 14px; font-family: inherit;">1 of 3</div>
+      <button type="button" id="lightboxDeleteBtn" class="btn small" style="background: var(--error, #ef4444); border-color: transparent; border-radius: 8px; padding: 6px 12px; font-size: 11px; color: #fff; cursor: pointer;">🗑️ Delete Image</button>
+    </div>
+  </div>
+
+  <!-- Custom Modern Dark Glass Alert Modal -->
+  <div class="modal-backdrop hidden" id="customAlertModal" style="z-index: 999999;">
+    <div class="modal-box" style="max-width: 440px; text-align: center; border-radius: 20px; padding: 28px 24px; background: rgba(18, 18, 22, 0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.12); box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);">
+      <div id="customAlertIconBox" style="width: 56px; height: 56px; border-radius: 50%; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; font-size: 26px; background: rgba(251, 191, 36, 0.12); border: 1px solid rgba(251, 191, 36, 0.3); color: #fbbf24;">
+        ⚠️
+      </div>
+      <h3 id="customAlertTitle" style="margin: 0 0 10px; font-size: 18px; font-weight: 800; color: #ededf0;">Attention</h3>
+      <p id="customAlertMessage" style="margin: 0 0 24px; font-size: 14px; color: #a0a0ab; line-height: 1.55; font-weight: 500; white-space: pre-line;"></p>
+      <button class="btn btn-primary" id="customAlertOkBtn" style="width: 100%; justify-content: center; padding: 11px; font-size: 14px; font-weight: 700; border-radius: 12px; cursor: pointer;">Got It</button>
+    </div>
+  </div>
+
+  <!-- Global Toast Notification Container -->
+  <div id="toastContainer" style="position: fixed; bottom: 24px; right: 24px; z-index: 9999999; display: flex; flex-direction: column; gap: 10px; pointer-events: none;"></div>
+
+  <script src="app.js?v=3.9.0"></script>
+</body>
+</html>
