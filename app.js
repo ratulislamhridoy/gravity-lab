@@ -4315,10 +4315,12 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       }
     }
 
-    const nameBase = ((sheetSetName ? sheetSetName.value : '') || (isMockup ? 'MY PRESET DESIGN' : 'HEALTHCARE ICON')).trim();
     const cleanLabel = sheetLabel ? sheetLabel.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, ' ') : '';
-    const setNameText = (cleanLabel ? `${nameBase} - ${cleanLabel}` : nameBase).toUpperCase();
-    const subtitleText = ((sheetSubtitle ? sheetSubtitle.value : '') || `${tilesToRender.length} ICONS · VECTOR SVG`).toUpperCase();
+    const userDefinedName = (sheetSetName && sheetSetName.value) ? sheetSetName.value.trim() : '';
+    const nameBase = userDefinedName || cleanLabel || (isMockup ? 'MY PRESET DESIGN' : 'ICON COLLECTION');
+    const setNameText = nameBase.toUpperCase();
+    const userDefinedSub = (sheetSubtitle && sheetSubtitle.value) ? sheetSubtitle.value.trim() : '';
+    const subtitleText = (userDefinedSub || `${tilesToRender.length} ICONS · VECTOR SVG`).toUpperCase();
 
     const W = 6000;
     const H = 2600;
