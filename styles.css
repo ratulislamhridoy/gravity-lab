@@ -39,13 +39,13 @@
 html {
   background: var(--bg);
 }
-html, body { height: 100%; margin: 0; padding: 0; }
+html, body { height: 100vh; max-height: 100vh; margin: 0; padding: 0; overflow: hidden; }
 body {
   font-family: var(--font);
   color: var(--on-surface);
   /* Organic fluid background gradient inspired by Gling.io */
   background: radial-gradient(circle at 10% 20%, rgba(243, 222, 237, 0.5) 0%, rgba(223, 245, 201, 0.5) 40%, var(--bg) 90%);
-  overflow-x: hidden;
+  overflow: hidden;
   -webkit-font-smoothing: antialiased;
 }
 ::selection { background: var(--primary); color: #1a1a1a !important; }
@@ -54,7 +54,7 @@ button, a { font-family: inherit; }
 .ic { width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; display: block; }
 
 /* === Layout === */
-.home-body { display: flex; width: 100%; min-height: 100vh; position: relative; }
+.home-body { display: flex; width: 100%; height: 100vh; max-height: 100vh; position: relative; overflow: hidden; }
 
 /* === In-Tool View Mode (Sidebar Hidden) === */
 .in-tool-view .home-sidebar,
@@ -106,7 +106,7 @@ button, a { font-family: inherit; }
 
 /* === Main === */
 .home-main {
-  flex: 1; margin-left: var(--sidebar-w); display: flex; flex-direction: column; min-width: 0; position: relative;
+  flex: 1; margin-left: var(--sidebar-w); display: flex; flex-direction: column; min-width: 0; position: relative; height: 100vh; max-height: 100vh; overflow: hidden;
   transition: margin-left .22s ease-in-out;
 }
 
@@ -235,9 +235,11 @@ button, a { font-family: inherit; }
 }
 .launch:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(205, 252, 82, 0.45); }
 
-/* === Studio View Shell === */
+#dashboardView { flex: 1; height: calc(100vh - 68px); overflow-y: auto; box-sizing: border-box; }
 .studio-shell { display: grid; grid-template-columns: 360px minmax(0, 1fr); height: calc(100vh - 68px); max-height: calc(100vh - 68px); border-top: 1px solid var(--outline-variant); width: 100%; max-width: 100%; overflow: hidden; }
-.studio-controls { background: var(--surface-low); border-right: 1px solid var(--outline-variant); padding: 24px; display: flex; flex-direction: column; gap: 18px; width: 360px; max-width: 100%; box-sizing: border-box; }
+.studio-controls { background: var(--surface-low); border-right: 1px solid var(--outline-variant); padding: 0; display: flex; flex-direction: column; width: 360px; max-width: 100%; height: 100%; overflow: hidden; box-sizing: border-box; }
+.studio-controls-scroll { overscroll-behavior: contain; }
+.studio-stage { overscroll-behavior: contain; }
 .studio-controls h3 { margin: 0 0 4px; font-size: 16px; font-weight: 700; color: var(--on-surface); border-bottom: 1px solid var(--outline-variant); padding-bottom: 12px; }
 
 .ctl-group { display: flex; flex-direction: column; gap: 6px; }
