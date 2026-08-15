@@ -3841,7 +3841,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
   // Trigger WebSocket server-assisted contour / curve tracing
   if (btnSliceVectorize) {
     btnSliceVectorize.addEventListener('click', () => {
-      if (!loadedSheetImg || slicedTilesData.length === 0) {
+      if (!loadedSheetImgs || loadedSheetImgs.length === 0 || slicedTilesData.length === 0) {
         alert('Please upload an icon sheet image first!');
         return;
       }
