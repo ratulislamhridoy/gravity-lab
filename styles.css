@@ -159,9 +159,9 @@ button, a { font-family: inherit; }
 .home-topbar .title { font-size: 16px; font-weight: 700; color: var(--on-surface); }
 .home-badge { padding: 5px 12px; border-radius: 999px; background: rgba(255, 107, 107, 0.08); border: 1px solid rgba(255, 107, 107, 0.2); color: var(--secondary); font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 
-/* === Views === */
+/* === Views & Utility Classes === */
 .home-content { padding: 40px 32px; width: 100%; max-width: 1200px; margin: 0 auto; }
-.home-view.hidden { display: none; }
+.home-view.hidden, .hidden { display: none !important; }
 
 /* Staggered load animation */
 @keyframes fadeInUp {
