@@ -3741,43 +3741,50 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
 
   function boxBlurUint8(data, w, h, radius) {
     if (radius <= 0) return data;
-    const len = w * h;
-    const temp = new Float32Array(len);
-    const out = new Uint8ClampedArray(data.length);
+    let current = data;
+    const passes = radius >= 3 ? 2 : 1;
+    const passRadius = Math.max(1, Math.round(radius / passes));
 
-    for (let y = 0; y < h; y++) {
-      for (let x = 0; x < w; x++) {
-        let sum = 0, count = 0;
-        for (let r = -radius; r <= radius; r++) {
-          const nx = x + r;
-          if (nx >= 0 && nx < w) {
-            sum += data[(y * w + nx) * 4];
-            count++;
-          }
-        }
-        temp[y * w + x] = sum / count;
-      }
-    }
+    for (let p = 0; p < passes; p++) {
+      const len = w * h;
+      const temp = new Float32Array(len);
+      const out = new Uint8ClampedArray(current.length);
 
-    for (let y = 0; y < h; y++) {
-      for (let x = 0; x < w; x++) {
-        let sum = 0, count = 0;
-        for (let r = -radius; r <= radius; r++) {
-          const ny = y + r;
-          if (ny >= 0 && ny < h) {
-            sum += temp[ny * w + x];
-            count++;
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          let sum = 0, count = 0;
+          for (let r = -passRadius; r <= passRadius; r++) {
+            const nx = x + r;
+            if (nx >= 0 && nx < w) {
+              sum += current[(y * w + nx) * 4];
+              count++;
+            }
           }
+          temp[y * w + x] = sum / count;
         }
-        const val = Math.round(sum / count);
-        const idx = (y * w + x) * 4;
-        out[idx] = val;
-        out[idx + 1] = val;
-        out[idx + 2] = val;
-        out[idx + 3] = 255;
       }
+
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          let sum = 0, count = 0;
+          for (let r = -passRadius; r <= passRadius; r++) {
+            const ny = y + r;
+            if (ny >= 0 && ny < h) {
+              sum += temp[ny * w + x];
+              count++;
+            }
+          }
+          const val = Math.round(sum / count);
+          const idx = (y * w + x) * 4;
+          out[idx] = val;
+          out[idx + 1] = val;
+          out[idx + 2] = val;
+          out[idx + 3] = 255;
+        }
+      }
+      current = out;
     }
-    return out;
+    return current;
   }
 
   function vectorizeTileClientSide(tile, mode, fillColor, smoothing, corner, simplify, speckle) {
@@ -3792,12 +3799,12 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       const origW = img.width || 128;
       const origH = img.height || 128;
 
-      // 1. High Quality 4x Canvas Upscaling
-      const scale = Math.min(4, 1600 / Math.max(origW, origH));
+      // 1. Ultra High Precision Sub-Pixel 8x Canvas Upscaling (up to 2048px)
+      const scale = Math.min(8, 2048 / Math.max(origW, origH));
       const w = Math.round(origW * scale);
       const h = Math.round(origH * scale);
 
-      // 2. Measure border background color from unpadded image canvas first
+      // 2. Measure border background color from unpadded image canvas
       const unpaddedCvs = document.createElement('canvas');
       unpaddedCvs.width = w;
       unpaddedCvs.height = h;
@@ -3835,8 +3842,8 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
         console.warn('Border sampling notice:', e);
       }
 
-      // 3. Create 32px padded canvas filled with measured background color
-      const pad = 32;
+      // 3. Create 36px padded canvas filled with measured background color
+      const pad = 36;
       const totalW = w + pad * 2;
       const totalH = h + pad * 2;
 
@@ -3862,7 +3869,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
         const paddedPixels = paddedImgData.data;
         const len = totalW * totalH;
 
-        // 4. Calculate perceptual ink distance from background
+        // 4. Calculate perceptual ink distance with S-curve contrast gamma
         let maxInk = 1;
         const inkDistances = new Float32Array(len);
         for (let i = 0; i < len; i++) {
@@ -3877,11 +3884,13 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
           if (dist > maxInk) maxInk = dist;
         }
 
-        // Stretch ink map to full 0..255 contrast
+        // Apply S-curve gamma adjustment for crisp yet ultra-smooth stroke edge definition
         const normData = new Uint8ClampedArray(len * 4);
         for (let i = 0; i < len; i++) {
-          const normInk = Math.min(255, Math.round((inkDistances[i] / maxInk) * 255));
-          const val = 255 - normInk; // 0 = black stroke (icon lines), 255 = white bg (background)
+          const inkRatio = Math.min(1, inkDistances[i] / maxInk);
+          const gammaInk = Math.pow(inkRatio, 0.85); // Crisp S-curve
+          const normInk = Math.min(255, Math.round(gammaInk * 255));
+          const val = 255 - normInk; // 0 = black stroke (icon lines), 255 = white bg
           const idx = i * 4;
           normData[idx] = val;
           normData[idx + 1] = val;
@@ -3889,17 +3898,17 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
           normData[idx + 3] = 255;
         }
 
-        // 5. Apply Edge Smoothing Gaussian Pre-Blur filter
-        const blurRadius = Math.max(0, Math.min(8, Math.round((Number(smoothing) || 0) * scale * 0.4)));
+        // 5. 2-Pass Gaussian Box Blur Edge Smoothing
+        const blurRadius = Math.max(0, Math.min(10, Math.round((Number(smoothing) || 0) * scale * 0.4)));
         const finalNormData = blurRadius > 0 ? boxBlurUint8(normData, totalW, totalH, blurRadius) : normData;
 
         const alphaMaxVal = Math.max(0, Math.min(1.334, ((corner || 133) / 180) * 1.334));
-        const optTolVal = Math.max(0.05, (simplify || 5) * 0.05);
+        const optTolVal = Math.max(0.04, (simplify || 5.5) * 0.04);
 
         window.Potrace.traceImageData({ width: totalW, height: totalH, data: finalNormData }, {
           threshold: 128,
           color: fillColor || '#344e41',
-          turdSize: Math.max(1, Math.round((speckle || 2) * scale)),
+          turdSize: Math.max(1, Math.round((speckle || 2) * scale * 0.8)),
           alphaMax: alphaMaxVal,
           optCurve: true,
           optTolerance: optTolVal
