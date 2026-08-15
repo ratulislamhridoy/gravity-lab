@@ -3237,25 +3237,15 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     });
   }
 
+  // Global state for Bulk Multi-Image Icon Sheet Processing
+  let loadedSheetImgs = []; // Holds array of { name: string, img: ImageElement }
+  let generatedBrandedSheetsMap = {};
+  let activePreviewSheetName = '';
+
   rebuildPresetDropdown();
   renderDesignerLayersTree();
   loadDesignerLayerFields('leftBg');
   buildBrandedSvgSheet();
-
-  // Update live tile count and auto-trigger raw slice preview
-  function updateSheetTileCount() {
-    const c = parseInt(sheetCols.value) || 1;
-    const r = parseInt(sheetRows.value) || 1;
-    if (sheetTileCount) sheetTileCount.textContent = (c * r).toString();
-    if (loadedSheetImg) {
-      processIconSheetSlicingOnly();
-    }
-  }
-  if (sheetCols) sheetCols.addEventListener('input', updateSheetTileCount);
-  if (sheetRows) sheetRows.addEventListener('input', updateSheetTileCount);
-
-  // Global state for Bulk Multi-Image Icon Sheet Processing
-  let loadedSheetImgs = []; // Holds array of { name: string, img: ImageElement }
 
   // File Upload Handlers (Supports Single and Bulk Multi-File Selection)
   if (sheetDropzone && sheetFileInput) {
@@ -4226,10 +4216,6 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     });
   }
 
-  const btnZipEl = document.getElementById('btnDownloadAllZip');
-  if (btnZipEl) {
-    btnZipEl.addEventListener('click', downloadAllSVGsAsZip);
-  }
 
   // Auto-trim whitespace from canvas tile
   function autoTrimCanvasTile(canvas) {
@@ -4274,20 +4260,16 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     return trimmed;
   }
 
-  // Build Assembled 6000x2600 Branded Presentation SVG Sheet (Crisp & High Resolution)
-  function buildBrandedSvgSheet() {
+  // Helper to build a single Branded Presentation SVG Sheet for a given tile subset
+  function buildSingleBrandedSvgSheet(tilesToRender, sheetLabel = '') {
     const cols = parseInt(sheetCols.value) || 5;
     const rows = parseInt(sheetRows.value) || 3;
+    const isMockup = (!tilesToRender || tilesToRender.length === 0);
 
-    // Check if we have source data
-    let tilesToRender = slicedTilesData;
-    let isMockup = false;
-    if (tilesToRender.length === 0) {
-      isMockup = true;
+    if (isMockup) {
       tilesToRender = [];
       const totalTiles = cols * rows;
       for (let i = 0; i < totalTiles; i++) {
-        // Simple mock circular gears/stars vector path color
         tilesToRender.push({
           idx: i + 1,
           svgWidth: 100,
@@ -4297,17 +4279,17 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       }
     }
 
-    const setNameText = ((sheetSetName ? sheetSetName.value : '') || (isMockup ? 'MY PRESET DESIGN' : 'HEALTHCARE ICON')).toUpperCase();
+    const nameBase = ((sheetSetName ? sheetSetName.value : '') || (isMockup ? 'MY PRESET DESIGN' : 'HEALTHCARE ICON')).trim();
+    const cleanLabel = sheetLabel ? sheetLabel.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, ' ') : '';
+    const setNameText = (cleanLabel ? `${nameBase} - ${cleanLabel}` : nameBase).toUpperCase();
     const subtitleText = ((sheetSubtitle ? sheetSubtitle.value : '') || `${tilesToRender.length} ICONS · VECTOR SVG`).toUpperCase();
 
     const W = 6000;
     const H = 2600;
 
-    // Find first grid layer for global fillColor
     const gridLayer = activeLayers.find(l => l.type === 'grid');
     const fillColor = (gridLayer && gridLayer.fill) || (vecFillColor ? vecFillColor.value : '#344e41');
 
-    // Layout check: template vs compact
     const layoutMode = sheetLayout ? sheetLayout.value : 'template';
     if (layoutMode === 'compact') {
       const CELL = 256;
@@ -4322,10 +4304,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
         for (let c = 0; c < cols; c++) {
           if (idx >= tilesToRender.length) break;
           const tile = tilesToRender[idx];
-          if (!tile) {
-            idx++;
-            continue;
-          }
+          if (!tile) { idx++; continue; }
           const cellX = gapPx + c * pitch;
           const cellY = gapPx + r * pitch;
           const cx = cellX + CELL / 2;
@@ -4346,7 +4325,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
         }
       }
 
-      generatedAssembledSvg = `
+      return `
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${compactW} ${compactH}" width="${compactW}" height="${compactH}">
           <rect width="${compactW}" height="${compactH}" fill="#ffffff"/>
           <g fill="${fillColor}">
@@ -4355,7 +4334,6 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
         </svg>
       `;
     } else {
-      // Branded template rendering: dynamically serialize each layer in the stacking order
       let layersHtml = '';
       activeLayers.forEach(layer => {
         let layerText = layer.text || '';
@@ -4387,7 +4365,6 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
           const ftw = featTile && featTile.svgWidth ? featTile.svgWidth : 100;
           const fth = featTile && featTile.svgHeight ? featTile.svgHeight : 100;
           
-          // Clean padding inside featured layer bounding box
           const pad = layer.w * 0.16; 
           const innerW = layer.w - 2 * pad;
           const innerH = layer.h - 2 * pad;
@@ -4397,7 +4374,6 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
           layersHtml += `    <!-- Featured Icon: ${layer.name} -->\n    <svg data-id="${layer.id}" x="${innerX}" y="${innerY}" width="${innerW}" height="${innerH}" viewBox="0 0 ${ftw} ${fth}" preserveAspectRatio="xMidYMid meet" fill="#ffffff" style="cursor: move; overflow: visible;">\n      ${featSvgContent}\n    </svg>\n`;
         }
         else if (layer.type === 'grid') {
-          // Dynamic grid math: center a square cells grid inside this grid layer bounding box
           const gridPad = layer.padding !== undefined ? layer.padding : 140;
           const maxGridW = layer.w - 2 * gridPad;
           const maxGridH = layer.h - 2 * gridPad;
@@ -4416,15 +4392,12 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
             for (let c = 0; c < cols; c++) {
               if (gridIdx >= tilesToRender.length) break;
               const tile = tilesToRender[gridIdx];
-              if (!tile) {
-                gridIdx++;
-                continue;
-              }
+              if (!tile) { gridIdx++; continue; }
 
               const cellX = startX + c * cellS;
               const cellY = startY + r * cellS;
 
-              const pad = cellS * 0.15; // 15% padding inside grid cell
+              const pad = cellS * 0.15;
               const fitSize = cellS - 2 * pad;
               const tw = tile.svgWidth ? tile.svgWidth : 100;
               const th = tile.svgHeight ? tile.svgHeight : 100;
@@ -4445,7 +4418,6 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
         }
       });
 
-      // Render selection outline and 4 handles if a layer is active
       const activeLayer = activeLayers.find(l => l.id === currentDesignerLayerId);
       if (activeLayer) {
         const al = activeLayer;
@@ -4455,11 +4427,11 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
         let ah = (al.type === 'text') ? (al.fontSize || 72) : (al.h || 0);
         
         if (al.type === 'text') {
-          ax = al.x - aw / 2; // Center box for anchor middle text
+          ax = al.x - aw / 2;
           ay = al.y - ah;
         }
 
-        const handleSize = 60; // scale size on 6000x2600 canvas
+        const handleSize = 60;
         
         layersHtml += `
           <!-- Selection Outlines & Resize Handles -->
@@ -4473,7 +4445,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
         `;
       }
 
-      generatedAssembledSvg = `
+      return `
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">
           <defs>
             <style>
@@ -4484,8 +4456,119 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
         </svg>
       `;
     }
+  }
 
-    if (tool4SheetCard) tool4SheetCard.innerHTML = generatedAssembledSvg;
+  // Master function to build and render Branded Presentation SVGs for ALL uploaded sheet images
+  function buildBrandedSvgSheet() {
+    generatedBrandedSheetsMap = {};
+
+    if (loadedSheetImgs && loadedSheetImgs.length > 0) {
+      loadedSheetImgs.forEach((sheetObj, index) => {
+        const sheetName = sheetObj.name;
+        const tilesForThisSheet = slicedTilesData.filter(t => t.sheetName === sheetName);
+        const svg = buildSingleBrandedSvgSheet(tilesForThisSheet.length ? tilesForThisSheet : slicedTilesData, loadedSheetImgs.length > 1 ? `Sheet ${index + 1}` : '');
+        generatedBrandedSheetsMap[sheetName] = svg;
+      });
+
+      if (!activePreviewSheetName || !generatedBrandedSheetsMap[activePreviewSheetName]) {
+        activePreviewSheetName = loadedSheetImgs[0].name;
+      }
+      generatedAssembledSvg = generatedBrandedSheetsMap[activePreviewSheetName];
+    } else {
+      generatedAssembledSvg = buildSingleBrandedSvgSheet(slicedTilesData, '');
+      generatedBrandedSheetsMap['Default'] = generatedAssembledSvg;
+      activePreviewSheetName = 'Default';
+    }
+
+    if (tool4SheetCard) {
+      tool4SheetCard.innerHTML = generatedAssembledSvg;
+    }
+
+    renderMultiSheetSelectorUI();
+  }
+
+  // Render UI dropdown bar for switching between multiple presentation sheets
+  function renderMultiSheetSelectorUI() {
+    const selectorContainer = document.getElementById('sheetPreviewSelectorBar');
+    if (!selectorContainer) return;
+
+    const sheetKeys = Object.keys(generatedBrandedSheetsMap);
+    if (sheetKeys.length <= 1) {
+      selectorContainer.style.display = 'none';
+      return;
+    }
+
+    selectorContainer.style.display = 'flex';
+    selectorContainer.innerHTML = `
+      <div style="font-size: 11px; font-weight: 800; color: var(--accent); display: flex; align-items: center; gap: 6px;">
+        📄 Select Presentation Sheet Preview:
+      </div>
+      <select id="sheetPreviewDropdown" style="background: var(--surface); color: #fff; border: 1px solid var(--outline); border-radius: 6px; padding: 4px 10px; font-size: 11px; font-weight: 700; cursor: pointer; outline: none;">
+        ${sheetKeys.map((key, i) => `<option value="${key}" ${key === activePreviewSheetName ? 'selected' : ''}>Sheet ${i + 1}: ${key}</option>`).join('')}
+      </select>
+    `;
+
+    const dropdown = document.getElementById('sheetPreviewDropdown');
+    if (dropdown) {
+      dropdown.addEventListener('change', (e) => {
+        activePreviewSheetName = e.target.value;
+        generatedAssembledSvg = generatedBrandedSheetsMap[activePreviewSheetName];
+        if (tool4SheetCard) tool4SheetCard.innerHTML = generatedAssembledSvg;
+      });
+    }
+  }
+
+  // Download all vectorized icons AND all assembled Branded Presentation Sheets as a ZIP
+  function downloadAllSVGsAsZip() {
+    if (!window.JSZip) {
+      alert('JSZip library is loading, please try again in a moment.');
+      return;
+    }
+    const zip = new JSZip();
+    const iconsFolder = zip.folder('icons');
+    const sheetsFolder = zip.folder('branded_sheets');
+
+    let iconCount = 0;
+    slicedTilesData.forEach((tile) => {
+      if (tile.svgContent) {
+        const safeSheetName = (tile.sheetName || 'sheet').replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
+        const filename = `${safeSheetName}_icon_${tile.idx}.svg`;
+        iconsFolder.file(filename, tile.svgContent);
+        iconCount++;
+      }
+    });
+
+    let sheetCount = 0;
+    Object.keys(generatedBrandedSheetsMap).forEach((sheetName, index) => {
+      const svgStr = generatedBrandedSheetsMap[sheetName];
+      if (svgStr) {
+        const cleanSvg = getCleanSvgForExport(svgStr);
+        const safeName = sheetName.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
+        const filename = `Branded_Sheet_${index + 1}_${safeName}.svg`;
+        sheetsFolder.file(filename, cleanSvg);
+        sheetCount++;
+      }
+    });
+
+    if (iconCount === 0 && sheetCount === 0) {
+      alert('No vectorized SVG icons or presentation sheets found to download yet.');
+      return;
+    }
+
+    zip.generateAsync({ type: 'blob' }).then((content) => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(content);
+      a.download = `Gravity_Vector_Package_${Date.now()}.zip`;
+      a.click();
+      if (window.showCustomAlert) {
+        window.showCustomAlert(`Downloaded all ${iconCount} vector icons and ${sheetCount} Branded Presentation SVG Sheets in a single ZIP package!`, 'ZIP Downloaded', 'success');
+      }
+    });
+  }
+
+  const btnZipEl = document.getElementById('btnDownloadAllZip');
+  if (btnZipEl) {
+    btnZipEl.addEventListener('click', downloadAllSVGsAsZip);
   }
 
   // Helper to sanitize SVG export by stripping UI selection overlays & resize handles
@@ -4510,11 +4593,16 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       btnSaveToPC.disabled = true;
       btnSaveToPC.textContent = '⏳ Saving...';
 
-      // Send the clean sanitized SVG (without UI selection handles)
-      const cleanSvg = getCleanSvgForExport(generatedAssembledSvg);
+      // Send all clean sanitized SVGs (for each sheet) to PC
+      const allCleanSheets = Object.keys(generatedBrandedSheetsMap).map(key => ({
+        name: key,
+        svg: getCleanSvgForExport(generatedBrandedSheetsMap[key])
+      }));
+
       sendFlowActionSpecific('save-vector-sheet', 'default', {
         outputDir: outputDir,
-        sheetSvg: cleanSvg,
+        sheetSvg: getCleanSvgForExport(generatedAssembledSvg),
+        allSheets: allCleanSheets,
         iconSvgs: slicedTilesData.map(t => t.svgContent)
       });
     });
