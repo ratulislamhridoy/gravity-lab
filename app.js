@@ -3696,8 +3696,8 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
 
       const fillColor = vecFillColor ? vecFillColor.value : '#344e41';
       const mode = vecMode ? vecMode.value : 'bw';
-      const smoothing = vecSmoothing ? parseInt(vecSmoothing.value) : 5;
-      const corner = vecCorner ? parseInt(vecCorner.value) : 133;
+      const smoothing = vecSmoothing ? parseInt(vecSmoothing.value) : 7;
+      const corner = vecCorner ? parseInt(vecCorner.value) : 152;
       const simplify = vecSimplify ? parseInt(vecSimplify.value) / 10 : 5.5;
       const speckle = vecSpeckle ? parseInt(vecSpeckle.value) : 3;
       const optimise = vecOptimise ? vecOptimise.checked : true;
