@@ -3748,14 +3748,21 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
 
     const img = new Image();
     img.onload = function() {
-      const w = img.width || 128;
-      const h = img.height || 128;
+      const origW = img.width || 128;
+      const origH = img.height || 128;
+
+      // 1. High Quality 4x Canvas Upscaling for silky smooth curve resolution
+      const scale = Math.min(4, 1600 / Math.max(origW, origH));
+      const w = Math.round(origW * scale);
+      const h = Math.round(origH * scale);
 
       const cvs = document.createElement('canvas');
       cvs.width = w;
       cvs.height = h;
       const ctx = cvs.getContext('2d');
-      ctx.drawImage(img, 0, 0);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(img, 0, 0, w, h);
 
       let imgData = null;
       try {
@@ -3765,23 +3772,84 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       }
 
       if (imgData && window.Potrace && window.Potrace.traceImageData) {
-        window.Potrace.traceImageData(imgData, {
+        const pixels = imgData.data;
+        const len = w * h;
+
+        // 2. Background Contrast Normalization (Sample tile border pixels)
+        let bgR = 255, bgG = 255, bgB = 255;
+        const borderPixels = [];
+        const stepX = Math.max(1, Math.floor(w / 64));
+        const stepY = Math.max(1, Math.floor(h / 64));
+
+        for (let x = 0; x < w; x += stepX) {
+          const idxTop = x * 4;
+          const idxBot = ((h - 1) * w + x) * 4;
+          borderPixels.push([pixels[idxTop], pixels[idxTop+1], pixels[idxTop+2]]);
+          borderPixels.push([pixels[idxBot], pixels[idxBot+1], pixels[idxBot+2]]);
+        }
+        for (let y = 0; y < h; y += stepY) {
+          const idxLeft = (y * w) * 4;
+          const idxRight = (y * w + w - 1) * 4;
+          borderPixels.push([pixels[idxLeft], pixels[idxLeft+1], pixels[idxLeft+2]]);
+          borderPixels.push([pixels[idxRight], pixels[idxRight+1], pixels[idxRight+2]]);
+        }
+        if (borderPixels.length > 0) {
+          borderPixels.sort((a, b) => (a[0]+a[1]+a[2]) - (b[0]+b[1]+b[2]));
+          const mid = borderPixels[Math.floor(borderPixels.length / 2)];
+          bgR = mid[0]; bgG = mid[1]; bgB = mid[2];
+        }
+
+        // Calculate perceptual ink distance from background
+        let maxInk = 1;
+        const inkDistances = new Float32Array(len);
+        for (let i = 0; i < len; i++) {
+          const offset = i * 4;
+          const a = pixels[offset + 3] / 255;
+          const r = pixels[offset] * a + bgR * (1 - a);
+          const g = pixels[offset + 1] * a + bgG * (1 - a);
+          const b = pixels[offset + 2] * a + bgB * (1 - a);
+          const dr = r - bgR, dg = g - bgG, db = b - bgB;
+          const dist = Math.sqrt(0.299 * dr * dr + 0.587 * dg * dg + 0.114 * db * db);
+          inkDistances[i] = dist;
+          if (dist > maxInk) maxInk = dist;
+        }
+
+        // Stretch ink map to full 0..255 contrast for Potrace 128 threshold
+        const normData = new Uint8ClampedArray(len * 4);
+        for (let i = 0; i < len; i++) {
+          const normInk = Math.min(255, Math.round((inkDistances[i] / maxInk) * 255));
+          const val = 255 - normInk; // 0 = black stroke, 255 = white bg
+          const idx = i * 4;
+          normData[idx] = val;
+          normData[idx + 1] = val;
+          normData[idx + 2] = val;
+          normData[idx + 3] = 255;
+        }
+
+        const alphaMaxVal = Math.max(0, Math.min(1.334, ((corner || 133) / 180) * 1.334));
+        const optTolVal = Math.max(0.05, (simplify || 5) * 0.05);
+
+        window.Potrace.traceImageData({ width: w, height: h, data: normData }, {
           threshold: 128,
           color: fillColor || '#344e41',
-          turdSize: speckle || 2,
-          alphaMax: smoothing > 0 ? 1 : 0
+          turdSize: Math.max(1, Math.round((speckle || 2) * scale)),
+          alphaMax: alphaMaxVal,
+          optCurve: true,
+          optTolerance: optTolVal
         }).then(svgString => {
+          // Re-scale viewBox back to original tile dimensions with 100% SVG fit
+          svgString = svgString.replace(/viewBox="0 0 \d+ \d+"/, `viewBox="0 0 ${w} ${h}"`);
           if (fillColor && !svgString.includes('fill=')) {
             svgString = svgString.replace('<path ', `<path fill="${fillColor}" `);
           }
           window.handleVectorizeTileResult({ ok: true, index: tile.idx, svg: svgString });
         }).catch(err => {
           console.warn('Potrace trace error, using fallback:', err);
-          const fallbackSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="100%" height="100%"><rect width="${w}" height="${h}" fill="none"/><image href="${tile.dataUrl}" width="${w}" height="${h}"/></svg>`;
+          const fallbackSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${origW} ${origH}" width="100%" height="100%"><rect width="${origW}" height="${origH}" fill="none"/><image href="${tile.dataUrl}" width="${origW}" height="${origH}"/></svg>`;
           window.handleVectorizeTileResult({ ok: true, index: tile.idx, svg: fallbackSvg });
         });
       } else {
-        const fallbackSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="100%" height="100%"><rect width="${w}" height="${h}" fill="none"/><image href="${tile.dataUrl}" width="${w}" height="${h}"/></svg>`;
+        const fallbackSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${origW} ${origH}" width="100%" height="100%"><rect width="${origW}" height="${origH}" fill="none"/><image href="${tile.dataUrl}" width="${origW}" height="${origH}"/></svg>`;
         window.handleVectorizeTileResult({ ok: true, index: tile.idx, svg: fallbackSvg });
       }
     };
