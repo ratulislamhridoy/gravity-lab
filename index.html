@@ -670,16 +670,6 @@
                   </div>
                 </div>
 
-                <!-- Card P4: Layers Tree -->
-                <div class="sidebar-card" style="background: var(--surface-lowest); border: 1px solid var(--outline-variant); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
-                  <div style="font-size: 11px; font-weight: 800; color: var(--tertiary); text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
-                    <span>📚</span> Layers Tree
-                  </div>
-                  <div id="designerLayerList" class="layer-list" style="display: flex; flex-direction: column; gap: 6px; max-height: 280px; overflow-y: auto;">
-                    <!-- Dynamic Layer Items loaded via JS -->
-                  </div>
-                </div>
-
               </div>
             </div>
 
@@ -694,7 +684,7 @@
 
           <!-- Right Workspace Stage -->
           <div class="studio-stage" style="padding: 24px; overflow-y: auto; height: 100%; box-sizing: border-box;">
-            <div class="output-card" style="max-width: 1200px;">
+            <div class="output-card" style="max-width: 1400px;">
               <div class="output-head">
                 <h4>Icon Sheet Studio Output</h4>
                 <div class="output-actions" style="display: flex; gap: 8px; align-items: center;">
@@ -714,11 +704,26 @@
                 </div>
               </div>
 
-              <!-- Assembled SVG Sheet Preview Container -->
-              <div id="tool4SheetWrap" style="display: none; width: 100%; text-align: center;">
+              <!-- Assembled SVG Sheet Preview Container with Dedicated Left Layers Panel -->
+              <div id="tool4SheetWrap" style="display: none; width: 100%; text-align: left; margin-top: 16px;">
                 <div id="sheetPreviewSelectorBar" style="display: none; justify-content: space-between; align-items: center; background: var(--surface-low); border: 1px solid var(--outline-variant); border-radius: 10px; padding: 8px 14px; margin-bottom: 12px;"></div>
-                <div id="tool4SheetCard" style="background: var(--surface-lowest); border: 1px solid var(--outline-variant); border-radius: 14px; overflow: hidden; padding: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.4);">
-                  <!-- Assembled SVG rendered here -->
+                
+                <div style="display: grid; grid-template-columns: 280px 1fr; gap: 16px; align-items: start;">
+                  <!-- Left Stage Panel: Layers Tree -->
+                  <div style="background: var(--surface-lowest); border: 1px solid var(--outline-variant); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.06);">
+                    <div style="font-size: 11px; font-weight: 800; color: var(--tertiary); text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; justify-content: space-between;">
+                      <span>📚 Layers Tree</span>
+                      <span style="font-size: 9px; opacity: 0.7; font-weight: 600; text-transform: none; color: var(--on-variant);">Drag & Order</span>
+                    </div>
+                    <div id="designerLayerList" class="layer-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 480px; overflow-y: auto; padding-right: 4px;">
+                      <!-- Dynamic Layer Items loaded via JS -->
+                    </div>
+                  </div>
+
+                  <!-- Right Presentation Sheet Preview Canvas Card -->
+                  <div id="tool4SheetCard" style="background: var(--surface-lowest); border: 1px solid var(--outline-variant); border-radius: 14px; overflow: hidden; padding: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.4); text-align: center;">
+                    <!-- Assembled SVG rendered here -->
+                  </div>
                 </div>
               </div>
 
