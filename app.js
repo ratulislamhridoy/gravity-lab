@@ -3756,7 +3756,45 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       const w = Math.round(origW * scale);
       const h = Math.round(origH * scale);
 
-      // 2. Add 32px Canvas Padding so outer curves NEVER touch canvas boundary
+      // 2. Measure border background color from unpadded image canvas first
+      const unpaddedCvs = document.createElement('canvas');
+      unpaddedCvs.width = w;
+      unpaddedCvs.height = h;
+      const unpaddedCtx = unpaddedCvs.getContext('2d');
+      unpaddedCtx.imageSmoothingEnabled = true;
+      unpaddedCtx.imageSmoothingQuality = 'high';
+      unpaddedCtx.drawImage(img, 0, 0, w, h);
+
+      let bgR = 255, bgG = 255, bgB = 255;
+      try {
+        const rawImgData = unpaddedCtx.getImageData(0, 0, w, h);
+        const rawPixels = rawImgData.data;
+        const borderPixels = [];
+        const stepX = Math.max(1, Math.floor(w / 64));
+        const stepY = Math.max(1, Math.floor(h / 64));
+
+        for (let x = 0; x < w; x += stepX) {
+          const idxTop = x * 4;
+          const idxBot = ((h - 1) * w + x) * 4;
+          borderPixels.push([rawPixels[idxTop], rawPixels[idxTop+1], rawPixels[idxTop+2]]);
+          borderPixels.push([rawPixels[idxBot], rawPixels[idxBot+1], rawPixels[idxBot+2]]);
+        }
+        for (let y = 0; y < h; y += stepY) {
+          const idxLeft = (y * w) * 4;
+          const idxRight = (y * w + w - 1) * 4;
+          borderPixels.push([rawPixels[idxLeft], rawPixels[idxLeft+1], rawPixels[idxLeft+2]]);
+          borderPixels.push([rawPixels[idxRight], rawPixels[idxRight+1], rawPixels[idxRight+2]]);
+        }
+        if (borderPixels.length > 0) {
+          borderPixels.sort((a, b) => (a[0]+a[1]+a[2]) - (b[0]+b[1]+b[2]));
+          const mid = borderPixels[Math.floor(borderPixels.length / 2)];
+          bgR = mid[0]; bgG = mid[1]; bgB = mid[2];
+        }
+      } catch (e) {
+        console.warn('Border sampling notice:', e);
+      }
+
+      // 3. Create 32px padded canvas filled with measured background color
       const pad = 32;
       const totalW = w + pad * 2;
       const totalH = h + pad * 2;
@@ -3768,51 +3806,20 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
 
-      let imgData = null;
+      ctx.fillStyle = `rgb(${bgR}, ${bgG}, ${bgB})`;
+      ctx.fillRect(0, 0, totalW, totalH);
+      ctx.drawImage(img, pad, pad, w, h);
+
+      let paddedImgData = null;
       try {
-        ctx.drawImage(img, pad, pad, w, h);
-        imgData = ctx.getImageData(0, 0, totalW, totalH);
+        paddedImgData = ctx.getImageData(0, 0, totalW, totalH);
       } catch (e) {
         console.warn('Canvas getImageData notice:', e);
       }
 
-      if (imgData && window.Potrace && window.Potrace.traceImageData) {
-        const pixels = imgData.data;
-        const len = totalW * totalH;
-
-        // 3. Background Contrast Normalization
-        let bgR = 255, bgG = 255, bgB = 255;
-        const borderPixels = [];
-        const stepX = Math.max(1, Math.floor(totalW / 64));
-        const stepY = Math.max(1, Math.floor(totalH / 64));
-
-        for (let x = 0; x < totalW; x += stepX) {
-          const idxTop = x * 4;
-          const idxBot = ((totalH - 1) * totalW + x) * 4;
-          borderPixels.push([pixels[idxTop], pixels[idxTop+1], pixels[idxTop+2]]);
-          borderPixels.push([pixels[idxBot], pixels[idxBot+1], pixels[idxBot+2]]);
-        }
-        for (let y = 0; y < totalH; y += stepY) {
-          const idxLeft = (y * totalW) * 4;
-          const idxRight = (y * totalW + totalW - 1) * 4;
-          borderPixels.push([pixels[idxLeft], pixels[idxLeft+1], pixels[idxLeft+2]]);
-          borderPixels.push([pixels[idxRight], pixels[idxRight+1], pixels[idxRight+2]]);
-        }
-        if (borderPixels.length > 0) {
-          borderPixels.sort((a, b) => (a[0]+a[1]+a[2]) - (b[0]+b[1]+b[2]));
-          const mid = borderPixels[Math.floor(borderPixels.length / 2)];
-          bgR = mid[0]; bgG = mid[1]; bgB = mid[2];
-        }
-
-        // Fill canvas padding with measured background color
-        ctx.fillStyle = `rgb(${bgR}, ${bgG}, ${bgB})`;
-        ctx.fillRect(0, 0, totalW, pad);
-        ctx.fillRect(0, totalH - pad, totalW, pad);
-        ctx.fillRect(0, 0, pad, totalH);
-        ctx.fillRect(totalW - pad, 0, pad, totalH);
-        ctx.drawImage(img, pad, pad, w, h);
-        const paddedImgData = ctx.getImageData(0, 0, totalW, totalH);
+      if (paddedImgData && window.Potrace && window.Potrace.traceImageData) {
         const paddedPixels = paddedImgData.data;
+        const len = totalW * totalH;
 
         // 4. Calculate perceptual ink distance from background
         let maxInk = 1;
@@ -3833,7 +3840,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
         const normData = new Uint8ClampedArray(len * 4);
         for (let i = 0; i < len; i++) {
           const normInk = Math.min(255, Math.round((inkDistances[i] / maxInk) * 255));
-          const val = 255 - normInk; // 0 = black stroke, 255 = white bg
+          const val = 255 - normInk; // 0 = black stroke (icon lines), 255 = white bg (background)
           const idx = i * 4;
           normData[idx] = val;
           normData[idx + 1] = val;
@@ -3852,7 +3859,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
           optCurve: true,
           optTolerance: optTolVal
         }).then(svgString => {
-          // Set viewBox to `pad pad w h` to crop exact icon bounds with 100% 360° rounded curves
+          // Crop viewBox to exact icon bounds `pad pad w h`
           svgString = svgString.replace(/viewBox="0 0 \d+ \d+"/, `viewBox="${pad} ${pad} ${w} ${h}"`);
           if (fillColor && !svgString.includes('fill=')) {
             svgString = svgString.replace('<path ', `<path fill="${fillColor}" `);
