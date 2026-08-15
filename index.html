@@ -376,194 +376,201 @@
         <div class="studio-shell">
           <!-- Left Control Panel (Sleek Organized Studio Sidebar) -->
           <div class="studio-controls" style="width: 360px; background: var(--surface-low); border-right: 1px solid var(--outline-variant); display: flex; flex-direction: column; height: 100%; overflow: hidden; padding: 0;">
-            
             <div class="studio-controls-scroll" style="flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px;">
-              <!-- Card 1: Source & Slicing -->
-            <div class="sidebar-card" style="background: var(--surface-lowest); border: 1px solid var(--outline-variant); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
-              <div style="display: flex; align-items: center; justify-content: space-between;">
-                <div style="font-size: 11px; font-weight: 800; color: var(--tertiary); text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
-                  <span>📂</span> 1. Source & Slicing
-                </div>
-                <select class="ctl-select small" id="sheetDetectMode" style="width: 130px; padding: 2px 6px; font-size: 10.5px; height: 24px; background: var(--surface-low); border: 1px solid var(--outline-variant); color: var(--on-surface); border-radius: 6px; font-weight: 700;">
-                  <option value="grid">Grid Slicing</option>
-                  <option value="auto" selected>Auto-Detect</option>
-                </select>
-              </div>
+              <!-- Panel 1: Slicing & Vectorization Controls (Active for Tiles Grid) -->
+              <div id="sidebarPanelTiles" class="sidebar-panel" style="display: flex; flex-direction: column; gap: 16px;">
+                <!-- Card 1: Source & Slicing -->
+                <div class="sidebar-card" style="background: var(--surface-lowest); border: 1px solid var(--outline-variant); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+                  <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div style="font-size: 11px; font-weight: 800; color: var(--tertiary); text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
+                      <span>📂</span> 1. Source & Slicing
+                    </div>
+                    <select class="ctl-select small" id="sheetDetectMode" style="width: 130px; padding: 2px 6px; font-size: 10.5px; height: 24px; background: var(--surface-low); border: 1px solid var(--outline-variant); color: var(--on-surface); border-radius: 6px; font-weight: 700;">
+                      <option value="grid">Grid Slicing</option>
+                      <option value="auto" selected>Auto-Detect</option>
+                    </select>
+                  </div>
 
-              <!-- Source Sheet Dropzone -->
-              <div id="sheetDropzone" style="border: 2px dashed var(--outline-variant); border-radius: 10px; padding: 14px 10px; text-align: center; cursor: pointer; background: var(--surface-low); transition: all 0.2s ease;">
-                <div style="font-size: 22px; margin-bottom: 2px;">📁</div>
-                <div style="font-size: 11.5px; font-weight: 700; color: var(--on-surface);" id="sheetFileName">Upload Icon Sheet Image(s)</div>
-                <div style="font-size: 10px; color: var(--on-variant); margin-top: 3px;">Drag & drop single or bulk sheets (PNG, JPG, WebP)</div>
-              </div>
-              <input type="file" id="sheetFileInput" accept="image/png,image/jpeg,image/webp" multiple hidden />
+                  <!-- Source Sheet Dropzone -->
+                  <div id="sheetDropzone" style="border: 2px dashed var(--outline-variant); border-radius: 10px; padding: 14px 10px; text-align: center; cursor: pointer; background: var(--surface-low); transition: all 0.2s ease;">
+                    <div style="font-size: 22px; margin-bottom: 2px;">📁</div>
+                    <div style="font-size: 11.5px; font-weight: 700; color: var(--on-surface);" id="sheetFileName">Upload Icon Sheet Image(s)</div>
+                    <div style="font-size: 10px; color: var(--on-variant); margin-top: 3px;">Drag & drop single or bulk sheets (PNG, JPG, WebP)</div>
+                  </div>
+                  <input type="file" id="sheetFileInput" accept="image/png,image/jpeg,image/webp" multiple hidden />
 
-              <!-- Grid Dimensions -->
-              <div class="ctl-row" style="gap: 8px;">
-                <div class="ctl-group half">
-                  <label class="ctl-label" style="font-size: 9.5px;">Columns</label>
-                  <input type="number" class="ctl-input" id="sheetCols" value="5" min="1" max="20" style="padding: 6px 10px; font-size: 12px; height: 32px;" />
+                  <!-- Grid Dimensions -->
+                  <div class="ctl-row" style="gap: 8px;">
+                    <div class="ctl-group half">
+                      <label class="ctl-label" style="font-size: 9.5px;">Columns</label>
+                      <input type="number" class="ctl-input" id="sheetCols" value="5" min="1" max="20" style="padding: 6px 10px; font-size: 12px; height: 32px;" />
+                    </div>
+                    <div class="ctl-group half">
+                      <label class="ctl-label" style="font-size: 9.5px;">Rows</label>
+                      <input type="number" class="ctl-input" id="sheetRows" value="3" min="1" max="20" style="padding: 6px 10px; font-size: 12px; height: 32px;" />
+                    </div>
+                    <div class="ctl-group half" style="display: flex; flex-direction: column; justify-content: flex-end;">
+                      <div style="background: rgba(92, 98, 236, 0.08); border: 1px solid rgba(92, 98, 236, 0.2); border-radius: 8px; padding: 4px 8px; text-align: center; height: 32px; display: flex; flex-direction: column; justify-content: center;">
+                        <span style="font-size: 8.5px; font-weight: 800; color: var(--tertiary); text-transform: uppercase;">Total Icons</span>
+                        <span id="sheetTileCount" style="font-size: 12px; font-weight: 800; color: var(--on-surface);">15</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Options -->
+                  <div style="display: flex; flex-direction: column; gap: 6px; padding-top: 4px; border-top: 1px dashed var(--outline-variant);">
+                    <label class="checkbox-row" style="display: flex; align-items: center; gap: 8px; font-size: 11px; cursor: pointer; color: var(--on-surface);">
+                      <input type="checkbox" id="sheetTrim" checked />
+                      <span>Auto-trim whitespace around icons</span>
+                    </label>
+                    <label class="checkbox-row" style="display: flex; align-items: center; gap: 8px; font-size: 11px; cursor: pointer; color: var(--on-surface);">
+                      <input type="checkbox" id="sheetShuffle" checked />
+                      <span>Shuffle icon positions</span>
+                    </label>
+                  </div>
                 </div>
-                <div class="ctl-group half">
-                  <label class="ctl-label" style="font-size: 9.5px;">Rows</label>
-                  <input type="number" class="ctl-input" id="sheetRows" value="3" min="1" max="20" style="padding: 6px 10px; font-size: 12px; height: 32px;" />
-                </div>
-                <div class="ctl-group half" style="display: flex; flex-direction: column; justify-content: flex-end;">
-                  <div style="background: rgba(92, 98, 236, 0.08); border: 1px solid rgba(92, 98, 236, 0.2); border-radius: 8px; padding: 4px 8px; text-align: center; height: 32px; display: flex; flex-direction: column; justify-content: center;">
-                    <span style="font-size: 8.5px; font-weight: 800; color: var(--tertiary); text-transform: uppercase;">Total Icons</span>
-                    <span id="sheetTileCount" style="font-size: 12px; font-weight: 800; color: var(--on-surface);">15</span>
+
+                <!-- Card 2: Vectorization Engine -->
+                <div class="sidebar-card" style="background: var(--surface-lowest); border: 1px solid var(--outline-variant); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+                  <div style="font-size: 11px; font-weight: 800; color: var(--tertiary); text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
+                    <span>⚙️</span> 2. Vectorization Engine
+                  </div>
+
+                  <!-- Fixed Mode (Hidden Input) -->
+                  <input type="hidden" id="vecMode" value="bw" />
+
+                  <div class="ctl-group">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                      <label class="ctl-label" style="margin: 0; font-size: 9.5px;">Edge Smoothing</label>
+                      <span id="vecSmoothingVal" style="font-size: 10.5px; font-weight: 800; color: var(--tertiary);">7</span>
+                    </div>
+                    <input type="range" class="range-input" id="vecSmoothing" min="0" max="15" value="7" />
+                  </div>
+
+                  <div class="ctl-group">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                      <label class="ctl-label" style="margin: 0; font-size: 9.5px;">Corner Smoothness</label>
+                      <span style="font-size: 10.5px; font-weight: 800; color: var(--tertiary);"><span id="vecCornerVal">152</span>°</span>
+                    </div>
+                    <input type="range" class="range-input" id="vecCorner" min="10" max="180" value="152" />
+                  </div>
+
+                  <div class="ctl-group">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                      <label class="ctl-label" style="margin: 0; font-size: 9.5px;">Curve Simplify</label>
+                      <span id="vecSimplifyVal" style="font-size: 10.5px; font-weight: 800; color: var(--tertiary);">5.5</span>
+                    </div>
+                    <input type="range" class="range-input" id="vecSimplify" min="5" max="100" value="55" />
+                  </div>
+
+                  <div class="ctl-group">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                      <label class="ctl-label" style="margin: 0; font-size: 9.5px;">Speckle Filter</label>
+                      <span style="font-size: 10.5px; font-weight: 800; color: var(--tertiary);"><span id="vecSpeckleVal">3</span> px</span>
+                    </div>
+                    <input type="range" class="range-input" id="vecSpeckle" min="1" max="20" value="3" />
+                  </div>
+
+                  <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 4px;">
+                    <label class="checkbox-row" style="display: flex; align-items: center; gap: 6px; font-size: 11px; cursor: pointer; color: var(--on-surface);">
+                      <input type="checkbox" id="vecOptimise" checked />
+                      <span>Smooth curves</span>
+                    </label>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                      <label class="ctl-label" style="margin: 0; font-size: 9.5px;">Icon Fill</label>
+                      <input type="color" id="vecFillColor" value="#344e41" style="width: 26px; height: 26px; border-radius: 6px; border: 1px solid var(--outline-variant); background: transparent; cursor: pointer; padding: 0;" />
+                      <input type="text" class="ctl-input" id="vecFillHex" value="#344e41" style="width: 65px; height: 26px; padding: 2px 6px; font-size: 10.5px; font-family: var(--mono);" />
+                    </div>
+                  </div>
+
+                  <div style="display: flex; gap: 6px; margin-top: 4px; padding-top: 6px; border-top: 1px dashed var(--outline-variant);">
+                    <button type="button" class="btn btn-dark small" id="btnResetVecSettings" style="flex: 1; height: 28px; font-size: 10.5px; padding: 0; gap: 4px;">
+                      🔄 Reset Default
+                    </button>
+                    <button type="button" class="btn btn-dark small" id="btnSaveVecSettings" style="flex: 1; height: 28px; font-size: 10.5px; padding: 0; gap: 4px; border-color: rgba(92,98,236,0.3); color: var(--tertiary);">
+                      💾 Save Settings
+                    </button>
                   </div>
                 </div>
               </div>
 
-              <!-- Options -->
-              <div style="display: flex; flex-direction: column; gap: 6px; padding-top: 4px; border-top: 1px dashed var(--outline-variant);">
-                <label class="checkbox-row" style="display: flex; align-items: center; gap: 8px; font-size: 11px; cursor: pointer; color: var(--on-surface);">
-                  <input type="checkbox" id="sheetTrim" checked />
-                  <span>Auto-trim whitespace around icons</span>
-                </label>
-                <label class="checkbox-row" style="display: flex; align-items: center; gap: 8px; font-size: 11px; cursor: pointer; color: var(--on-surface);">
-                  <input type="checkbox" id="sheetShuffle" checked />
-                  <span>Shuffle icon positions</span>
-                </label>
-              </div>
-            </div>
-
-            <!-- Card 2: Vectorization Engine -->
-            <div class="sidebar-card" style="background: var(--surface-lowest); border: 1px solid var(--outline-variant); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
-              <div style="font-size: 11px; font-weight: 800; color: var(--tertiary); text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
-                <span>⚙️</span> 2. Vectorization Engine
-              </div>
-
-              <!-- Fixed Mode (Hidden Input) -->
-              <input type="hidden" id="vecMode" value="bw" />
-
-              <div class="ctl-group">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
-                  <label class="ctl-label" style="margin: 0; font-size: 9.5px;">Edge Smoothing</label>
-                  <span id="vecSmoothingVal" style="font-size: 10.5px; font-weight: 800; color: var(--tertiary);">7</span>
-                </div>
-                <input type="range" class="range-input" id="vecSmoothing" min="0" max="15" value="7" />
-              </div>
-
-              <div class="ctl-group">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
-                  <label class="ctl-label" style="margin: 0; font-size: 9.5px;">Corner Smoothness</label>
-                  <span style="font-size: 10.5px; font-weight: 800; color: var(--tertiary);"><span id="vecCornerVal">152</span>°</span>
-                </div>
-                <input type="range" class="range-input" id="vecCorner" min="10" max="180" value="152" />
-              </div>
-
-              <div class="ctl-group">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
-                  <label class="ctl-label" style="margin: 0; font-size: 9.5px;">Curve Simplify</label>
-                  <span id="vecSimplifyVal" style="font-size: 10.5px; font-weight: 800; color: var(--tertiary);">5.5</span>
-                </div>
-                <input type="range" class="range-input" id="vecSimplify" min="5" max="100" value="55" />
-              </div>
-
-              <div class="ctl-group">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
-                  <label class="ctl-label" style="margin: 0; font-size: 9.5px;">Speckle Filter</label>
-                  <span style="font-size: 10.5px; font-weight: 800; color: var(--tertiary);"><span id="vecSpeckleVal">3</span> px</span>
-                </div>
-                <input type="range" class="range-input" id="vecSpeckle" min="1" max="20" value="3" />
-              </div>
-
-              <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 4px;">
-                <label class="checkbox-row" style="display: flex; align-items: center; gap: 6px; font-size: 11px; cursor: pointer; color: var(--on-surface);">
-                  <input type="checkbox" id="vecOptimise" checked />
-                  <span>Smooth curves</span>
-                </label>
-                <div style="display: flex; align-items: center; gap: 6px;">
-                  <label class="ctl-label" style="margin: 0; font-size: 9.5px;">Icon Fill</label>
-                  <input type="color" id="vecFillColor" value="#344e41" style="width: 26px; height: 26px; border-radius: 6px; border: 1px solid var(--outline-variant); background: transparent; cursor: pointer; padding: 0;" />
-                  <input type="text" class="ctl-input" id="vecFillHex" value="#344e41" style="width: 65px; height: 26px; padding: 2px 6px; font-size: 10.5px; font-family: var(--mono);" />
-                </div>
-              </div>
-
-              <div style="display: flex; gap: 6px; margin-top: 4px; padding-top: 6px; border-top: 1px dashed var(--outline-variant);">
-                <button type="button" class="btn btn-dark small" id="btnResetVecSettings" style="flex: 1; height: 28px; font-size: 10.5px; padding: 0; gap: 4px;">
-                  🔄 Reset Default
-                </button>
-                <button type="button" class="btn btn-dark small" id="btnSaveVecSettings" style="flex: 1; height: 28px; font-size: 10.5px; padding: 0; gap: 4px; border-color: rgba(92,98,236,0.3); color: var(--tertiary);">
-                  💾 Save Settings
-                </button>
-              </div>
-            </div>
-
-            <!-- Card 3: Quality & Layout -->
-            <div class="sidebar-card" style="background: var(--surface-lowest); border: 1px solid var(--outline-variant); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
-              <div style="font-size: 11px; font-weight: 800; color: var(--tertiary); text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
-                <span>🚀</span> 3. Quality & Layout
-              </div>
-
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                <div>
-                  <label class="ctl-label" style="font-size: 9.5px; margin-bottom: 4px; display: block;">Upscale</label>
-                  <div class="segmented-control" style="display: flex; background: var(--surface-low); border-radius: 6px; padding: 2px; border: 1px solid var(--outline-variant);">
-                    <button type="button" class="segment-btn upscale-btn" data-val="1" style="flex: 1; border: none; background: transparent; color: var(--on-surface); font-size: 10px; padding: 3px 0; cursor: pointer; border-radius: 4px;">1x</button>
-                    <button type="button" class="segment-btn upscale-btn" data-val="2" style="flex: 1; border: none; background: transparent; color: var(--on-surface); font-size: 10px; padding: 3px 0; cursor: pointer; border-radius: 4px;">2x</button>
-                    <button type="button" class="segment-btn upscale-btn active" data-val="4" style="flex: 1; border: none; background: var(--primary); color: var(--on-primary); font-size: 10px; padding: 3px 0; cursor: pointer; border-radius: 4px;">4x</button>
+              <!-- Panel 2: Presentation Layout & Branding (Active for Presentation Sheet) -->
+              <div id="sidebarPanelSheet" class="sidebar-panel hidden" style="display: flex; flex-direction: column; gap: 16px;">
+                <!-- Card 3: Quality & Layout -->
+                <div class="sidebar-card" style="background: var(--surface-lowest); border: 1px solid var(--outline-variant); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+                  <div style="font-size: 11px; font-weight: 800; color: var(--tertiary); text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
+                    <span>🚀</span> 3. Quality & Layout
                   </div>
-                  <input type="hidden" id="vecUpscale" value="4" />
-                </div>
 
-                <div>
-                  <label class="ctl-label" style="font-size: 9.5px; margin-bottom: 4px; display: block;">Trace Detail</label>
-                  <div class="segmented-control" style="display: flex; background: var(--surface-low); border-radius: 6px; padding: 2px; border: 1px solid var(--outline-variant);">
-                    <button type="button" class="segment-btn detail-btn" data-val="1200" style="flex: 1; border: none; background: transparent; color: var(--on-surface); font-size: 10px; padding: 3px 0; cursor: pointer; border-radius: 4px;">Std</button>
-                    <button type="button" class="segment-btn detail-btn active" data-val="1600" style="flex: 1; border: none; background: var(--primary); color: var(--on-primary); font-size: 10px; padding: 3px 0; cursor: pointer; border-radius: 4px;">High</button>
-                    <button type="button" class="segment-btn detail-btn" data-val="2200" style="flex: 1; border: none; background: transparent; color: var(--on-surface); font-size: 10px; padding: 3px 0; cursor: pointer; border-radius: 4px;">Ultra</button>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <div>
+                      <label class="ctl-label" style="font-size: 9.5px; margin-bottom: 4px; display: block;">Upscale</label>
+                      <div class="segmented-control" style="display: flex; background: var(--surface-low); border-radius: 6px; padding: 2px; border: 1px solid var(--outline-variant);">
+                        <button type="button" class="segment-btn upscale-btn" data-val="1" style="flex: 1; border: none; background: transparent; color: var(--on-surface); font-size: 10px; padding: 3px 0; cursor: pointer; border-radius: 4px;">1x</button>
+                        <button type="button" class="segment-btn upscale-btn" data-val="2" style="flex: 1; border: none; background: transparent; color: var(--on-surface); font-size: 10px; padding: 3px 0; cursor: pointer; border-radius: 4px;">2x</button>
+                        <button type="button" class="segment-btn upscale-btn active" data-val="4" style="flex: 1; border: none; background: var(--primary); color: var(--on-primary); font-size: 10px; padding: 3px 0; cursor: pointer; border-radius: 4px;">4x</button>
+                      </div>
+                      <input type="hidden" id="vecUpscale" value="4" />
+                    </div>
+
+                    <div>
+                      <label class="ctl-label" style="font-size: 9.5px; margin-bottom: 4px; display: block;">Trace Detail</label>
+                      <div class="segmented-control" style="display: flex; background: var(--surface-low); border-radius: 6px; padding: 2px; border: 1px solid var(--outline-variant);">
+                        <button type="button" class="segment-btn detail-btn" data-val="1200" style="flex: 1; border: none; background: transparent; color: var(--on-surface); font-size: 10px; padding: 3px 0; cursor: pointer; border-radius: 4px;">Std</button>
+                        <button type="button" class="segment-btn detail-btn active" data-val="1600" style="flex: 1; border: none; background: var(--primary); color: var(--on-primary); font-size: 10px; padding: 3px 0; cursor: pointer; border-radius: 4px;">High</button>
+                        <button type="button" class="segment-btn detail-btn" data-val="2200" style="flex: 1; border: none; background: transparent; color: var(--on-surface); font-size: 10px; padding: 3px 0; cursor: pointer; border-radius: 4px;">Ultra</button>
+                      </div>
+                      <input type="hidden" id="vecTraceDetail" value="1600" />
+                    </div>
                   </div>
-                  <input type="hidden" id="vecTraceDetail" value="1600" />
+
+                  <div>
+                    <label class="ctl-label" style="font-size: 9.5px; margin-bottom: 4px; display: block;">Presentation Layout</label>
+                    <div class="segmented-control" style="display: flex; background: var(--surface-low); border-radius: 6px; padding: 2px; border: 1px solid var(--outline-variant);">
+                      <button type="button" class="segment-btn layout-btn active" data-val="template" style="flex: 1; border: none; background: var(--primary); color: var(--on-primary); font-size: 10px; padding: 4px 0; cursor: pointer; border-radius: 4px;">Branded Sheet</button>
+                      <button type="button" class="segment-btn layout-btn" data-val="compact" style="flex: 1; border: none; background: transparent; color: var(--on-surface); font-size: 10px; padding: 4px 0; cursor: pointer; border-radius: 4px;">Compact Grid</button>
+                    </div>
+                    <input type="hidden" id="sheetLayout" value="template" />
+                  </div>
                 </div>
-              </div>
 
-              <div>
-                <label class="ctl-label" style="font-size: 9.5px; margin-bottom: 4px; display: block;">Presentation Layout</label>
-                <div class="segmented-control" style="display: flex; background: var(--surface-low); border-radius: 6px; padding: 2px; border: 1px solid var(--outline-variant);">
-                  <button type="button" class="segment-btn layout-btn active" data-val="template" style="flex: 1; border: none; background: var(--primary); color: var(--on-primary); font-size: 10px; padding: 4px 0; cursor: pointer; border-radius: 4px;">Branded Sheet</button>
-                  <button type="button" class="segment-btn layout-btn" data-val="compact" style="flex: 1; border: none; background: transparent; color: var(--on-surface); font-size: 10px; padding: 4px 0; cursor: pointer; border-radius: 4px;">Compact Grid</button>
+                <!-- Card 4: Theme & Branding -->
+                <div class="sidebar-card" style="background: var(--surface-lowest); border: 1px solid var(--outline-variant); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+                  <div style="font-size: 11px; font-weight: 800; color: var(--tertiary); text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
+                    <span>🎨</span> 4. Theme & Branding
+                  </div>
+
+                  <div class="ctl-group">
+                    <label class="ctl-label" style="font-size: 9.5px;">Preset Theme</label>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                      <select class="ctl-select" id="sheetPresetSelect" style="flex: 1; height: 32px; font-size: 11px; padding: 4px 8px;">
+                        <option value="healthcare" selected>Healthcare Sage Green</option>
+                        <option value="slate">Dark Slate Navy</option>
+                        <option value="purple">Cyber Purple</option>
+                        <option value="dark">Minimal Dark</option>
+                      </select>
+                      <button type="button" class="btn btn-dark small" id="btnDeletePreset" title="Delete custom preset" style="height: 32px; width: 32px; padding: 0; flex-shrink: 0;">🗑️</button>
+                    </div>
+                  </div>
+
+                  <!-- Save Custom Theme Collapsible -->
+                  <div style="padding: 8px; background: var(--surface-low); border: 1px dashed var(--outline-variant); border-radius: 8px;">
+                    <label class="ctl-label" style="font-size: 9px; margin-bottom: 4px; color: var(--tertiary); display: block;">Save Theme Preset</label>
+                    <div style="display: flex; gap: 6px;">
+                      <input type="text" class="ctl-input" id="newPresetName" placeholder="e.g. Emerald Theme" style="flex: 1; font-size: 10.5px; height: 28px; padding: 2px 8px;" />
+                      <button type="button" class="btn btn-primary small" id="btnSavePreset" style="height: 28px; font-size: 10px; font-weight: 700; white-space: nowrap; padding: 0 8px;">Save</button>
+                    </div>
+                  </div>
+
+                  <input type="hidden" id="sheetSetName" value="" />
+                  <input type="hidden" id="sheetSubtitle" value="" />
+
+                  <div>
+                    <label class="ctl-label" style="font-size: 9.5px;">Output Directory</label>
+                    <input type="text" class="ctl-input" id="sheetSaveDir" value="D:\softower making\Gravity Ai\output\icon_sheets" placeholder="Save directory" style="height: 30px; font-size: 10.5px; padding: 4px 8px; font-family: var(--mono);" />
+                  </div>
                 </div>
-                <input type="hidden" id="sheetLayout" value="template" />
-              </div>
-            </div>
-
-            <!-- Card 4: Theme & Branding -->
-            <div class="sidebar-card" style="background: var(--surface-lowest); border: 1px solid var(--outline-variant); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
-              <div style="font-size: 11px; font-weight: 800; color: var(--tertiary); text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
-                <span>🎨</span> 4. Theme & Branding
-              </div>
-
-              <div class="ctl-group">
-                <label class="ctl-label" style="font-size: 9.5px;">Preset Theme</label>
-                <div style="display: flex; gap: 6px; align-items: center;">
-                  <select class="ctl-select" id="sheetPresetSelect" style="flex: 1; height: 32px; font-size: 11px; padding: 4px 8px;">
-                    <option value="healthcare" selected>Healthcare Sage Green</option>
-                    <option value="slate">Dark Slate Navy</option>
-                    <option value="purple">Cyber Purple</option>
-                    <option value="dark">Minimal Dark</option>
-                  </select>
-                  <button type="button" class="btn btn-dark small" id="btnDeletePreset" title="Delete custom preset" style="height: 32px; width: 32px; padding: 0; flex-shrink: 0;">🗑️</button>
-                </div>
-              </div>
-
-              <!-- Save Custom Theme Collapsible -->
-              <div style="padding: 8px; background: var(--surface-low); border: 1px dashed var(--outline-variant); border-radius: 8px;">
-                <label class="ctl-label" style="font-size: 9px; margin-bottom: 4px; color: var(--tertiary); display: block;">Save Theme Preset</label>
-                <div style="display: flex; gap: 6px;">
-                  <input type="text" class="ctl-input" id="newPresetName" placeholder="e.g. Emerald Theme" style="flex: 1; font-size: 10.5px; height: 28px; padding: 2px 8px;" />
-                  <button type="button" class="btn btn-primary small" id="btnSavePreset" style="height: 28px; font-size: 10px; font-weight: 700; white-space: nowrap; padding: 0 8px;">Save</button>
-                </div>
-              </div>
-
-              <input type="hidden" id="sheetSetName" value="" />
-              <input type="hidden" id="sheetSubtitle" value="" />
-
-              <div>
-                <label class="ctl-label" style="font-size: 9.5px;">Output Directory</label>
-                <input type="text" class="ctl-input" id="sheetSaveDir" value="D:\softower making\Gravity Ai\output\icon_sheets" placeholder="Save directory" style="height: 30px; font-size: 10.5px; padding: 4px 8px; font-family: var(--mono);" />
+              </div>padding: 4px 8px; font-family: var(--mono);" />
               </div>
               </div>
             </div>
