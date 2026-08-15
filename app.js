@@ -3831,14 +3831,6 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
   // Trigger WebSocket server-assisted contour / curve tracing
   if (btnSliceVectorize) {
     btnSliceVectorize.addEventListener('click', () => {
-      const sidebarPanelSheet = document.getElementById('sidebarPanelSheet');
-      const isSheetPanelActive = sidebarPanelSheet && !sidebarPanelSheet.classList.contains('hidden');
-      if (isSheetPanelActive) {
-        buildBrandedSvgSheet();
-        if (window.showCustomAlert) window.showCustomAlert('Presentation sheet design updated!', 'Presentation Updated', 'success');
-        return;
-      }
-
       if (!loadedSheetImgs || loadedSheetImgs.length === 0 || slicedTilesData.length === 0) {
         alert('Please upload an icon sheet image first!');
         return;
@@ -4878,55 +4870,6 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       redo();
     }
   });
-
-  // Contextual Sidebar & Tab View Toggle Handlers
-  const sidebarPanelTiles = document.getElementById('sidebarPanelTiles');
-  const sidebarPanelSheet = document.getElementById('sidebarPanelSheet');
-
-  function switchStudioTab(tabName) {
-    if (tabName === 'tiles') {
-      if (tool4TilesContainer) tool4TilesContainer.style.display = 'block';
-      if (tool4SheetWrap) tool4SheetWrap.style.display = 'none';
-      if (sidebarPanelTiles) sidebarPanelTiles.classList.remove('hidden');
-      if (sidebarPanelSheet) sidebarPanelSheet.classList.add('hidden');
-
-      if (btnToggleTilesView) {
-        btnToggleTilesView.style.background = 'var(--primary)';
-        btnToggleTilesView.style.color = 'var(--on-primary)';
-      }
-      if (btnToggleSheetView) {
-        btnToggleSheetView.style.background = 'var(--surface-low)';
-        btnToggleSheetView.style.color = 'var(--on-surface)';
-      }
-      if (btnSliceVectorize) {
-        btnSliceVectorize.innerHTML = '⚡ Convert to Vector';
-      }
-    } else if (tabName === 'sheet') {
-      if (tool4TilesContainer) tool4TilesContainer.style.display = 'none';
-      if (tool4SheetWrap) tool4SheetWrap.style.display = 'block';
-      if (sidebarPanelTiles) sidebarPanelTiles.classList.add('hidden');
-      if (sidebarPanelSheet) sidebarPanelSheet.classList.remove('hidden');
-
-      if (btnToggleSheetView) {
-        btnToggleSheetView.style.background = 'var(--primary)';
-        btnToggleSheetView.style.color = 'var(--on-primary)';
-      }
-      if (btnToggleTilesView) {
-        btnToggleTilesView.style.background = 'var(--surface-low)';
-        btnToggleTilesView.style.color = 'var(--on-surface)';
-      }
-      if (btnSliceVectorize) {
-        btnSliceVectorize.innerHTML = '🎨 Update Presentation';
-      }
-    }
-  }
-
-  if (btnToggleTilesView) {
-    btnToggleTilesView.addEventListener('click', () => switchStudioTab('tiles'));
-  }
-  if (btnToggleSheetView) {
-    btnToggleSheetView.addEventListener('click', () => switchStudioTab('sheet'));
-  }
 
 });
 
