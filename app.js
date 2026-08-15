@@ -4660,6 +4660,71 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     }
   };
 
+  // View Switcher & Contextual Sidebar Toggle Logic
+  const btnToggleTilesView = document.getElementById('btnToggleTilesView');
+  const btnToggleSheetView = document.getElementById('btnToggleSheetView');
+  const tool4TilesContainer = document.getElementById('tool4TilesContainer');
+  const tool4SheetWrap = document.getElementById('tool4SheetWrap');
+  const studioSliceControls = document.getElementById('studioSliceControls');
+  const studioPresentationControls = document.getElementById('studioPresentationControls');
+
+  function setStudioView(viewMode) {
+    if (viewMode === 'sheet') {
+      if (tool4TilesContainer) tool4TilesContainer.style.display = 'none';
+      if (tool4SheetWrap) tool4SheetWrap.style.display = 'block';
+      if (studioSliceControls) {
+        studioSliceControls.classList.add('hidden');
+        studioSliceControls.style.display = 'none';
+      }
+      if (studioPresentationControls) {
+        studioPresentationControls.classList.remove('hidden');
+        studioPresentationControls.style.display = 'flex';
+      }
+      if (btnToggleTilesView) btnToggleTilesView.className = 'btn btn-dark small';
+      if (btnToggleSheetView) btnToggleSheetView.className = 'btn btn-primary small';
+      if (btnSliceVectorize) {
+        btnSliceVectorize.textContent = '✨ Update Presentation';
+      }
+    } else {
+      if (tool4TilesContainer) tool4TilesContainer.style.display = 'block';
+      if (tool4SheetWrap) tool4SheetWrap.style.display = 'none';
+      if (studioSliceControls) {
+        studioSliceControls.classList.remove('hidden');
+        studioSliceControls.style.display = 'flex';
+      }
+      if (studioPresentationControls) {
+        studioPresentationControls.classList.add('hidden');
+        studioPresentationControls.style.display = 'none';
+      }
+      if (btnToggleTilesView) btnToggleTilesView.className = 'btn btn-primary small';
+      if (btnToggleSheetView) btnToggleSheetView.className = 'btn btn-dark small';
+      if (btnSliceVectorize) {
+        const count = slicedTilesData.length || 15;
+        btnSliceVectorize.textContent = `⚡ Convert ${count} Icons to Vector`;
+      }
+    }
+  }
+
+  if (btnToggleTilesView) {
+    btnToggleTilesView.addEventListener('click', () => setStudioView('tiles'));
+  }
+  if (btnToggleSheetView) {
+    btnToggleSheetView.addEventListener('click', () => {
+      setStudioView('sheet');
+      buildBrandedSvgSheet();
+    });
+  }
+
+  // Handle Action Footer Button based on active view
+  if (btnSliceVectorize) {
+    btnSliceVectorize.addEventListener('click', () => {
+      const isSheetView = studioPresentationControls && !studioPresentationControls.classList.contains('hidden') && studioPresentationControls.style.display !== 'none';
+      if (isSheetView) {
+        buildBrandedSvgSheet();
+      }
+    });
+  }
+
   // Download SVG Sheet manually
   if (btnDownloadAssembledSheet) {
     btnDownloadAssembledSheet.addEventListener('click', () => {
