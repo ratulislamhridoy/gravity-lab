@@ -4648,7 +4648,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
   window.handleSaveVectorSheetResult = function(msg) {
     if (btnSaveToPC) {
       btnSaveToPC.disabled = false;
-      btnSaveToPC.textContent = '💾 Save to PC';
+      btnSaveToPC.textContent = '📥 Download Sheet';
     }
 
     if (msg.ok) {
