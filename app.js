@@ -3751,9 +3751,39 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       const w = img.width || 128;
       const h = img.height || 128;
 
-      const svgString = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="100%" height="100%"><rect width="${w}" height="${h}" fill="none"/><image href="${tile.dataUrl}" width="${w}" height="${h}"/></svg>`;
+      const cvs = document.createElement('canvas');
+      cvs.width = w;
+      cvs.height = h;
+      const ctx = cvs.getContext('2d');
+      ctx.drawImage(img, 0, 0);
 
-      window.handleVectorizeTileResult({ ok: true, index: tile.idx, svg: svgString });
+      let imgData = null;
+      try {
+        imgData = ctx.getImageData(0, 0, w, h);
+      } catch (e) {
+        console.warn('Canvas getImageData notice:', e);
+      }
+
+      if (imgData && window.Potrace && window.Potrace.traceImageData) {
+        window.Potrace.traceImageData(imgData, {
+          threshold: 128,
+          color: fillColor || '#344e41',
+          turdSize: speckle || 2,
+          alphaMax: smoothing > 0 ? 1 : 0
+        }).then(svgString => {
+          if (fillColor && !svgString.includes('fill=')) {
+            svgString = svgString.replace('<path ', `<path fill="${fillColor}" `);
+          }
+          window.handleVectorizeTileResult({ ok: true, index: tile.idx, svg: svgString });
+        }).catch(err => {
+          console.warn('Potrace trace error, using fallback:', err);
+          const fallbackSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="100%" height="100%"><rect width="${w}" height="${h}" fill="none"/><image href="${tile.dataUrl}" width="${w}" height="${h}"/></svg>`;
+          window.handleVectorizeTileResult({ ok: true, index: tile.idx, svg: fallbackSvg });
+        });
+      } else {
+        const fallbackSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="100%" height="100%"><rect width="${w}" height="${h}" fill="none"/><image href="${tile.dataUrl}" width="${w}" height="${h}"/></svg>`;
+        window.handleVectorizeTileResult({ ok: true, index: tile.idx, svg: fallbackSvg });
+      }
     };
 
     img.onerror = function() {
