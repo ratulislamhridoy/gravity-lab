@@ -2401,38 +2401,56 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
   const btnBrowseDir = document.getElementById('btnBrowseDir');
   const sheetDirPicker = document.getElementById('sheetDirPicker');
 
-  function openFolderPicker() {
-    if (sheetDirPicker) {
-      sheetDirPicker.value = '';
-      sheetDirPicker.click();
+  // Custom Output Directory Modal Logic
+  const dirPickerModal = document.getElementById('dirPickerModal');
+  const btnCloseDirModal = document.getElementById('btnCloseDirModal');
+  const btnCancelDirModal = document.getElementById('btnCancelDirModal');
+  const btnApplyDirModal = document.getElementById('btnApplyDirModal');
+  const modalDirInput = document.getElementById('modalDirInput');
+  const dirPresetBtns = document.querySelectorAll('.dir-preset-btn');
+
+  function openCustomDirModal() {
+    if (dirPickerModal && modalDirInput && sheetSaveDir) {
+      modalDirInput.value = sheetSaveDir.value || 'D:\\softower making\\Gravity Ai\\output\\icon_sheets';
+      dirPickerModal.classList.remove('hidden');
+    }
+  }
+
+  function closeCustomDirModal() {
+    if (dirPickerModal) {
+      dirPickerModal.classList.add('hidden');
     }
   }
 
   if (btnBrowseDir) {
-    btnBrowseDir.addEventListener('click', openFolderPicker);
+    btnBrowseDir.addEventListener('click', openCustomDirModal);
   }
   if (sheetSaveDir) {
-    sheetSaveDir.addEventListener('click', openFolderPicker);
+    sheetSaveDir.addEventListener('click', openCustomDirModal);
   }
-  if (sheetDirPicker) {
-    sheetDirPicker.addEventListener('change', (e) => {
-      if (e.target.files && e.target.files.length > 0) {
-        const file = e.target.files[0];
-        let fullPath = file.path || '';
-        if (fullPath) {
-          const lastSep = Math.max(fullPath.lastIndexOf('/'), fullPath.lastIndexOf('\\'));
-          if (lastSep !== -1) fullPath = fullPath.substring(0, lastSep);
-        } else if (file.webkitRelativePath) {
-          fullPath = file.webkitRelativePath.split('/')[0];
-        } else {
-          fullPath = file.name;
-        }
-        if (sheetSaveDir && fullPath) {
-          sheetSaveDir.value = fullPath;
-        }
+  if (btnCloseDirModal) {
+    btnCloseDirModal.addEventListener('click', closeCustomDirModal);
+  }
+  if (btnCancelDirModal) {
+    btnCancelDirModal.addEventListener('click', closeCustomDirModal);
+  }
+  if (btnApplyDirModal) {
+    btnApplyDirModal.addEventListener('click', () => {
+      if (sheetSaveDir && modalDirInput) {
+        sheetSaveDir.value = modalDirInput.value.trim();
       }
+      closeCustomDirModal();
     });
   }
+
+  dirPresetBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const path = btn.getAttribute('data-path');
+      if (path && modalDirInput) {
+        modalDirInput.value = path;
+      }
+    });
+  });
   const btnSliceVectorize = document.getElementById('btnSliceVectorize');
   const btnSaveToPC = document.getElementById('btnSaveToPC');
   const btnToggleTilesView = document.getElementById('btnToggleTilesView');

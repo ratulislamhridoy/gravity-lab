@@ -815,6 +815,58 @@
     </div>
   </div>
 
+  <!-- Custom Output Directory Selector Modal -->
+  <div class="modal-backdrop hidden" id="dirPickerModal" style="z-index: 999999;">
+    <div class="modal-box" style="max-width: 480px; width: 90%; border-radius: 20px; padding: 24px; background: rgba(18, 18, 22, 0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.12); box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6); display: flex; flex-direction: column; gap: 18px;">
+      
+      <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--outline-variant); padding-bottom: 12px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(92, 98, 236, 0.15); border: 1px solid rgba(92, 98, 236, 0.3); color: var(--tertiary); display: flex; align-items: center; justify-content: center; font-size: 18px;">
+            📂
+          </div>
+          <div>
+            <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #ededf0;">Set Output Directory</h3>
+            <span style="font-size: 11px; color: var(--on-variant);">Choose target folder for exported SVG icon sheets</span>
+          </div>
+        </div>
+        <button type="button" class="btn btn-dark small" id="btnCloseDirModal" style="width: 28px; height: 28px; padding: 0; border-radius: 50%; font-size: 14px; justify-content: center;">✕</button>
+      </div>
+
+      <!-- Quick Directory Preset Options -->
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <label style="font-size: 10.5px; font-weight: 800; color: var(--tertiary); text-transform: uppercase; letter-spacing: 0.5px;">Quick Preset Folders</label>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;" id="dirQuickPresets">
+          <button type="button" class="btn btn-dark small dir-preset-btn" data-path="D:\softower making\Gravity Ai\output\icon_sheets" style="padding: 10px; border-radius: 10px; justify-content: flex-start; gap: 8px; font-size: 11px; font-weight: 700;">
+            <span>📁</span> Project Output
+          </button>
+          <button type="button" class="btn btn-dark small dir-preset-btn" data-path="C:\Users\Downloads\icon_sheets" style="padding: 10px; border-radius: 10px; justify-content: flex-start; gap: 8px; font-size: 11px; font-weight: 700;">
+            <span>📥</span> Downloads
+          </button>
+          <button type="button" class="btn btn-dark small dir-preset-btn" data-path="C:\Users\Desktop\icon_sheets" style="padding: 10px; border-radius: 10px; justify-content: flex-start; gap: 8px; font-size: 11px; font-weight: 700;">
+            <span>🖥️</span> Desktop
+          </button>
+          <button type="button" class="btn btn-dark small dir-preset-btn" data-path="C:\Users\Documents\icon_sheets" style="padding: 10px; border-radius: 10px; justify-content: flex-start; gap: 8px; font-size: 11px; font-weight: 700;">
+            <span>📄</span> Documents
+          </button>
+        </div>
+      </div>
+
+      <!-- Custom Path Input -->
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <label style="font-size: 10.5px; font-weight: 800; color: var(--tertiary); text-transform: uppercase; letter-spacing: 0.5px;">Selected Directory Path</label>
+        <input type="text" class="ctl-input" id="modalDirInput" placeholder="Enter or paste output directory path..." style="height: 36px; padding: 6px 12px; font-size: 11px; font-family: var(--mono);" />
+      </div>
+
+      <!-- Footer Buttons -->
+      <div style="display: flex; gap: 10px; margin-top: 4px;">
+        <button type="button" class="btn btn-dark" id="btnCancelDirModal" style="flex: 1; height: 38px; justify-content: center; font-weight: 700; border-radius: 10px;">Cancel</button>
+        <button type="button" class="btn btn-primary" id="btnApplyDirModal" style="flex: 1; height: 38px; justify-content: center; font-weight: 800; border-radius: 10px;">✓ Apply Directory</button>
+      </div>
+
+    </div>
+  </div>
+
   <!-- Custom Modern Dark Glass Alert Modal -->
   <div class="modal-backdrop hidden" id="customAlertModal" style="z-index: 999999;">
     <div class="modal-box" style="max-width: 440px; text-align: center; border-radius: 20px; padding: 28px 24px; background: rgba(18, 18, 22, 0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.12); box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);">
