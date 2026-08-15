@@ -2613,9 +2613,14 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
 
   // Rebuild template preset select options
   function rebuildPresetDropdown(preferredVal) {
-    if (!sheetPresetSelect) return;
-    const selectedVal = preferredVal || sheetPresetSelect.value || 'healthcare';
-    sheetPresetSelect.innerHTML = '';
+    const presetSelects = [
+      document.getElementById('sheetPresetSelect'),
+      document.getElementById('sheetPresetSelectTiles')
+    ].filter(Boolean);
+
+    if (presetSelects.length === 0) return;
+    const primarySelect = presetSelects[0];
+    const selectedVal = preferredVal || primarySelect.value || 'healthcare';
 
     const builtins = {
       metal: 'Metal Mint Industry (Template 1)',
@@ -2626,33 +2631,72 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       healthcare: 'Healthcare Sage Green'
     };
 
-    Object.keys(builtins).forEach(key => {
-      const opt = document.createElement('option');
-      opt.value = key;
-      opt.textContent = builtins[key];
-      sheetPresetSelect.appendChild(opt);
-    });
-
     let saved = {};
     try {
       saved = JSON.parse(localStorage.getItem('gravity_sheet_presets')) || {};
     } catch (e) {}
 
-    Object.keys(saved).forEach(key => {
-      sheetPresetThemes[key] = saved[key].map(l => ({ ...l }));
-      const opt = document.createElement('option');
-      opt.value = key;
-      opt.textContent = key + ' (Custom)';
-      sheetPresetSelect.appendChild(opt);
-    });
+    presetSelects.forEach(sel => {
+      sel.innerHTML = '';
 
-    if ([...sheetPresetSelect.options].some(o => o.value === selectedVal)) {
-      sheetPresetSelect.value = selectedVal;
-    } else {
-      sheetPresetSelect.value = 'healthcare';
+      Object.keys(builtins).forEach(key => {
+        const opt = document.createElement('option');
+        opt.value = key;
+        opt.textContent = builtins[key];
+        sel.appendChild(opt);
+      });
+
+      Object.keys(saved).forEach(key => {
+        sheetPresetThemes[key] = saved[key].map(l => ({ ...l }));
+        const opt = document.createElement('option');
+        opt.value = key;
+        opt.textContent = key + ' (Custom)';
+        sel.appendChild(opt);
+      });
+
+      if ([...sel.options].some(o => o.value === selectedVal)) {
+        sel.value = selectedVal;
+      } else {
+        sel.value = 'healthcare';
+      }
+
+      updateCustomSelectUI(sel);
+    });
+  }
+
+  // Bind change listeners to sync preset theme dropdowns across both Tiles Grid & Presentation views
+  const sheetPresetSelectTilesEl = document.getElementById('sheetPresetSelectTiles');
+  
+  function applyPresetSelection(val) {
+    const mainSel = document.getElementById('sheetPresetSelect');
+    const tilesSel = document.getElementById('sheetPresetSelectTiles');
+    if (mainSel && mainSel.value !== val) mainSel.value = val;
+    if (tilesSel && tilesSel.value !== val) tilesSel.value = val;
+
+    let baseKey = val;
+    if (!sheetPresetThemes[baseKey] && !defaultTemplateGeometries[baseKey]) {
+      baseKey = 'healthcare';
     }
 
-    updateCustomSelectUI(sheetPresetSelect);
+    const templateSource = sheetPresetThemes[baseKey] || defaultTemplateGeometries[baseKey];
+    if (templateSource) {
+      activeLayers = templateSource.map(l => ({ ...l }));
+      currentDesignerLayerId = activeLayers.length > 0 ? activeLayers[0].id : null;
+      if (currentDesignerLayerId) {
+        loadDesignerLayerFields(currentDesignerLayerId);
+      } else {
+        clearDesignerLayerFields();
+      }
+      renderDesignerLayersTree();
+      buildBrandedSvgSheet();
+    }
+  }
+
+  if (sheetPresetSelect) {
+    sheetPresetSelect.addEventListener('change', () => applyPresetSelection(sheetPresetSelect.value));
+  }
+  if (sheetPresetSelectTilesEl) {
+    sheetPresetSelectTilesEl.addEventListener('change', () => applyPresetSelection(sheetPresetSelectTilesEl.value));
   }
 
   // Populate custom presets into dropdown immediately on initialization
