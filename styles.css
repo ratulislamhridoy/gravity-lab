@@ -236,7 +236,7 @@ button, a { font-family: inherit; }
 .launch:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(205, 252, 82, 0.45); }
 
 /* === Studio View Shell === */
-.studio-shell { display: grid; grid-template-columns: 360px minmax(0, 1fr); min-height: calc(100vh - 68px); border-top: 1px solid var(--outline-variant); width: 100%; max-width: 100%; overflow-x: hidden; }
+.studio-shell { display: grid; grid-template-columns: 360px minmax(0, 1fr); height: calc(100vh - 68px); max-height: calc(100vh - 68px); border-top: 1px solid var(--outline-variant); width: 100%; max-width: 100%; overflow: hidden; }
 .studio-controls { background: var(--surface-low); border-right: 1px solid var(--outline-variant); padding: 24px; display: flex; flex-direction: column; gap: 18px; width: 360px; max-width: 100%; box-sizing: border-box; }
 .studio-controls h3 { margin: 0 0 4px; font-size: 16px; font-weight: 700; color: var(--on-surface); border-bottom: 1px solid var(--outline-variant); padding-bottom: 12px; }
 
