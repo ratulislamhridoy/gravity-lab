@@ -3837,7 +3837,6 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       }
 
       btnSliceVectorize.disabled = true;
-      btnSliceVectorize.textContent = '⏳ Vectorizing...';
       vectorizeCompletedCount = 0;
 
       const fillColor = vecFillColor ? vecFillColor.value : '#344e41';
@@ -3850,82 +3849,117 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       const upscale = vecUpscale ? parseInt(vecUpscale.value) : 4;
       const traceDetail = vecTraceDetail ? parseInt(vecTraceDetail.value) : 1600;
 
-      slicedTilesData.forEach((tile, index) => {
-        // Show spinning indicator on this card
-        const cardEl = document.getElementById(`tool4-tile-card-${tile.idx}`);
-        if (cardEl) {
-          cardEl.innerHTML = `
-            <div style="position: absolute; top: 8px; left: 8px; font-size: 10px; font-weight: 800; color: var(--accent); background: rgba(52,152,219,0.12); padding: 3px 8px; border-radius: 6px;">#${tile.idx}</div>
-            <div style="width: 100px; height: 100px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: 12px; color: var(--on-surface-variant);">
-              <div style="font-size: 24px; animation: spin 1s linear infinite;">⏳</div>
-              <div style="font-size: 10px; margin-top: 8px; opacity: 0.8;">Tracing curves...</div>
-            </div>
-          `;
-        }
+      // Non-blocking Asynchronous Queue Processing to keep UI 100% responsive
+      async function processTilesInAsyncQueue() {
+        const total = slicedTilesData.length;
 
-        // Check if WebSocket server is available or fallback to Web Worker Client-Side Vectorizer
-        if (flowSocket && flowSocket.readyState === WebSocket.OPEN) {
-          sendFlowActionSpecific('vectorize-tile', 'default', {
-            index: tile.idx,
-            dataUrl: tile.dataUrl,
-            mode: mode,
-            color: fillColor,
-            smoothing: smoothing,
-            corner: corner,
-            simplify: simplify,
-            speckle: speckle,
-            optimise: optimise,
-            upscale: upscale,
-            maxRes: traceDetail
-          });
-        } else {
-          vectorizeTileClientSide(tile, mode, fillColor, smoothing, corner, simplify, speckle);
+        for (let i = 0; i < total; i++) {
+          const tile = slicedTilesData[i];
+
+          if (btnSliceVectorize) {
+            btnSliceVectorize.textContent = `⏳ Vectorizing ${i + 1} / ${total}...`;
+          }
+
+          // Show spinning indicator on this card
+          const cardEl = document.getElementById(`tool4-tile-card-${tile.idx}`);
+          if (cardEl) {
+            cardEl.innerHTML = `
+              <div style="position: absolute; top: 8px; left: 8px; font-size: 10px; font-weight: 800; color: var(--accent); background: rgba(52,152,219,0.12); padding: 3px 8px; border-radius: 6px;">#${tile.idx}</div>
+              <div style="width: 100px; height: 100px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: 12px; color: var(--on-surface-variant);">
+                <div style="font-size: 24px; animation: spin 1s linear infinite;">⏳</div>
+                <div style="font-size: 10px; margin-top: 8px; opacity: 0.8;">Tracing curves...</div>
+              </div>
+            `;
+          }
+
+          // Check if WebSocket server is available or fallback to Web Worker Client-Side Vectorizer
+          if (flowSocket && flowSocket.readyState === WebSocket.OPEN) {
+            sendFlowActionSpecific('vectorize-tile', 'default', {
+              index: tile.idx,
+              dataUrl: tile.dataUrl,
+              mode: mode,
+              color: fillColor,
+              smoothing: smoothing,
+              corner: corner,
+              simplify: simplify,
+              speckle: speckle,
+              optimise: optimise,
+              upscale: upscale,
+              maxRes: traceDetail
+            });
+          } else {
+            vectorizeTileClientSide(tile, mode, fillColor, smoothing, corner, simplify, speckle);
+          }
+
+          // Yield main UI thread every tile so browser UI stays 100% smooth without freeze
+          if (i % 2 === 1) {
+            await new Promise(resolve => setTimeout(resolve, 10));
+          }
         }
-      });
+      }
+
+      processTilesInAsyncQueue();
     });
   }
 
+  // Ultra-Fast O(1) Sliding-Window Box Blur Algorithm (Zero Freeze / High Performance)
   function boxBlurUint8(data, w, h, radius) {
     if (radius <= 0) return data;
-    let current = data;
     const passes = radius >= 3 ? 2 : 1;
-    const passRadius = Math.max(1, Math.round(radius / passes));
+    const r = Math.max(1, Math.round(radius / passes));
+    let current = data;
 
     for (let p = 0; p < passes; p++) {
       const len = w * h;
       const temp = new Float32Array(len);
-      const out = new Uint8ClampedArray(current.length);
+      const out = new Uint8ClampedArray(len * 4);
 
+      // Horizontal Pass (O(1) sliding window sum)
       for (let y = 0; y < h; y++) {
-        for (let x = 0; x < w; x++) {
-          let sum = 0, count = 0;
-          for (let r = -passRadius; r <= passRadius; r++) {
-            const nx = x + r;
-            if (nx >= 0 && nx < w) {
-              sum += current[(y * w + nx) * 4];
-              count++;
-            }
+        let sum = 0;
+        let count = 0;
+        const rowOffset = y * w;
+
+        for (let ix = -r; ix <= r; ix++) {
+          if (ix >= 0 && ix < w) {
+            sum += current[(rowOffset + ix) * 4];
+            count++;
           }
-          temp[y * w + x] = sum / count;
+        }
+        temp[rowOffset] = sum / count;
+
+        for (let x = 1; x < w; x++) {
+          const addX = x + r;
+          const remX = x - r - 1;
+          if (addX < w) { sum += current[(rowOffset + addX) * 4]; count++; }
+          if (remX >= 0) { sum -= current[(rowOffset + remX) * 4]; count--; }
+          temp[rowOffset + x] = sum / count;
         }
       }
 
-      for (let y = 0; y < h; y++) {
-        for (let x = 0; x < w; x++) {
-          let sum = 0, count = 0;
-          for (let r = -passRadius; r <= passRadius; r++) {
-            const ny = y + r;
-            if (ny >= 0 && ny < h) {
-              sum += temp[ny * w + x];
-              count++;
-            }
+      // Vertical Pass (O(1) sliding window sum)
+      for (let x = 0; x < w; x++) {
+        let sum = 0;
+        let count = 0;
+
+        for (let iy = -r; iy <= r; iy++) {
+          if (iy >= 0 && iy < h) {
+            sum += temp[iy * w + x];
+            count++;
           }
+        }
+        const val0 = Math.round(sum / count);
+        const idx0 = x * 4;
+        out[idx0] = val0; out[idx0 + 1] = val0; out[idx0 + 2] = val0; out[idx0 + 3] = 255;
+
+        for (let y = 1; y < h; y++) {
+          const addY = y + r;
+          const remY = y - r - 1;
+          if (addY < h) { sum += temp[addY * w + x]; count++; }
+          if (remY >= 0) { sum -= temp[remY * w + x]; count--; }
           const val = Math.round(sum / count);
           const idx = (y * w + x) * 4;
-          out[idx] = val;
-          out[idx + 1] = val;
-          out[idx + 2] = val;
-          out[idx + 3] = 255;
+          out[idx] = val; out[idx + 1] = val; out[idx + 2] = val; out[idx + 3] = 255;
         }
       }
       current = out;
