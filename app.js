@@ -795,6 +795,7 @@ document.addEventListener('DOMContentLoaded', () => {
     backToDashBtn.style.display = 'inline-block';
     pageTitle.textContent = 'Icon Sheet Slicer & Vectorizer';
     appBody.classList.add('in-tool-view');
+    setStudioView('tiles');
     initFlowConnection(); // Connect WebSocket immediately
   }
 
