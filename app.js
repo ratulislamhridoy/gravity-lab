@@ -2409,39 +2409,34 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
   const modalDirInput = document.getElementById('modalDirInput');
   const dirPresetBtns = document.querySelectorAll('.dir-preset-btn');
 
-  function openCustomDirModal() {
-    if (dirPickerModal && modalDirInput && sheetSaveDir) {
-      modalDirInput.value = sheetSaveDir.value || 'D:\\softower making\\Gravity Ai\\output\\icon_sheets';
-      dirPickerModal.classList.remove('hidden');
-    }
-  }
-
-  function closeCustomDirModal() {
-    if (dirPickerModal) {
-      dirPickerModal.classList.add('hidden');
+  function openNativeFilePicker() {
+    if (sheetDirPicker) {
+      sheetDirPicker.value = '';
+      sheetDirPicker.click();
     }
   }
 
   if (btnBrowseDir) {
-    btnBrowseDir.addEventListener('click', openCustomDirModal);
+    btnBrowseDir.addEventListener('click', openNativeFilePicker);
   }
-  if (sheetSaveDir) {
-    sheetSaveDir.addEventListener('click', (e) => {
-      // Allow direct typing if focused/clicked, or open modal if empty/double clicked
-    });
-  }
-  if (btnCloseDirModal) {
-    btnCloseDirModal.addEventListener('click', closeCustomDirModal);
-  }
-  if (btnCancelDirModal) {
-    btnCancelDirModal.addEventListener('click', closeCustomDirModal);
-  }
-  if (btnApplyDirModal) {
-    btnApplyDirModal.addEventListener('click', () => {
-      if (sheetSaveDir && modalDirInput) {
-        sheetSaveDir.value = modalDirInput.value.trim();
+
+  if (sheetDirPicker) {
+    sheetDirPicker.addEventListener('change', (e) => {
+      if (e.target.files && e.target.files.length > 0) {
+        const file = e.target.files[0];
+        let fullPath = file.path || '';
+        if (fullPath) {
+          const lastSep = Math.max(fullPath.lastIndexOf('/'), fullPath.lastIndexOf('\\'));
+          if (lastSep !== -1) fullPath = fullPath.substring(0, lastSep);
+        } else if (file.webkitRelativePath) {
+          fullPath = file.webkitRelativePath.split('/')[0];
+        } else {
+          fullPath = file.name;
+        }
+        if (sheetSaveDir && fullPath) {
+          sheetSaveDir.value = fullPath;
+        }
       }
-      closeCustomDirModal();
     });
   }
 
