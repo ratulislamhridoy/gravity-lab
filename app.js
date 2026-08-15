@@ -538,19 +538,66 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Navigation & Tool Launch
-  document.querySelectorAll('.launch').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const toolId = btn.getAttribute('data-launch');
-      if (toolId === 'icon-sheet-prompt') {
-        launchTool1();
-      } else if (toolId === 'google-flow-gen') {
-        launchTool3();
-      } else if (toolId === 'icon-sheet-slicer') {
-        launchTool4();
+  // Active Nav Item Sync Helper
+  function setSidebarActive(toolId) {
+    document.querySelectorAll('.home-nav .nav-item').forEach(btn => {
+      const navTarget = btn.getAttribute('data-nav') || btn.getAttribute('data-launch');
+      if (navTarget === toolId) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+  }
+
+  // Navigation & Tool Launch (Card clicks & Sidebar Nav items)
+  document.querySelectorAll('[data-launch]').forEach(elem => {
+    elem.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const toolId = elem.getAttribute('data-launch');
+      triggerToolLaunch(toolId);
+    });
+  });
+
+  // Make entire .tool-card clickable
+  document.querySelectorAll('.tool-card').forEach(card => {
+    card.style.cursor = 'pointer';
+    card.addEventListener('click', (e) => {
+      // Avoid double triggering if launch button clicked
+      if (e.target.classList.contains('launch')) return;
+      const launchBtn = card.querySelector('[data-launch]');
+      if (launchBtn) {
+        const toolId = launchBtn.getAttribute('data-launch');
+        triggerToolLaunch(toolId);
       }
     });
   });
+
+  // Dashboard nav button click handler
+  const dashNavBtn = document.querySelector('.home-nav [data-nav="dashboard"]');
+  if (dashNavBtn) {
+    dashNavBtn.addEventListener('click', () => {
+      if (dashboardView) dashboardView.classList.remove('hidden');
+      if (studioView) studioView.classList.add('hidden');
+      if (tool2View) tool2View.classList.add('hidden');
+      if (tool3View) tool3View.classList.add('hidden');
+      if (document.getElementById('tool4View')) document.getElementById('tool4View').classList.add('hidden');
+      if (backToDashBtn) backToDashBtn.style.display = 'none';
+      if (pageTitle) pageTitle.textContent = 'Studio Dashboard';
+      if (appBody) appBody.classList.remove('in-tool-view');
+      setSidebarActive('dashboard');
+    });
+  }
+
+  function triggerToolLaunch(toolId) {
+    if (toolId === 'icon-sheet-prompt') {
+      launchTool1();
+    } else if (toolId === 'google-flow-gen') {
+      launchTool3();
+    } else if (toolId === 'icon-sheet-slicer') {
+      launchTool4();
+    }
+  }
 
   // Tool #3 Prompt Sync & Counter Logic
   const btnSyncFromTool1 = document.getElementById('btnSyncFromTool1');
@@ -4661,10 +4708,10 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
   };
 
   // View Switcher & Contextual Sidebar Toggle Logic
-  const btnToggleTilesView = document.getElementById('btnToggleTilesView');
-  const btnToggleSheetView = document.getElementById('btnToggleSheetView');
-  const tool4TilesContainer = document.getElementById('tool4TilesContainer');
-  const tool4SheetWrap = document.getElementById('tool4SheetWrap');
+  if (!btnToggleTilesView) btnToggleTilesView = document.getElementById('btnToggleTilesView');
+  if (!btnToggleSheetView) btnToggleSheetView = document.getElementById('btnToggleSheetView');
+  if (!tool4TilesContainer) tool4TilesContainer = document.getElementById('tool4TilesContainer');
+  if (!tool4SheetWrap) tool4SheetWrap = document.getElementById('tool4SheetWrap');
   const studioSliceControls = document.getElementById('studioSliceControls');
   const studioPresentationControls = document.getElementById('studioPresentationControls');
 
