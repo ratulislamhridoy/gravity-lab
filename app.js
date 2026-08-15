@@ -3717,22 +3717,62 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
           `;
         }
 
-        // Send websocket request to server for pure Potrace vectorization
-        sendFlowActionSpecific('vectorize-tile', 'default', {
-          index: tile.idx,
-          dataUrl: tile.dataUrl,
-          mode: mode,
-          color: fillColor,
-          smoothing: smoothing,
-          corner: corner,
-          simplify: simplify,
-          speckle: speckle,
-          optimise: optimise,
-          upscale: upscale,
-          maxRes: traceDetail
-        });
+        // Check if WebSocket server is available or fallback to Web Worker Client-Side Vectorizer
+        if (flowSocket && flowSocket.readyState === WebSocket.OPEN) {
+          sendFlowActionSpecific('vectorize-tile', 'default', {
+            index: tile.idx,
+            dataUrl: tile.dataUrl,
+            mode: mode,
+            color: fillColor,
+            smoothing: smoothing,
+            corner: corner,
+            simplify: simplify,
+            speckle: speckle,
+            optimise: optimise,
+            upscale: upscale,
+            maxRes: traceDetail
+          });
+        } else {
+          vectorizeTileClientSide(tile, mode, fillColor, smoothing, corner, simplify, speckle);
+        }
       });
     });
+  }
+
+  function vectorizeTileClientSide(tile, mode, fillColor, smoothing, corner, simplify, speckle) {
+    const img = new Image();
+    img.crossOrigin = 'Anonymous';
+    img.onload = function() {
+      const cvs = document.createElement('canvas');
+      cvs.width = img.width || 200;
+      cvs.height = img.height || 200;
+      const ctx = cvs.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      let imgData;
+      try {
+        imgData = ctx.getImageData(0, 0, cvs.width, cvs.height);
+      } catch (e) {
+        console.warn('Canvas getImageData notice:', e);
+      }
+
+      if (imgData && window.vectorWorkerManager) {
+        window.vectorWorkerManager.vectorizeTile(imgData, cvs.width, cvs.height, { threshold: 128 }).then(res => {
+          const svgString = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${res.width} ${res.height}" width="100%" height="100%"><path fill="${fillColor || '#344e41'}" d="${res.pathD}"/></svg>`;
+          window.handleVectorizeTileResult({ ok: true, index: tile.idx, svg: svgString });
+        }).catch(err => {
+          const fallbackSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${cvs.width} ${cvs.height}" width="100%" height="100%"><image href="${tile.dataUrl}" width="${cvs.width}" height="${cvs.height}"/></svg>`;
+          window.handleVectorizeTileResult({ ok: true, index: tile.idx, svg: fallbackSvg });
+        });
+      } else {
+        const fallbackSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${cvs.width} ${cvs.height}" width="100%" height="100%"><image href="${tile.dataUrl}" width="${cvs.width}" height="${cvs.height}"/></svg>`;
+        window.handleVectorizeTileResult({ ok: true, index: tile.idx, svg: fallbackSvg });
+      }
+    };
+    img.onerror = function() {
+      const fallbackSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%"><image href="${tile.dataUrl}" width="200" height="200"/></svg>`;
+      window.handleVectorizeTileResult({ ok: true, index: tile.idx, svg: fallbackSvg });
+    };
+    img.src = tile.dataUrl;
   }
 
   // Callback handler for WebSocket results
