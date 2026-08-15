@@ -3888,13 +3888,12 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
               maxRes: traceDetail
             });
           } else {
-            vectorizeTileClientSide(tile, mode, fillColor, smoothing, corner, simplify, speckle);
+            // Await sequential tile execution to prevent memory overflow and browser freezing
+            await vectorizeTileClientSide(tile, mode, fillColor, smoothing, corner, simplify, speckle);
           }
 
-          // Yield main UI thread every tile so browser UI stays 100% smooth without freeze
-          if (i % 2 === 1) {
-            await new Promise(resolve => setTimeout(resolve, 10));
-          }
+          // Yield main UI thread between tiles to keep browser 100% responsive
+          await new Promise(resolve => setTimeout(resolve, 15));
         }
       }
 
@@ -3968,158 +3967,161 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
   }
 
   function vectorizeTileClientSide(tile, mode, fillColor, smoothing, corner, simplify, speckle) {
-    if (!tile || !tile.dataUrl) {
-      const emptySvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%"></svg>`;
-      window.handleVectorizeTileResult({ ok: true, index: tile ? tile.idx : 1, svg: emptySvg });
-      return;
-    }
-
-    const img = new Image();
-    img.onload = function() {
-      const origW = img.width || 128;
-      const origH = img.height || 128;
-
-      // 1. Ultra High Precision Sub-Pixel 8x Canvas Upscaling (up to 2048px)
-      const scale = Math.min(8, 2048 / Math.max(origW, origH));
-      const w = Math.round(origW * scale);
-      const h = Math.round(origH * scale);
-
-      // 2. Measure border background color from unpadded image canvas
-      const unpaddedCvs = document.createElement('canvas');
-      unpaddedCvs.width = w;
-      unpaddedCvs.height = h;
-      const unpaddedCtx = unpaddedCvs.getContext('2d');
-      unpaddedCtx.imageSmoothingEnabled = true;
-      unpaddedCtx.imageSmoothingQuality = 'high';
-      unpaddedCtx.drawImage(img, 0, 0, w, h);
-
-      let bgR = 255, bgG = 255, bgB = 255;
-      try {
-        const rawImgData = unpaddedCtx.getImageData(0, 0, w, h);
-        const rawPixels = rawImgData.data;
-        const borderPixels = [];
-        const stepX = Math.max(1, Math.floor(w / 64));
-        const stepY = Math.max(1, Math.floor(h / 64));
-
-        for (let x = 0; x < w; x += stepX) {
-          const idxTop = x * 4;
-          const idxBot = ((h - 1) * w + x) * 4;
-          borderPixels.push([rawPixels[idxTop], rawPixels[idxTop+1], rawPixels[idxTop+2]]);
-          borderPixels.push([rawPixels[idxBot], rawPixels[idxBot+1], rawPixels[idxBot+2]]);
-        }
-        for (let y = 0; y < h; y += stepY) {
-          const idxLeft = (y * w) * 4;
-          const idxRight = (y * w + w - 1) * 4;
-          borderPixels.push([rawPixels[idxLeft], rawPixels[idxLeft+1], rawPixels[idxLeft+2]]);
-          borderPixels.push([rawPixels[idxRight], rawPixels[idxRight+1], rawPixels[idxRight+2]]);
-        }
-        if (borderPixels.length > 0) {
-          borderPixels.sort((a, b) => (a[0]+a[1]+a[2]) - (b[0]+b[1]+b[2]));
-          const mid = borderPixels[Math.floor(borderPixels.length / 2)];
-          bgR = mid[0]; bgG = mid[1]; bgB = mid[2];
-        }
-      } catch (e) {
-        console.warn('Border sampling notice:', e);
+    return new Promise((resolve) => {
+      if (!tile || !tile.dataUrl) {
+        const emptySvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%"></svg>`;
+        window.handleVectorizeTileResult({ ok: true, index: tile ? tile.idx : 1, svg: emptySvg });
+        resolve();
+        return;
       }
 
-      // 3. Create 36px padded canvas filled with measured background color
-      const pad = 36;
-      const totalW = w + pad * 2;
-      const totalH = h + pad * 2;
+      const img = new Image();
+      img.onload = function() {
+        const origW = img.width || 128;
+        const origH = img.height || 128;
 
-      const cvs = document.createElement('canvas');
-      cvs.width = totalW;
-      cvs.height = totalH;
-      const ctx = cvs.getContext('2d');
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
+        // 1. High Precision Sub-Pixel 4x Canvas Upscaling (up to 1024px for optimal performance)
+        const scale = Math.min(4, 1024 / Math.max(origW, origH));
+        const w = Math.round(origW * scale);
+        const h = Math.round(origH * scale);
 
-      ctx.fillStyle = `rgb(${bgR}, ${bgG}, ${bgB})`;
-      ctx.fillRect(0, 0, totalW, totalH);
-      ctx.drawImage(img, pad, pad, w, h);
+        // 2. Measure border background color from unpadded image canvas
+        const unpaddedCvs = document.createElement('canvas');
+        unpaddedCvs.width = w;
+        unpaddedCvs.height = h;
+        const unpaddedCtx = unpaddedCvs.getContext('2d');
+        unpaddedCtx.imageSmoothingEnabled = true;
+        unpaddedCtx.imageSmoothingQuality = 'high';
+        unpaddedCtx.drawImage(img, 0, 0, w, h);
 
-      let paddedImgData = null;
-      try {
-        paddedImgData = ctx.getImageData(0, 0, totalW, totalH);
-      } catch (e) {
-        console.warn('Canvas getImageData notice:', e);
-      }
+        let bgR = 255, bgG = 255, bgB = 255;
+        try {
+          const rawImgData = unpaddedCtx.getImageData(0, 0, w, h);
+          const rawPixels = rawImgData.data;
+          const borderPixels = [];
+          const stepX = Math.max(1, Math.floor(w / 64));
+          const stepY = Math.max(1, Math.floor(h / 64));
 
-      if (paddedImgData && window.Potrace && window.Potrace.traceImageData) {
-        const paddedPixels = paddedImgData.data;
-        const len = totalW * totalH;
-
-        // 4. Calculate perceptual ink distance with S-curve contrast gamma
-        let maxInk = 1;
-        const inkDistances = new Float32Array(len);
-        for (let i = 0; i < len; i++) {
-          const offset = i * 4;
-          const a = paddedPixels[offset + 3] / 255;
-          const r = paddedPixels[offset] * a + bgR * (1 - a);
-          const g = paddedPixels[offset + 1] * a + bgG * (1 - a);
-          const b = paddedPixels[offset + 2] * a + bgB * (1 - a);
-          const dr = r - bgR, dg = g - bgG, db = b - bgB;
-          const dist = Math.sqrt(0.299 * dr * dr + 0.587 * dg * dg + 0.114 * db * db);
-          inkDistances[i] = dist;
-          if (dist > maxInk) maxInk = dist;
-        }
-
-        // Apply S-curve gamma adjustment for crisp yet ultra-smooth stroke edge definition
-        const normData = new Uint8ClampedArray(len * 4);
-        for (let i = 0; i < len; i++) {
-          const inkRatio = Math.min(1, inkDistances[i] / maxInk);
-          const gammaInk = Math.pow(inkRatio, 0.85); // Crisp S-curve
-          const normInk = Math.min(255, Math.round(gammaInk * 255));
-          const val = 255 - normInk; // 0 = black stroke (icon lines), 255 = white bg
-          const idx = i * 4;
-          normData[idx] = val;
-          normData[idx + 1] = val;
-          normData[idx + 2] = val;
-          normData[idx + 3] = 255;
-        }
-
-        // 5. 2-Pass Gaussian Box Blur Edge Smoothing
-        const blurRadius = Math.max(0, Math.min(10, Math.round((Number(smoothing) || 0) * scale * 0.4)));
-        const finalNormData = blurRadius > 0 ? boxBlurUint8(normData, totalW, totalH, blurRadius) : normData;
-
-        const alphaMaxVal = Math.max(0, Math.min(1.334, ((corner || 133) / 180) * 1.334));
-        const optTolVal = Math.max(0.04, (simplify || 5.5) * 0.04);
-
-        window.Potrace.traceImageData({ width: totalW, height: totalH, data: finalNormData }, {
-          threshold: 128,
-          color: fillColor || '#344e41',
-          turdSize: Math.max(1, Math.round((speckle || 2) * scale * 0.8)),
-          alphaMax: alphaMaxVal,
-          optCurve: true,
-          optTolerance: optTolVal
-        }).then(svgString => {
-          // Crop viewBox to exact icon bounds `pad pad w h`
-          svgString = svgString.replace(/viewBox="0 0 \d+ \d+"/, `viewBox="${pad} ${pad} ${w} ${h}"`);
-          if (fillColor && !svgString.includes('fill=')) {
-            svgString = svgString.replace('<path ', `<path fill="${fillColor}" `);
+          for (let x = 0; x < w; x += stepX) {
+            const idxTop = x * 4;
+            const idxBot = ((h - 1) * w + x) * 4;
+            borderPixels.push([rawPixels[idxTop], rawPixels[idxTop+1], rawPixels[idxTop+2]]);
+            borderPixels.push([rawPixels[idxBot], rawPixels[idxBot+1], rawPixels[idxBot+2]]);
           }
-          window.handleVectorizeTileResult({ ok: true, index: tile.idx, svg: svgString });
-        }).catch(err => {
-          console.warn('Potrace trace error, using fallback:', err);
+          for (let y = 0; y < h; y += stepY) {
+            const idxLeft = (y * w) * 4;
+            const idxRight = (y * w + w - 1) * 4;
+            borderPixels.push([rawPixels[idxLeft], rawPixels[idxLeft+1], rawPixels[idxLeft+2]]);
+            borderPixels.push([rawPixels[idxRight], rawPixels[idxRight+1], rawPixels[idxRight+2]]);
+          }
+          if (borderPixels.length > 0) {
+            borderPixels.sort((a, b) => (a[0]+a[1]+a[2]) - (b[0]+b[1]+b[2]));
+            const mid = borderPixels[Math.floor(borderPixels.length / 2)];
+            bgR = mid[0]; bgG = mid[1]; bgB = mid[2];
+          }
+        } catch (e) {
+          console.warn('Border sampling notice:', e);
+        }
+
+        // 3. Create 36px padded canvas filled with measured background color
+        const pad = 36;
+        const totalW = w + pad * 2;
+        const totalH = h + pad * 2;
+
+        const cvs = document.createElement('canvas');
+        cvs.width = totalW;
+        cvs.height = totalH;
+        const ctx = cvs.getContext('2d');
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+
+        ctx.fillStyle = `rgb(${bgR}, ${bgG}, ${bgB})`;
+        ctx.fillRect(0, 0, totalW, totalH);
+        ctx.drawImage(img, pad, pad, w, h);
+
+        let paddedImgData = null;
+        try {
+          paddedImgData = ctx.getImageData(0, 0, totalW, totalH);
+        } catch (e) {
+          console.warn('Canvas getImageData notice:', e);
+        }
+
+        if (paddedImgData && window.Potrace && window.Potrace.traceImageData) {
+          const paddedPixels = paddedImgData.data;
+          const len = totalW * totalH;
+
+          // 4. Calculate perceptual ink distance with S-curve contrast gamma
+          let maxInk = 1;
+          const inkDistances = new Float32Array(len);
+          for (let i = 0; i < len; i++) {
+            const offset = i * 4;
+            const a = paddedPixels[offset + 3] / 255;
+            const r = paddedPixels[offset] * a + bgR * (1 - a);
+            const g = paddedPixels[offset + 1] * a + bgG * (1 - a);
+            const b = paddedPixels[offset + 2] * a + bgB * (1 - a);
+            const dr = r - bgR, dg = g - bgG, db = b - bgB;
+            const dist = Math.sqrt(0.299 * dr * dr + 0.587 * dg * dg + 0.114 * db * db);
+            inkDistances[i] = dist;
+            if (dist > maxInk) maxInk = dist;
+          }
+
+          // Apply S-curve gamma adjustment for crisp yet ultra-smooth stroke edge definition
+          const normData = new Uint8ClampedArray(len * 4);
+          for (let i = 0; i < len; i++) {
+            const inkRatio = Math.min(1, inkDistances[i] / maxInk);
+            const gammaInk = Math.pow(inkRatio, 0.85); // Crisp S-curve
+            const normInk = Math.min(255, Math.round(gammaInk * 255));
+            const val = 255 - normInk; // 0 = black stroke (icon lines), 255 = white bg
+            const idx = i * 4;
+            normData[idx] = val;
+            normData[idx + 1] = val;
+            normData[idx + 2] = val;
+            normData[idx + 3] = 255;
+          }
+
+          // 5. 2-Pass Gaussian Box Blur Edge Smoothing
+          const blurRadius = Math.max(0, Math.min(10, Math.round((Number(smoothing) || 0) * scale * 0.4)));
+          const finalNormData = blurRadius > 0 ? boxBlurUint8(normData, totalW, totalH, blurRadius) : normData;
+
+          const alphaMaxVal = Math.max(0, Math.min(1.334, ((corner || 133) / 180) * 1.334));
+          const optTolVal = Math.max(0.04, (simplify || 5.5) * 0.04);
+
+          window.Potrace.traceImageData({ width: totalW, height: totalH, data: finalNormData }, {
+            threshold: 128,
+            color: fillColor || '#344e41',
+            turdSize: Math.max(1, Math.round((speckle || 2) * scale * 0.8)),
+            alphaMax: alphaMaxVal,
+            optCurve: true,
+            optTolerance: optTolVal
+          }).then(svgString => {
+            // Crop viewBox to exact icon bounds `pad pad w h`
+            svgString = svgString.replace(/viewBox="0 0 \d+ \d+"/, `viewBox="${pad} ${pad} ${w} ${h}"`);
+            if (fillColor && !svgString.includes('fill=')) {
+              svgString = svgString.replace('<path ', `<path fill="${fillColor}" `);
+            }
+            window.handleVectorizeTileResult({ ok: true, index: tile.idx, svg: svgString });
+            resolve();
+          }).catch(err => {
+            console.warn('Potrace trace error, using fallback:', err);
+            const fallbackSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${origW} ${origH}" width="100%" height="100%"><rect width="${origW}" height="${origH}" fill="none"/><image href="${tile.dataUrl}" width="${origW}" height="${origH}"/></svg>`;
+            window.handleVectorizeTileResult({ ok: true, index: tile.idx, svg: fallbackSvg });
+            resolve();
+          });
+        } else {
           const fallbackSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${origW} ${origH}" width="100%" height="100%"><rect width="${origW}" height="${origH}" fill="none"/><image href="${tile.dataUrl}" width="${origW}" height="${origH}"/></svg>`;
           window.handleVectorizeTileResult({ ok: true, index: tile.idx, svg: fallbackSvg });
-        });
-      } else {
-        const fallbackSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${origW} ${origH}" width="100%" height="100%"><rect width="${origW}" height="${origH}" fill="none"/><image href="${tile.dataUrl}" width="${origW}" height="${origH}"/></svg>`;
+          resolve();
+        }
+      };
+
+      img.onerror = function() {
+        const fallbackSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="100%" height="100%"><image href="${tile.dataUrl}" width="128" height="128"/></svg>`;
         window.handleVectorizeTileResult({ ok: true, index: tile.idx, svg: fallbackSvg });
-      }
-    };
+        resolve();
+      };
 
-    img.onerror = function() {
-      const fallbackSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="100%" height="100%"><image href="${tile.dataUrl}" width="128" height="128"/></svg>`;
-      window.handleVectorizeTileResult({ ok: true, index: tile.idx, svg: fallbackSvg });
-    };
-
-    // Trigger immediate load
-    img.src = tile.dataUrl;
-    if (img.complete) {
-      img.onload();
-    }
+      img.src = tile.dataUrl;
+    });
   }
 
   // Callback handler for WebSocket results
