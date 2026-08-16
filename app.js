@@ -5260,6 +5260,47 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
   }
 
   // ===== Admin User Activity Tracker =====
+  window.trackUserMetric = function(metricKey) {
+    if (!firebaseAuth || !firebaseAuth.currentUser) return;
+    const user = firebaseAuth.currentUser;
+    if (!user || !user.uid) return;
+
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    const logs = getUserLogs();
+    const existingIndex = logs.findIndex(u => u.uid === user.uid || (u.email && user.email && u.email.toLowerCase() === user.email.toLowerCase()));
+    
+    if (existingIndex >= 0) {
+      if (!logs[existingIndex].metrics) logs[existingIndex].metrics = {};
+      if (!logs[existingIndex].metrics[metricKey]) {
+        logs[existingIndex].metrics[metricKey] = { total: 0, today: 0, lastDate: todayStr };
+      }
+      const m = logs[existingIndex].metrics[metricKey];
+      if (m.lastDate !== todayStr) {
+        m.today = 0;
+        m.lastDate = todayStr;
+      }
+      m.total = (m.total || 0) + 1;
+      m.today = (m.today || 0) + 1;
+      saveUserLogs(logs);
+    }
+
+    if (firebaseDb) {
+      try {
+        const userRef = firebaseDb.collection('users').doc(user.uid);
+        const updateData = {};
+        updateData[`metrics.${metricKey}.total`] = firebase.firestore.FieldValue.increment(1);
+        updateData[`metrics.${metricKey}.today`] = firebase.firestore.FieldValue.increment(1);
+        updateData[`metrics.${metricKey}.lastDate`] = todayStr;
+        updateData.lastActive = firebase.firestore.FieldValue.serverTimestamp();
+
+        userRef.set(updateData, { merge: true }).catch(err => console.warn('[Firestore Metric Track Error]:', err));
+      } catch (err) {
+        console.warn('[Firestore Metric Error]:', err);
+      }
+    }
+  };
+
   function getUserLogs() {
     try {
       return JSON.parse(localStorage.getItem('gravity_user_activity_logs') || '[]');
@@ -5308,7 +5349,6 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
 
     saveUserLogs(logs);
 
-    // Sync with Firebase Firestore DB if initialized
     if (firebaseDb) {
       try {
         const userRef = firebaseDb.collection('users').doc(user.uid);
@@ -5374,27 +5414,67 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
         }
 
         const providerBadge = (u.provider && u.provider.includes('google'))
-          ? '<span style="background: rgba(66,133,244,0.15); color: #4285f4; border: 1px solid rgba(66,133,244,0.3); padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 10px;">🌐 Google</span>'
-          : '<span style="background: rgba(92,98,236,0.15); color: #5c62ec; border: 1px solid rgba(92,98,236,0.3); padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 10px;">✉️ Email</span>';
+          ? '<span style="background: rgba(66,133,244,0.15); color: #4285f4; border: 1px solid rgba(66,133,244,0.3); padding: 2px 6px; border-radius: 6px; font-weight: 700; font-size: 10px;">🌐 Google</span>'
+          : '<span style="background: rgba(92,98,236,0.15); color: #5c62ec; border: 1px solid rgba(92,98,236,0.3); padding: 2px 6px; border-radius: 6px; font-weight: 700; font-size: 10px;">✉️ Email</span>';
 
         const statusBadge = isOnline
-          ? '<span style="background: rgba(205,252,82,0.15); color: #cdfc52; border: 1px solid rgba(205,252,82,0.3); padding: 2px 8px; border-radius: 6px; font-weight: 800; font-size: 10px; display: inline-flex; align-items: center; gap: 4px;"><span style="width:6px;height:6px;border-radius:50%;background:#cdfc52;"></span> Active Now</span>'
+          ? '<span style="background: rgba(163,230,53,0.15); color: #a3e635; border: 1px solid rgba(163,230,53,0.3); padding: 2px 8px; border-radius: 6px; font-weight: 800; font-size: 10px; display: inline-flex; align-items: center; gap: 4px;"><span style="width:6px;height:6px;border-radius:50%;background:#a3e635;"></span> Active Now</span>'
           : '<span style="background: rgba(255,255,255,0.06); color: var(--on-variant); border: 1px solid var(--outline-variant); padding: 2px 8px; border-radius: 6px; font-weight: 600; font-size: 10px;">⚪ Offline</span>';
+
+        // Extract usage metrics (Lifetime & Today)
+        const m = u.metrics || {};
+        const apiTotal = (m.apiKeys && m.apiKeys.total) || 0;
+        const apiBadge = apiTotal > 0
+          ? '<span style="background: rgba(251,191,36,0.15); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); padding: 2px 6px; border-radius: 6px; font-weight: 700; font-size: 10px;">🔑 Configured</span>'
+          : '<span style="background: rgba(255,255,255,0.05); color: var(--on-variant); border: 1px solid var(--outline-variant); padding: 2px 6px; border-radius: 6px; font-size: 10px;">No Key</span>';
+
+        const getMetricCounts = (key) => {
+          const item = m[key] || {};
+          const tot = item.total || 0;
+          const tod = (item.lastDate === todayStr) ? (item.today || 0) : 0;
+          return { tot, tod };
+        };
+
+        const iconSheets = getMetricCounts('iconSheets');
+        const prompts = getMetricCounts('prompts');
+        const flowImages = getMetricCounts('flowImages');
+        const presentations = getMetricCounts('presentations');
 
         return `
           <tr style="border-bottom: 1px solid var(--outline-variant); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
             <td style="padding: 12px 14px;">
               <div style="display: flex; align-items: center; gap: 10px;">
-                <img src="${u.photoURL || 'https://lh3.googleusercontent.com/a/default-user'}" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover; border: 1px solid var(--outline-variant);" />
+                <img src="${u.photoURL || 'https://lh3.googleusercontent.com/a/default-user'}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid var(--outline-variant);" />
                 <div>
-                  <div style="font-weight: 700; color: #ededf0;">${u.displayName || 'User'}</div>
-                  <div style="font-size: 10.5px; color: var(--on-variant); font-family: var(--mono);">${u.email}</div>
+                  <div style="font-weight: 700; color: #ededf0; display: flex; align-items: center; gap: 6px;">
+                    ${u.displayName || 'User'}
+                    ${providerBadge}
+                  </div>
+                  <div style="font-size: 10.5px; color: var(--on-variant); font-family: var(--mono); margin-top: 1px;">${u.email}</div>
                 </div>
               </div>
             </td>
-            <td style="padding: 12px 14px; color: var(--on-variant); font-size: 11px;">${firstDateStr}</td>
-            <td style="padding: 12px 14px; color: #ededf0; font-size: 11px; font-weight: 600;">${lastActiveStr}</td>
-            <td style="padding: 12px 14px;">${providerBadge}</td>
+            <td style="padding: 12px 14px;">
+              <div style="font-size: 11px; color: #ededf0; font-weight: 600;">Last: ${lastActiveStr}</div>
+              <div style="font-size: 10px; color: var(--on-variant); margin-top: 2px;">First: ${firstDateStr}</div>
+            </td>
+            <td style="padding: 12px 14px;">${apiBadge}</td>
+            <td style="padding: 12px 14px;">
+              <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px 12px; font-size: 10.5px;">
+                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); padding: 4px 8px; border-radius: 6px; color: #ededf0;">
+                  🎨 Icon Sheets: <strong style="color: #cdfc52;">${iconSheets.tot}</strong> <span style="color: var(--on-variant); font-size: 9.5px;">(Today: ${iconSheets.tod})</span>
+                </div>
+                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); padding: 4px 8px; border-radius: 6px; color: #ededf0;">
+                  💬 Prompts: <strong style="color: #fbbf24;">${prompts.tot}</strong> <span style="color: var(--on-variant); font-size: 9.5px;">(Today: ${prompts.tod})</span>
+                </div>
+                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); padding: 4px 8px; border-radius: 6px; color: #ededf0;">
+                  🖼️ Flow Images: <strong style="color: #818cf8;">${flowImages.tot}</strong> <span style="color: var(--on-variant); font-size: 9.5px;">(Today: ${flowImages.tod})</span>
+                </div>
+                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); padding: 4px 8px; border-radius: 6px; color: #ededf0;">
+                  📊 Presentations: <strong style="color: #38bdf8;">${presentations.tot}</strong> <span style="color: var(--on-variant); font-size: 9.5px;">(Today: ${presentations.tod})</span>
+                </div>
+              </div>
+            </td>
             <td style="padding: 12px 14px;">${statusBadge}</td>
           </tr>
         `;
