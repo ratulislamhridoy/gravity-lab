@@ -1313,7 +1313,7 @@ Do not include any markdown formatting outside the json codeblock. Output valid 
         promptResultBox.appendChild(progressDiv);
       }
       promptResultBox.insertBefore(nicheCard, progressDiv);
-      listContainers[i] = document.getElementById(`niche-list-${i}`);
+      listContainers[i] = nicheCard.querySelector('.bulk-prompt-list');
     }
 
     // Launch parallel requests for all niches and variations
@@ -1323,21 +1323,22 @@ Do not include any markdown formatting outside the json codeblock. Output valid 
 
       for (let j = 0; j < promptsPerNicheCount; j++) {
         const promise = (async () => {
-          let keyIndex = (i * promptsPerNicheCount + j) % apiKeys.length;
-          const seedInt = Math.floor(Math.random() * 1000000);
-          let topicsSubject = `- Icon set topics/subjects: ${niche}.`;
-          if (niche.startsWith("Reference Image") && uploadedPromptImages.length > 0) {
-            topicsSubject = `- Icon set topics/subjects: Visually analyze the main subjects/niche of the reference images and generate a list of related icons/terms for the grid cells.`;
-          }
+          try {
+            let keyIndex = (i * promptsPerNicheCount + j) % apiKeys.length;
+            const seedInt = Math.floor(Math.random() * 1000000);
+            let topicsSubject = `- Icon set topics/subjects: ${niche}.`;
+            if (niche.startsWith("Reference Image") && uploadedPromptImages.length > 0) {
+              topicsSubject = `- Icon set topics/subjects: Visually analyze the main subjects/niche of the reference images and generate a list of related icons/terms for the grid cells.`;
+            }
 
-          const textLabelSelect = document.getElementById('textLabelSelect');
-          const textLabelOpt = textLabelSelect ? textLabelSelect.value : 'none';
-          let textLabelInstruction = '- Strictly isolated icons ONLY with NO text, NO labels, NO typography underneath the icon cells.';
-          if (textLabelOpt === 'with-text') {
-            textLabelInstruction = '- Clear text label under each icon cell in clean typography.';
-          }
+            const textLabelSelect = document.getElementById('textLabelSelect');
+            const textLabelOpt = textLabelSelect ? textLabelSelect.value : 'none';
+            let textLabelInstruction = '- Strictly isolated icons ONLY with NO text, NO labels, NO typography underneath the icon cells.';
+            if (textLabelOpt === 'with-text') {
+              textLabelInstruction = '- Clear text label under each icon cell in clean typography.';
+            }
 
-          let systemInstruction = `You are a master AI art prompt engineer for Midjourney v6 and DALL-E 3. 
+            let systemInstruction = `You are a master AI art prompt engineer for Midjourney v6 and DALL-E 3. 
 Your task is to generate a single, rich, fluent, highly detailed, production-grade icon sheet master prompt for creating a vector icon grid.
 DO NOT use mechanical numbered lists (no "1. 2. 3."). Instead, write an elegant, expressive, natural prose prompt.
 
@@ -1354,127 +1355,137 @@ Requirements:
 
 Output ONLY the final production AI prompt string ready to copy-paste. Do not include any chat formatting or quotes.`;
 
-          let attempt = 0;
-          let success = false;
-          let generatedText = '';
-          const maxAttempts = Math.max(3, apiKeys.length * 2);
+            let attempt = 0;
+            let success = false;
+            let generatedText = '';
+            const maxAttempts = Math.max(3, apiKeys.length * 2);
 
-          while (attempt < maxAttempts && !success) {
-            const currentKey = apiKeys[keyIndex];
-            try {
-              const contents = [];
-              let localizedPrompt = systemInstruction;
+            while (attempt < maxAttempts && !success) {
+              const currentKey = apiKeys[keyIndex];
+              try {
+                const contents = [];
+                let localizedPrompt = systemInstruction;
 
-              if (uploadedPromptImages.length > 0) {
-                const targetImages = (isImageNiches && uploadedPromptImages.length > 1) ? [uploadedPromptImages[i]] : uploadedPromptImages;
-                localizedPrompt += `\n\nCRITICAL VISUAL SPECIFICATION: You must visually analyze the attached ${targetImages.length} reference style image(s). 
+                if (uploadedPromptImages.length > 0) {
+                  const targetImages = (isImageNiches && uploadedPromptImages.length > 1) ? [uploadedPromptImages[i]] : uploadedPromptImages;
+                  localizedPrompt += `\n\nCRITICAL VISUAL SPECIFICATION: You must visually analyze the attached ${targetImages.length} reference style image(s). 
 Identify their outline/fill styles, icon densities, level of details, stroke widths, shape conventions, and general layout aesthetics. 
 Synthesize these visual properties and stylistic DNA into your generated prompt string so that a new AI image generation from it produces icons with a matching style.`;
 
-                const parts = [{ text: localizedPrompt }];
-                targetImages.forEach(img => {
-                  parts.push({
-                    inlineData: {
-                      mimeType: img.mimeType,
-                      data: img.data
-                    }
+                  const parts = [{ text: localizedPrompt }];
+                  targetImages.forEach(img => {
+                    parts.push({
+                      inlineData: {
+                        mimeType: img.mimeType,
+                        data: img.data
+                      }
+                    });
                   });
-                });
-                contents.push({ parts });
-              } else {
-                contents.push({
-                  parts: [
-                    { text: localizedPrompt }
-                  ]
-                });
-              }
+                  contents.push({ parts });
+                } else {
+                  contents.push({
+                    parts: [
+                      { text: localizedPrompt }
+                    ]
+                  });
+                }
 
-              const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${currentKey}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contents })
-              });
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${currentKey}`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ contents })
+                });
 
-              const data = await response.json();
-              if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0].text) {
-                generatedText = data.candidates[0].content.parts[0].text.replace(/[\r\n\t]+/g, ' ').replace(/\s+/g, ' ').trim();
-                success = true;
-              } else if (data.error) {
-                console.warn(`Key #${keyIndex + 1} Error (${data.error.code || ''}): ${data.error.message}`);
-                generatedText = `Error from Gemini API (Key #${keyIndex + 1}): ${data.error.message}`;
+                const data = await response.json();
+                if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0].text) {
+                  generatedText = data.candidates[0].content.parts[0].text.replace(/[\r\n\t]+/g, ' ').replace(/\s+/g, ' ').trim();
+                  success = true;
+                  if (typeof window.trackUserMetric === 'function') {
+                    window.trackUserMetric('prompts');
+                  }
+                } else if (data.error) {
+                  console.warn(`Key #${keyIndex + 1} Error (${data.error.code || ''}): ${data.error.message}`);
+                  generatedText = `Error from Gemini API (Key #${keyIndex + 1}): ${data.error.message}`;
+                  keyIndex = (keyIndex + 1) % apiKeys.length;
+                  attempt++;
+                  await new Promise(r => setTimeout(r, 500));
+                } else {
+                  generatedText = `Unknown API Error.`;
+                  keyIndex = (keyIndex + 1) % apiKeys.length;
+                  attempt++;
+                  await new Promise(r => setTimeout(r, 500));
+                }
+              } catch (err) {
+                console.warn(`Network Error on Key #${keyIndex + 1}: ${err.message}`);
+                generatedText = `Network Error: ${err.message}`;
                 keyIndex = (keyIndex + 1) % apiKeys.length;
                 attempt++;
                 await new Promise(r => setTimeout(r, 500));
-              } else {
-                generatedText = `Unknown API Error.`;
-                keyIndex = (keyIndex + 1) % apiKeys.length;
-                attempt++;
-                await new Promise(r => setTimeout(r, 500));
               }
-            } catch (err) {
-              console.warn(`Network Error on Key #${keyIndex + 1}: ${err.message}`);
-              generatedText = `Network Error: ${err.message}`;
-              keyIndex = (keyIndex + 1) % apiKeys.length;
-              attempt++;
-              await new Promise(r => setTimeout(r, 500));
+            }
+
+            // Save result object
+            promptResults.push({ niche, variation: j + 1, promptText: generatedText });
+
+            // Build individual variation item
+            const promptItem = document.createElement('div');
+            promptItem.className = 'bulk-prompt-item';
+            promptItem.innerHTML = `
+              <div class="bulk-prompt-header" style="display: flex; justify-content: flex-end;">
+                <div style="display: flex; gap: 6px;">
+                  <button class="btn btn-dark small send-flow-btn" style="padding: 2px 8px; font-size: 11px;">☁️ Flow</button>
+                  <button class="btn btn-dark small copy-bulk-btn" style="padding: 2px 8px; font-size: 11px;">📋 Copy</button>
+                  <button class="btn btn-dark small delete-prompt-btn" style="padding: 2px 8px; font-size: 11px; color: #ff4d4f; border-color: rgba(255, 77, 79, 0.3);" title="Delete this prompt">🗑️ Delete</button>
+                </div>
+              </div>
+              <pre class="bulk-prompt-text">${generatedText}</pre>
+            `;
+
+            promptItem.querySelector('.copy-bulk-btn').addEventListener('click', () => {
+              navigator.clipboard.writeText(generatedText);
+              alert('Prompt variation copied to clipboard!');
+            });
+
+            promptItem.querySelector('.send-flow-btn').addEventListener('click', () => {
+              launchTool3(generatedText);
+            });
+
+            promptItem.querySelector('.delete-prompt-btn').addEventListener('click', () => {
+              promptItem.remove();
+
+              const targetIndex = promptResults.findIndex(p => p.niche === niche && p.variation === (j + 1) && p.promptText === generatedText);
+              if (targetIndex !== -1) {
+                promptResults.splice(targetIndex, 1);
+              }
+
+              promptResultBox.dataset.generatedPrompts = JSON.stringify(promptResults);
+
+              if (listContainer && listContainer.children.length === 0) {
+                const nicheCard = listContainer.closest('.bulk-niche-card');
+                if (nicheCard) nicheCard.remove();
+              }
+
+              if (promptResults.length === 0) {
+                if (bulkActions) bulkActions.style.display = 'none';
+                promptResultBox.innerHTML = `
+                  <div style="text-align: center; padding: 40px; color: rgba(255,255,255,0.4);">
+                    <p style="font-size: 16px;">All generated prompts deleted.</p>
+                  </div>
+                `;
+              }
+            });
+
+            if (listContainer) {
+              listContainer.appendChild(promptItem);
+            }
+          } catch (execErr) {
+            console.error('Prompt Generation Error:', execErr);
+          } finally {
+            completedCount++;
+            if (progressDiv) {
+              progressDiv.innerHTML = `⚡ Parallel Generating: Completed ${completedCount}/${totalRequests} prompts...`;
             }
           }
-
-          // Save result object
-          promptResults.push({ niche, variation: j + 1, promptText: generatedText });
-
-          // Build individual variation item
-          const promptItem = document.createElement('div');
-          promptItem.className = 'bulk-prompt-item';
-          promptItem.innerHTML = `
-            <div class="bulk-prompt-header" style="display: flex; justify-content: flex-end;">
-              <div style="display: flex; gap: 6px;">
-                <button class="btn btn-dark small send-flow-btn" style="padding: 2px 8px; font-size: 11px;">☁️ Flow</button>
-                <button class="btn btn-dark small copy-bulk-btn" style="padding: 2px 8px; font-size: 11px;">📋 Copy</button>
-                <button class="btn btn-dark small delete-prompt-btn" style="padding: 2px 8px; font-size: 11px; color: #ff4d4f; border-color: rgba(255, 77, 79, 0.3);" title="Delete this prompt">🗑️ Delete</button>
-              </div>
-            </div>
-            <pre class="bulk-prompt-text">${generatedText}</pre>
-          `;
-
-          promptItem.querySelector('.copy-bulk-btn').addEventListener('click', () => {
-            navigator.clipboard.writeText(generatedText);
-            alert('Prompt variation copied to clipboard!');
-          });
-
-          promptItem.querySelector('.send-flow-btn').addEventListener('click', () => {
-            launchTool3(generatedText);
-          });
-
-          promptItem.querySelector('.delete-prompt-btn').addEventListener('click', () => {
-            promptItem.remove();
-
-            const targetIndex = promptResults.findIndex(p => p.niche === niche && p.variation === (j + 1) && p.promptText === generatedText);
-            if (targetIndex !== -1) {
-              promptResults.splice(targetIndex, 1);
-            }
-
-            promptResultBox.dataset.generatedPrompts = JSON.stringify(promptResults);
-
-            if (listContainer && listContainer.children.length === 0) {
-              const nicheCard = listContainer.closest('.bulk-niche-card');
-              if (nicheCard) nicheCard.remove();
-            }
-
-            if (promptResults.length === 0) {
-              if (bulkActions) bulkActions.style.display = 'none';
-              promptResultBox.innerHTML = `
-                <div style="text-align: center; padding: 40px; color: rgba(255,255,255,0.4);">
-                  <p style="font-size: 16px;">All generated prompts deleted.</p>
-                </div>
-              `;
-            }
-          });
-
-          listContainer.appendChild(promptItem);
-
-          completedCount++;
-          progressDiv.innerHTML = `⚡ Parallel Generating: Completed ${completedCount}/${totalRequests} prompts...`;
         })();
 
         promises.push(promise);
@@ -1483,7 +1494,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
 
     await Promise.all(promises);
 
-    progressDiv.remove();
+    if (progressDiv) progressDiv.remove();
     generatePromptBtn.disabled = false;
     if (bulkActions) bulkActions.style.display = 'flex';
     promptResultBox.dataset.generatedPrompts = JSON.stringify(promptResults);
