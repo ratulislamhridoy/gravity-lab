@@ -5298,6 +5298,9 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     const logs = getUserLogs();
     const existingIndex = logs.findIndex(u => u.uid === user.uid || (u.email && user.email && u.email.toLowerCase() === user.email.toLowerCase()));
     
+    // Determine the value to set/increment
+    const apiKeysCount = (metricKey === 'apiKeys') ? getApiKeys().length : 0;
+
     if (existingIndex >= 0) {
       if (!logs[existingIndex].metrics) logs[existingIndex].metrics = {};
       if (!logs[existingIndex].metrics[metricKey]) {
@@ -5308,8 +5311,13 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
         m.today = 0;
         m.lastDate = todayStr;
       }
-      m.total = (m.total || 0) + 1;
-      m.today = (m.today || 0) + 1;
+      if (metricKey === 'apiKeys') {
+        m.total = apiKeysCount;
+        m.today = apiKeysCount;
+      } else {
+        m.total = (m.total || 0) + 1;
+        m.today = (m.today || 0) + 1;
+      }
       saveUserLogs(logs);
 
       // Sync metric update to MongoDB backend
@@ -5351,9 +5359,15 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
           }, { merge: true });
 
           const updateData = {};
-          updateData[`metrics.${metricKey}.total`] = firebase.firestore.FieldValue.increment(1);
-          updateData[`metrics.${metricKey}.today`] = firebase.firestore.FieldValue.increment(1);
-          updateData[`metrics.${metricKey}.lastDate`] = todayStr;
+          if (metricKey === 'apiKeys') {
+            updateData[`metrics.apiKeys.total`] = apiKeysCount;
+            updateData[`metrics.apiKeys.today`] = apiKeysCount;
+            updateData[`metrics.apiKeys.lastDate`] = todayStr;
+          } else {
+            updateData[`metrics.${metricKey}.total`] = firebase.firestore.FieldValue.increment(1);
+            updateData[`metrics.${metricKey}.today`] = firebase.firestore.FieldValue.increment(1);
+            updateData[`metrics.${metricKey}.lastDate`] = todayStr;
+          }
           await userRef.update(updateData);
         } catch (err) {
           console.warn('[Firestore Metric Error]:', err);
@@ -5388,9 +5402,8 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       ? user.providerData[0].providerId 
       : (user.email ? 'google.com' : 'password');
 
-    // Scan real local API keys count
-    const keys = (localStorage.getItem('gravity_gemini_keys') || '').split('\n').filter(k => k.trim().length > 5);
-    const apiKeysCount = keys.length;
+    // Scan real local API keys count using getApiKeys helper
+    const apiKeysCount = getApiKeys().length;
 
     const userData = {
       uid: user.uid,
