@@ -4,7 +4,13 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
-    { "source": "/(promptgen|flowgen|slicer|vectorizer|Vectorizer|bannergen|dashboard)", "destination": "/index.html" }
+    { "source": "/dashboard", "destination": "/index.html" },
+    { "source": "/promptgen", "destination": "/index.html" },
+    { "source": "/flowgen", "destination": "/index.html" },
+    { "source": "/slicer", "destination": "/index.html" },
+    { "source": "/vectorizer", "destination": "/index.html" },
+    { "source": "/Vectorizer", "destination": "/index.html" },
+    { "source": "/bannergen", "destination": "/index.html" }
   ],
   "headers": [
     {
