@@ -5370,12 +5370,22 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
 
     saveUserLogs(logs);
 
+    // Sync to MongoDB Backend Storage
+    try {
+      fetch('/api/users/track', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userData)
+      }).catch(err => console.warn('[MongoDB Track Fetch Error]:', err));
+    } catch (e) {}
+
     if (firebaseDb) {
       try {
         const userRef = firebaseDb.collection('users').doc(user.uid);
         userRef.get().then((doc) => {
           if (doc.exists) {
             userRef.set({
+              uid: user.uid,
               email: user.email,
               displayName: userData.displayName,
               photoURL: userData.photoURL,
@@ -5526,6 +5536,16 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
         tbody.innerHTML = formattedRows;
       }
     }
+
+    // Fetch from MongoDB backend API
+    fetch('/api/users/list')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.ok && Array.isArray(data.users) && data.users.length > 0) {
+          renderList(data.users);
+          saveUserLogs(data.users);
+        }
+      }).catch(err => console.warn('[MongoDB List Fetch Error]:', err));
 
     // Try listening to Firestore Database real-time snapshot
     if (firebaseDb) {
