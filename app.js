@@ -5667,7 +5667,20 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       }
 
       const mergedList = Array.from(userMap.values());
-      console.log('[Admin Logs Sync Debug] Version v8.1.0 loaded successfully!');
+      
+      // Sort: Current logged-in user first, then by most recently active descending
+      mergedList.sort((a, b) => {
+        const isCurrA = curr && (a.uid === curr.uid || (a.email && curr.email && a.email.toLowerCase() === curr.email.toLowerCase()));
+        const isCurrB = curr && (b.uid === curr.uid || (b.email && curr.email && b.email.toLowerCase() === curr.email.toLowerCase()));
+        if (isCurrA && !isCurrB) return -1;
+        if (!isCurrA && isCurrB) return 1;
+        
+        const dateA = new Date(a.lastActive || 0);
+        const dateB = new Date(b.lastActive || 0);
+        return dateB - dateA;
+      });
+
+      console.log('[Admin Logs Sync Debug] Version v8.2.0 loaded successfully!');
       console.log('[Admin Logs Sync Debug] Sources metadata:', {
         firestoreCount: latestSources.firestore ? latestSources.firestore.length : 0,
         mongoCount: latestSources.mongo ? latestSources.mongo.length : 0,
