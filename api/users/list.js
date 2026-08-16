@@ -12,14 +12,14 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const { db, useRealMongo } = await connectToDatabase();
+    const { db, useRealMongo, error } = await connectToDatabase();
 
     if (useRealMongo && db) {
       const users = await db.collection('users').find().toArray();
-      res.status(200).json({ ok: true, count: users.length, users });
+      res.status(200).json({ ok: true, count: users.length, users, useRealMongo: true });
     } else {
       const users = loadMongoUsersLocal();
-      res.status(200).json({ ok: true, count: users.length, users });
+      res.status(200).json({ ok: true, count: users.length, users, useRealMongo: false, mongoError: error });
     }
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });

@@ -15,6 +15,8 @@ try {
   console.log('[MongoDB Driver Note]: mongodb package not installed.');
 }
 
+let lastMongoError = null;
+
 async function connectToDatabase() {
   if (cachedDb) {
     return { db: cachedDb, useRealMongo: true };
@@ -25,19 +27,21 @@ async function connectToDatabase() {
       const client = new MongoClientObj(MONGODB_ATLAS_URI, {
         useNewUrlParser: true,
         useUnifiedTopology: true,
-        serverSelectionTimeoutMS: 5000
+        serverSelectionTimeoutMS: 3000
       });
       await client.connect();
       const db = client.db('gravity_ai');
       cachedDb = db;
       useRealMongo = true;
+      lastMongoError = null;
       return { db: db, useRealMongo: true };
     } catch (err) {
+      lastMongoError = err.message;
       console.error('[MongoDB Atlas Connection Failed]:', err.message);
     }
   }
 
-  return { db: null, useRealMongo: false };
+  return { db: null, useRealMongo: false, error: lastMongoError || 'No driver' };
 }
 
 function loadMongoUsersLocal() {
