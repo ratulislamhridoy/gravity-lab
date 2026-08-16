@@ -3,14 +3,9 @@
   "name": "gravity-lab-studio",
   "cleanUrls": true,
   "trailingSlash": false,
-  "rewrites": [
-    { "source": "/dashboard", "destination": "/index.html" },
-    { "source": "/promptgen", "destination": "/index.html" },
-    { "source": "/flowgen", "destination": "/index.html" },
-    { "source": "/slicer", "destination": "/index.html" },
-    { "source": "/vectorizer", "destination": "/index.html" },
-    { "source": "/Vectorizer", "destination": "/index.html" },
-    { "source": "/bannergen", "destination": "/index.html" }
+  "routes": [
+    { "src": "/(promptgen|flowgen|slicer|vectorizer|Vectorizer|bannergen|dashboard)", "dest": "/index.html" },
+    { "src": "/(.*)", "dest": "/$1" }
   ],
   "headers": [
     {
