@@ -5118,6 +5118,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
 
   // Initialize Firebase App if configured
   let firebaseAuth = null;
+  let firebaseDb = null;
   if (window.firebase) {
     try {
       if (!firebase.apps.length) {
@@ -5136,6 +5137,9 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
         firebase.initializeApp(firebaseConfig);
       }
       firebaseAuth = firebase.auth();
+      if (firebase.firestore) {
+        firebaseDb = firebase.firestore();
+      }
       
       firebaseAuth.onAuthStateChanged((user) => {
         if (user) {
@@ -5281,29 +5285,65 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       ? user.providerData[0].providerId 
       : (user.email ? 'google.com' : 'password');
 
+    const userData = {
+      uid: user.uid,
+      email: user.email,
+      displayName: user.displayName || userEmail.split('@')[0],
+      photoURL: user.photoURL || 'https://lh3.googleusercontent.com/a/default-user',
+      lastActive: now,
+      provider: providerId,
+      status: 'active'
+    };
+
     if (existingIndex >= 0) {
       logs[existingIndex].lastActive = now;
-      logs[existingIndex].displayName = user.displayName || logs[existingIndex].displayName || userEmail.split('@')[0];
-      logs[existingIndex].photoURL = user.photoURL || logs[existingIndex].photoURL || 'https://lh3.googleusercontent.com/a/default-user';
+      logs[existingIndex].displayName = userData.displayName;
+      logs[existingIndex].photoURL = userData.photoURL;
       logs[existingIndex].status = 'active';
       logs[existingIndex].provider = providerId;
     } else {
-      logs.unshift({
-        email: user.email,
-        displayName: user.displayName || userEmail.split('@')[0],
-        photoURL: user.photoURL || 'https://lh3.googleusercontent.com/a/default-user',
-        firstLogin: now,
-        lastActive: now,
-        provider: providerId,
-        status: 'active'
-      });
+      userData.firstLogin = now;
+      logs.unshift(userData);
     }
 
     saveUserLogs(logs);
+
+    // Sync with Firebase Firestore DB if initialized
+    if (firebaseDb) {
+      try {
+        const userRef = firebaseDb.collection('users').doc(user.uid);
+        userRef.get().then((doc) => {
+          if (doc.exists) {
+            userRef.set({
+              email: user.email,
+              displayName: userData.displayName,
+              photoURL: userData.photoURL,
+              lastActive: firebase.firestore.FieldValue.serverTimestamp(),
+              provider: providerId,
+              status: 'active'
+            }, { merge: true });
+          } else {
+            userRef.set({
+              uid: user.uid,
+              email: user.email,
+              displayName: userData.displayName,
+              photoURL: userData.photoURL,
+              firstLogin: firebase.firestore.FieldValue.serverTimestamp(),
+              lastActive: firebase.firestore.FieldValue.serverTimestamp(),
+              provider: providerId,
+              status: 'active'
+            });
+          }
+        }).catch(err => console.warn('[Firestore Write Error]:', err));
+      } catch (e) {
+        console.warn('[Firestore Track Error]:', e);
+      }
+    }
   }
 
+  let firestoreUnsubscribe = null;
+
   function renderAdminUserLogs() {
-    const logs = getUserLogs();
     const tbody = document.getElementById('adminUserLogsTableBody');
     const statTotalUsers = document.getElementById('statTotalUsers');
     const statActiveUsers = document.getElementById('statActiveUsers');
@@ -5311,64 +5351,99 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
 
     if (!tbody) return;
 
-    // Calculate Today's date string YYYY-MM-DD
-    const todayStr = new Date().toISOString().split('T')[0];
-    let activeCount = 0;
-    let todayCount = 0;
+    function renderList(userList) {
+      const todayStr = new Date().toISOString().split('T')[0];
+      let activeCount = 0;
+      let todayCount = 0;
 
-    const formattedRows = logs.map(u => {
-      const isOnline = u.status === 'active';
-      if (isOnline) activeCount++;
+      const formattedRows = userList.map(u => {
+        const isOnline = u.status === 'active';
+        if (isOnline) activeCount++;
 
-      if (u.lastActive && u.lastActive.startsWith(todayStr)) {
-        todayCount++;
-      }
+        let firstDateStr = 'N/A';
+        if (u.firstLogin) {
+          const dt = u.firstLogin.toDate ? u.firstLogin.toDate() : new Date(u.firstLogin);
+          firstDateStr = dt.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        }
 
-      const firstDateStr = u.firstLogin ? new Date(u.firstLogin).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A';
-      const lastActiveStr = u.lastActive ? new Date(u.lastActive).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A';
+        let lastActiveStr = 'N/A';
+        if (u.lastActive) {
+          const dt = u.lastActive.toDate ? u.lastActive.toDate() : new Date(u.lastActive);
+          lastActiveStr = dt.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+          if (dt.toISOString().startsWith(todayStr)) todayCount++;
+        }
 
-      const providerBadge = (u.provider && u.provider.includes('google'))
-        ? '<span style="background: rgba(66,133,244,0.15); color: #4285f4; border: 1px solid rgba(66,133,244,0.3); padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 10px;">🌐 Google</span>'
-        : '<span style="background: rgba(92,98,236,0.15); color: #5c62ec; border: 1px solid rgba(92,98,236,0.3); padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 10px;">✉️ Email</span>';
+        const providerBadge = (u.provider && u.provider.includes('google'))
+          ? '<span style="background: rgba(66,133,244,0.15); color: #4285f4; border: 1px solid rgba(66,133,244,0.3); padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 10px;">🌐 Google</span>'
+          : '<span style="background: rgba(92,98,236,0.15); color: #5c62ec; border: 1px solid rgba(92,98,236,0.3); padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 10px;">✉️ Email</span>';
 
-      const statusBadge = isOnline
-        ? '<span style="background: rgba(205,252,82,0.15); color: #cdfc52; border: 1px solid rgba(205,252,82,0.3); padding: 2px 8px; border-radius: 6px; font-weight: 800; font-size: 10px; display: inline-flex; align-items: center; gap: 4px;"><span style="width:6px;height:6px;border-radius:50%;background:#cdfc52;"></span> Active Now</span>'
-        : '<span style="background: rgba(255,255,255,0.06); color: var(--on-variant); border: 1px solid var(--outline-variant); padding: 2px 8px; border-radius: 6px; font-weight: 600; font-size: 10px;">⚪ Offline</span>';
+        const statusBadge = isOnline
+          ? '<span style="background: rgba(205,252,82,0.15); color: #cdfc52; border: 1px solid rgba(205,252,82,0.3); padding: 2px 8px; border-radius: 6px; font-weight: 800; font-size: 10px; display: inline-flex; align-items: center; gap: 4px;"><span style="width:6px;height:6px;border-radius:50%;background:#cdfc52;"></span> Active Now</span>'
+          : '<span style="background: rgba(255,255,255,0.06); color: var(--on-variant); border: 1px solid var(--outline-variant); padding: 2px 8px; border-radius: 6px; font-weight: 600; font-size: 10px;">⚪ Offline</span>';
 
-      return `
-        <tr style="border-bottom: 1px solid var(--outline-variant); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
-          <td style="padding: 12px 14px;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-              <img src="${u.photoURL}" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover; border: 1px solid var(--outline-variant);" />
-              <div>
-                <div style="font-weight: 700; color: #ededf0;">${u.displayName || 'User'}</div>
-                <div style="font-size: 10.5px; color: var(--on-variant); font-family: var(--mono);">${u.email}</div>
+        return `
+          <tr style="border-bottom: 1px solid var(--outline-variant); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
+            <td style="padding: 12px 14px;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <img src="${u.photoURL || 'https://lh3.googleusercontent.com/a/default-user'}" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover; border: 1px solid var(--outline-variant);" />
+                <div>
+                  <div style="font-weight: 700; color: #ededf0;">${u.displayName || 'User'}</div>
+                  <div style="font-size: 10.5px; color: var(--on-variant); font-family: var(--mono);">${u.email}</div>
+                </div>
               </div>
-            </div>
-          </td>
-          <td style="padding: 12px 14px; color: var(--on-variant); font-size: 11px;">${firstDateStr}</td>
-          <td style="padding: 12px 14px; color: #ededf0; font-size: 11px; font-weight: 600;">${lastActiveStr}</td>
-          <td style="padding: 12px 14px;">${providerBadge}</td>
-          <td style="padding: 12px 14px;">${statusBadge}</td>
-        </tr>
-      `;
-    }).join('');
+            </td>
+            <td style="padding: 12px 14px; color: var(--on-variant); font-size: 11px;">${firstDateStr}</td>
+            <td style="padding: 12px 14px; color: #ededf0; font-size: 11px; font-weight: 600;">${lastActiveStr}</td>
+            <td style="padding: 12px 14px;">${providerBadge}</td>
+            <td style="padding: 12px 14px;">${statusBadge}</td>
+          </tr>
+        `;
+      }).join('');
 
-    if (statTotalUsers) statTotalUsers.textContent = logs.length;
-    if (statActiveUsers) statActiveUsers.textContent = activeCount;
-    if (statLoginsToday) statLoginsToday.textContent = todayCount;
+      if (statTotalUsers) statTotalUsers.textContent = userList.length;
+      if (statActiveUsers) statActiveUsers.textContent = activeCount;
+      if (statLoginsToday) statLoginsToday.textContent = todayCount;
 
-    if (logs.length === 0) {
-      tbody.innerHTML = `
-        <tr>
-          <td colspan="5" style="padding: 24px; text-align: center; color: var(--on-variant); font-size: 12px;">
-            No user sign-in logs captured yet.
-          </td>
-        </tr>
-      `;
-    } else {
-      tbody.innerHTML = formattedRows;
+      if (userList.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" style="padding: 24px; text-align: center; color: var(--on-variant); font-size: 12px;">
+              No user sign-in logs captured yet.
+            </td>
+          </tr>
+        `;
+      } else {
+        tbody.innerHTML = formattedRows;
+      }
     }
+
+    // Try listening to Firestore Database real-time snapshot
+    if (firebaseDb) {
+      if (firestoreUnsubscribe) firestoreUnsubscribe();
+      try {
+        firestoreUnsubscribe = firebaseDb.collection('users').onSnapshot((snapshot) => {
+          const firestoreUsers = [];
+          snapshot.forEach(doc => {
+            firestoreUsers.push(doc.data());
+          });
+          if (firestoreUsers.length > 0) {
+            renderList(firestoreUsers);
+            saveUserLogs(firestoreUsers);
+          } else {
+            renderList(getUserLogs());
+          }
+        }, (err) => {
+          console.warn('[Firestore Listen Error]:', err);
+          renderList(getUserLogs());
+        });
+        return;
+      } catch (e) {
+        console.warn('[Firestore DB Error]:', e);
+      }
+    }
+
+    // Fallback to localStorage if Firestore is unavailable
+    renderList(getUserLogs());
   }
 
   // Update onAuthStateChanged handler
