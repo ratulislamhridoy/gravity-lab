@@ -5801,6 +5801,44 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
   }
 
   const btnRefreshAdminUserLogs = document.getElementById('btnRefreshAdminUserLogs');
+  const btnAddTestUser = document.getElementById('btnAddTestUser');
+
+  if (btnAddTestUser) {
+    btnAddTestUser.addEventListener('click', async () => {
+      if (!firebaseDb) {
+        if (window.showCustomToast) window.showCustomToast('Firestore DB not initialized', 'warning');
+        return;
+      }
+      const randomId = Math.floor(1000 + Math.random() * 9000);
+      const testUid = 'user_test_' + randomId;
+      const names = ['Arafat Hossain', 'Tanvir Ahmed', 'Nusrat Jahan', 'Sabbir Rahman', 'Fahim Shahriar'];
+      const randomName = names[Math.floor(Math.random() * names.length)] + ' #' + randomId;
+      const testEmail = 'user' + randomId + '@gravitylab.ai';
+      
+      try {
+        await firebaseDb.collection('users').doc(testUid).set({
+          uid: testUid,
+          email: testEmail,
+          displayName: randomName,
+          photoURL: `https://api.dicebear.com/7.x/avataaars/svg?seed=${randomId}`,
+          firstLogin: firebase.firestore.FieldValue.serverTimestamp(),
+          lastActive: firebase.firestore.FieldValue.serverTimestamp(),
+          provider: 'google.com',
+          status: 'active',
+          metrics: {
+            iconSheets: { total: Math.floor(Math.random() * 10), today: Math.floor(Math.random() * 3) },
+            prompts: { total: Math.floor(Math.random() * 20), today: Math.floor(Math.random() * 5) },
+            flowImages: { total: Math.floor(Math.random() * 8), today: Math.floor(Math.random() * 2) },
+            presentations: { total: Math.floor(Math.random() * 5), today: Math.floor(Math.random() * 1) }
+          }
+        });
+        if (window.showCustomToast) window.showCustomToast(`Test user ${randomName} added to Firestore!`, 'success');
+      } catch (err) {
+        console.error('Error adding test user:', err);
+        if (window.showCustomToast) window.showCustomToast('Failed to add test user: ' + err.message, 'error');
+      }
+    });
+  }
 
   if (btnRefreshAdminUserLogs) {
     btnRefreshAdminUserLogs.addEventListener('click', () => {
