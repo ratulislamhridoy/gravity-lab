@@ -5226,18 +5226,122 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     });
   }
 
-  if (btnSignOut) {
-    btnSignOut.addEventListener('click', async () => {
-      if (firebaseAuth) {
-        try {
-          await firebaseAuth.signOut();
-        } catch (err) {
-          console.error('Sign Out Error:', err);
+  // ===== Admin Panel & PIN Security Controller =====
+  const ADMIN_EMAIL = 'mdratulislamhridoy@gmail.com';
+  const ADMIN_PIN = '6342';
+
+  const adminNavBtn = document.getElementById('adminNavBtn');
+  const adminPinModal = document.getElementById('adminPinModal');
+  const adminPinForm = document.getElementById('adminPinForm');
+  const adminPinInput = document.getElementById('adminPinInput');
+  const btnCancelAdminPin = document.getElementById('btnCancelAdminPin');
+  const adminPanelView = document.getElementById('adminPanelView');
+  const btnExitAdminPanel = document.getElementById('btnExitAdminPanel');
+
+  const btnAdminClearCache = document.getElementById('btnAdminClearCache');
+  const btnAdminResetState = document.getElementById('btnAdminResetState');
+  const btnAdminExportLogs = document.getElementById('btnAdminExportLogs');
+
+  function checkAdminAccess(user) {
+    if (user && user.email && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+      if (adminNavBtn) adminNavBtn.classList.remove('hidden');
+    } else {
+      if (adminNavBtn) adminNavBtn.classList.add('hidden');
+      if (adminPanelView && !adminPanelView.classList.contains('hidden')) {
+        const dashNav = document.querySelector('.nav-item[data-nav="dashboard"]');
+        if (dashNav) dashNav.click();
+      }
+    }
+  }
+
+  // Update onAuthStateChanged handler
+  if (window.firebase && firebaseAuth) {
+    firebaseAuth.onAuthStateChanged((user) => {
+      if (user) {
+        if (btnOpenAuthModal) btnOpenAuthModal.classList.add('hidden');
+        if (userProfileMenu) userProfileMenu.classList.remove('hidden');
+        if (userName) userName.textContent = user.displayName || (user.email ? user.email.split('@')[0] : 'User');
+        if (userAvatar) userAvatar.src = user.photoURL || 'https://lh3.googleusercontent.com/a/default-user';
+        closeAuthModal();
+      } else {
+        if (btnOpenAuthModal) btnOpenAuthModal.classList.remove('hidden');
+        if (userProfileMenu) userProfileMenu.classList.add('hidden');
+      }
+      checkAdminAccess(user);
+    });
+  }
+
+  if (adminNavBtn) {
+    adminNavBtn.addEventListener('click', () => {
+      if (adminPinModal) {
+        if (adminPinInput) adminPinInput.value = '';
+        adminPinModal.classList.remove('hidden');
+        setTimeout(() => { if (adminPinInput) adminPinInput.focus(); }, 100);
+      }
+    });
+  }
+
+  if (btnCancelAdminPin) {
+    btnCancelAdminPin.addEventListener('click', () => {
+      if (adminPinModal) adminPinModal.classList.add('hidden');
+    });
+  }
+
+  if (adminPinForm) {
+    adminPinForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const enteredPin = adminPinInput ? adminPinInput.value.trim() : '';
+      if (enteredPin === ADMIN_PIN) {
+        if (adminPinModal) adminPinModal.classList.add('hidden');
+        
+        // Hide all views and show adminPanelView
+        document.querySelectorAll('.home-view').forEach(view => view.classList.add('hidden'));
+        document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+        if (adminNavBtn) adminNavBtn.classList.add('active');
+        if (adminPanelView) adminPanelView.classList.remove('hidden');
+
+        if (window.showCustomToast) window.showCustomToast('Welcome Admin! PIN Verified 👑', 'success');
+      } else {
+        if (adminPinInput) adminPinInput.value = '';
+        if (window.showCustomAlert) {
+          window.showCustomAlert('Incorrect Security PIN. Access Denied!', 'Admin Security', 'error');
         }
       }
-      if (btnOpenAuthModal) btnOpenAuthModal.classList.remove('hidden');
-      if (userProfileMenu) userProfileMenu.classList.add('hidden');
-      if (window.showCustomToast) window.showCustomToast('Signed out', 'info');
+    });
+  }
+
+  if (btnExitAdminPanel) {
+    btnExitAdminPanel.addEventListener('click', () => {
+      const dashNav = document.querySelector('.nav-item[data-nav="dashboard"]');
+      if (dashNav) dashNav.click();
+    });
+  }
+
+  if (btnAdminClearCache) {
+    btnAdminClearCache.addEventListener('click', () => {
+      localStorage.clear();
+      sessionStorage.clear();
+      if (window.showCustomToast) window.showCustomToast('Studio cache & local storage cleared successfully!', 'success');
+    });
+  }
+
+  if (btnAdminResetState) {
+    btnAdminResetState.addEventListener('click', () => {
+      if (window.showCustomToast) window.showCustomToast('App parameters reset to default state.', 'info');
+    });
+  }
+
+  if (btnAdminExportLogs) {
+    btnAdminExportLogs.addEventListener('click', () => {
+      const diagData = `GravityLab Diagnostics Report\nTime: ${new Date().toISOString()}\nAdmin: ${ADMIN_EMAIL}\nFirebase App: gravitylab-d9276\nUserAgent: ${navigator.userAgent}`;
+      const blob = new Blob([diagData], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'gravitylab-diagnostics.txt';
+      a.click();
+      URL.revokeObjectURL(url);
+      if (window.showCustomToast) window.showCustomToast('Diagnostics report exported!', 'success');
     });
   }
 
