@@ -5120,11 +5120,16 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
   if (window.firebase) {
     try {
       if (!firebase.apps.length) {
+        // =========================================================================
+        // 🔑 FIREBASE CONFIGURATION SETUP:
+        // Paste your own Firebase project credentials below from Firebase Console:
+        // Project Settings -> General -> Your apps -> Web (</>)
+        // =========================================================================
         const firebaseConfig = {
-          apiKey: "AIzaSyGravityAiStudioKeyPlaceholder",
-          authDomain: "gravity-ai-studio.firebaseapp.com",
-          projectId: "gravity-ai-studio",
-          storageBucket: "gravity-ai-studio.appspot.com",
+          apiKey: "AIzaSyGravityLabKeyPlaceholder",
+          authDomain: "gravitylab-app.firebaseapp.com",
+          projectId: "gravitylab-app",
+          storageBucket: "gravitylab-app.appspot.com",
           messagingSenderId: "102938475612",
           appId: "1:102938475612:web:a1b2c3d4e5f6g7h8"
         };
