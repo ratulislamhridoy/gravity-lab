@@ -5420,30 +5420,15 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     if (firebaseDb) {
       try {
         const userRef = firebaseDb.collection('users').doc(user.uid);
-        userRef.get().then((doc) => {
-          if (doc.exists) {
-            userRef.set({
-              uid: user.uid,
-              email: user.email,
-              displayName: userData.displayName,
-              photoURL: userData.photoURL,
-              lastActive: firebase.firestore.FieldValue.serverTimestamp(),
-              provider: providerId,
-              status: 'active'
-            }, { merge: true });
-          } else {
-            userRef.set({
-              uid: user.uid,
-              email: user.email,
-              displayName: userData.displayName,
-              photoURL: userData.photoURL,
-              firstLogin: firebase.firestore.FieldValue.serverTimestamp(),
-              lastActive: firebase.firestore.FieldValue.serverTimestamp(),
-              provider: providerId,
-              status: 'active'
-            });
-          }
-        }).catch(err => console.warn('[Firestore Write Error]:', err));
+        userRef.set({
+          uid: user.uid,
+          email: user.email || '',
+          displayName: userData.displayName,
+          photoURL: userData.photoURL,
+          lastActive: firebase.firestore.FieldValue.serverTimestamp(),
+          provider: providerId,
+          status: 'active'
+        }, { merge: true }).catch(err => console.warn('[Firestore Write Error]:', err));
       } catch (e) {
         console.warn('[Firestore Track Error]:', e);
       }
