@@ -5316,16 +5316,9 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     }
   }
 
-  const ADMIN_EMAILS = [
-    'mdratulislamhridoy@gmail.com',
-    'mdratulislahridoy1@gmail.com',
-    'mdratulislamhridoy2@gmail.com',
-    'mdratulislamhridoy3@gmail.com'
-  ];
-
   function isAdminUser(user) {
     if (!user || !user.email) return false;
-    return ADMIN_EMAILS.includes(user.email.toLowerCase().trim());
+    return user.email.toLowerCase().trim() === ADMIN_EMAIL;
   }
 
   function checkAdminAccess(user) {
