@@ -5338,23 +5338,27 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     }
 
     if (firebaseDb) {
-      try {
-        const userRef = firebaseDb.collection('users').doc(user.uid);
-        const updateData = {};
-        updateData.uid = user.uid;
-        updateData.email = user.email || '';
-        updateData.displayName = user.displayName || (user.email ? user.email.split('@')[0] : 'User');
-        updateData.photoURL = user.photoURL || 'https://lh3.googleusercontent.com/a/default-user';
-        updateData.status = 'active';
-        updateData[`metrics.${metricKey}.total`] = firebase.firestore.FieldValue.increment(1);
-        updateData[`metrics.${metricKey}.today`] = firebase.firestore.FieldValue.increment(1);
-        updateData[`metrics.${metricKey}.lastDate`] = todayStr;
-        updateData.lastActive = firebase.firestore.FieldValue.serverTimestamp();
+      (async () => {
+        try {
+          const userRef = firebaseDb.collection('users').doc(user.uid);
+          await userRef.set({
+            uid: user.uid,
+            email: user.email || '',
+            displayName: user.displayName || (user.email ? user.email.split('@')[0] : 'User'),
+            photoURL: user.photoURL || 'https://lh3.googleusercontent.com/a/default-user',
+            status: 'active',
+            lastActive: firebase.firestore.FieldValue.serverTimestamp()
+          }, { merge: true });
 
-        userRef.set(updateData, { merge: true }).catch(err => console.warn('[Firestore Metric Track Error]:', err));
-      } catch (err) {
-        console.warn('[Firestore Metric Error]:', err);
-      }
+          const updateData = {};
+          updateData[`metrics.${metricKey}.total`] = firebase.firestore.FieldValue.increment(1);
+          updateData[`metrics.${metricKey}.today`] = firebase.firestore.FieldValue.increment(1);
+          updateData[`metrics.${metricKey}.lastDate`] = todayStr;
+          await userRef.update(updateData);
+        } catch (err) {
+          console.warn('[Firestore Metric Error]:', err);
+        }
+      })();
     }
   };
 
@@ -5384,6 +5388,10 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       ? user.providerData[0].providerId 
       : (user.email ? 'google.com' : 'password');
 
+    // Scan real local API keys count
+    const keys = (localStorage.getItem('gravity_gemini_keys') || '').split('\n').filter(k => k.trim().length > 5);
+    const apiKeysCount = keys.length;
+
     const userData = {
       uid: user.uid,
       email: user.email,
@@ -5395,12 +5403,19 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       metrics: existingIndex >= 0 ? (logs[existingIndex].metrics || {}) : {}
     };
 
+    if (!userData.metrics) userData.metrics = {};
+    if (!userData.metrics.apiKeys) {
+      userData.metrics.apiKeys = { total: 0, today: 0, lastDate: new Date().toISOString().split('T')[0] };
+    }
+    userData.metrics.apiKeys.total = apiKeysCount;
+
     if (existingIndex >= 0) {
       logs[existingIndex].lastActive = now;
       logs[existingIndex].displayName = userData.displayName;
       logs[existingIndex].photoURL = userData.photoURL;
       logs[existingIndex].status = 'active';
       logs[existingIndex].provider = providerId;
+      logs[existingIndex].metrics = userData.metrics;
     } else {
       userData.firstLogin = now;
       logs.unshift(userData);
@@ -5418,20 +5433,28 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     } catch (e) {}
 
     if (firebaseDb) {
-      try {
-        const userRef = firebaseDb.collection('users').doc(user.uid);
-        userRef.set({
-          uid: user.uid,
-          email: user.email || '',
-          displayName: userData.displayName,
-          photoURL: userData.photoURL,
-          lastActive: firebase.firestore.FieldValue.serverTimestamp(),
-          provider: providerId,
-          status: 'active'
-        }, { merge: true }).catch(err => console.warn('[Firestore Write Error]:', err));
-      } catch (e) {
-        console.warn('[Firestore Track Error]:', e);
-      }
+      (async () => {
+        try {
+          const userRef = firebaseDb.collection('users').doc(user.uid);
+          await userRef.set({
+            uid: user.uid,
+            email: user.email || '',
+            displayName: userData.displayName,
+            photoURL: userData.photoURL,
+            lastActive: firebase.firestore.FieldValue.serverTimestamp(),
+            provider: providerId,
+            status: 'active'
+          }, { merge: true });
+
+          const updateData = {};
+          updateData['metrics.apiKeys.total'] = apiKeysCount;
+          updateData['metrics.apiKeys.today'] = apiKeysCount;
+          updateData['metrics.apiKeys.lastDate'] = new Date().toISOString().split('T')[0];
+          await userRef.update(updateData);
+        } catch (e) {
+          console.warn('[Firestore Track Error]:', e);
+        }
+      })();
     }
 
     if (typeof renderAdminUserLogs === 'function') {
