@@ -404,7 +404,7 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  const FRONTEND_ROUTES = ['/promptgen', '/flowgen', '/slicer', '/bannergen', '/dashboard'];
+  const FRONTEND_ROUTES = ['/promptgen', '/flowgen', '/slicer', '/vectorizer', '/Vectorizer', '/bannergen', '/dashboard'];
 
   if (urlPath === '/') urlPath = '/index.html';
   

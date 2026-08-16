@@ -595,7 +595,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function triggerToolLaunch(toolId) {
     if (toolId === 'icon-sheet-prompt') navigateTo('/promptgen');
     else if (toolId === 'google-flow-gen') navigateTo('/flowgen');
-    else if (toolId === 'icon-sheet-slicer') navigateTo('/slicer');
+    else if (toolId === 'icon-sheet-slicer') navigateTo('/Vectorizer');
     else navigateTo('/' + toolId);
   }
 
@@ -795,8 +795,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function launchTool4() {
-    if (window.location.pathname !== '/slicer') {
-      navigateTo('/slicer');
+    if (window.location.pathname !== '/Vectorizer' && window.location.pathname !== '/vectorizer' && window.location.pathname !== '/slicer') {
+      navigateTo('/Vectorizer');
       return;
     }
     if (dashboardView) dashboardView.classList.add('hidden');
@@ -6328,7 +6328,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     } else if (path === '/flowgen') {
       launchTool3();
       setSidebarActive('google-flow-gen');
-    } else if (path === '/slicer') {
+    } else if (path === '/slicer' || path === '/vectorizer' || path === '/Vectorizer') {
       launchTool4();
       setSidebarActive('icon-sheet-slicer');
     } else if (path === '/bannergen') {
