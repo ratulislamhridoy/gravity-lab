@@ -494,6 +494,9 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('gravity_gemini_keys', keys.join('\n'));
         localStorage.setItem('gravity_gemini_key', keys[0]); // Legacy compatibility
         updateKeyCountBadge();
+        if (typeof window.trackUserMetric === 'function') {
+          window.trackUserMetric('apiKeys');
+        }
         if (apiKeyModal) apiKeyModal.classList.add('hidden');
         alert(`Successfully saved ${keys.length} Gemini API Key${keys.length > 1 ? 's' : ''} & Default Model settings!`);
       } else {
