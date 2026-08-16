@@ -153,6 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const promptImgUploadBtn = document.getElementById('promptImgUploadBtn');
   const promptImgInput = document.getElementById('promptImgInput');
   const promptImgPreviewContainer = document.getElementById('promptImgPreviewContainer');
+  let uploadedPromptImages = [];
   // Non-Blocking Web Worker Vectorization Engine
   class VectorWorkerManager {
     constructor() {
