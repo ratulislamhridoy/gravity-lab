@@ -5306,8 +5306,20 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     }
   }
 
+  const ADMIN_EMAILS = [
+    'mdratulislamhridoy@gmail.com',
+    'mdratulislahridoy1@gmail.com',
+    'mdratulislamhridoy2@gmail.com',
+    'mdratulislamhridoy3@gmail.com'
+  ];
+
+  function isAdminUser(user) {
+    if (!user || !user.email) return false;
+    return ADMIN_EMAILS.includes(user.email.toLowerCase().trim());
+  }
+
   function checkAdminAccess(user) {
-    if (user && user.email && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+    if (isAdminUser(user)) {
       if (adminNavBtn) adminNavBtn.classList.remove('hidden');
       performAutoCleanup();
     } else {
@@ -5968,6 +5980,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       if (enteredPin === ADMIN_PIN) {
         closeAdminPinModal();
         window.enterAdminWorkspace();
+        performAutoCleanup();
         if (window.showCustomToast) window.showCustomToast('Welcome Admin! PIN 6342 Verified 👑', 'success');
       } else {
         if (adminPinInput) adminPinInput.value = '';
