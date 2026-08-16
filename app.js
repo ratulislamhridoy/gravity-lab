@@ -5927,7 +5927,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
   }
 
   window.showAdminSubView = function(targetSectionId) {
-    const sections = ['adminSectionOverview', 'adminSectionUserLogs', 'adminSectionControls'];
+    const sections = ['adminSectionOverview', 'adminSectionUserLogs', 'adminSectionControls', 'adminSectionFeedback'];
     
     sections.forEach(id => {
       const el = document.getElementById(id);
@@ -5955,6 +5955,10 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     } else if (targetSectionId === 'adminSectionControls') {
       const btn = document.getElementById('adminNavControls');
       if (btn) btn.classList.add('active');
+    } else if (targetSectionId === 'adminSectionFeedback') {
+      const btn = document.getElementById('adminNavFeedback');
+      if (btn) btn.classList.add('active');
+      renderAdminFeedback(); // Refresh feedbacks on tab selection!
     }
   };
 
@@ -6096,6 +6100,180 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       if (window.showCustomToast) window.showCustomToast('Diagnostics report exported!', 'success');
     });
   }
+
+  // ===== User Feedback Section =====
+  let currentFeedbackRating = 5;
+  const feedbackRatingStars = document.getElementById('feedbackRatingStars');
+  const feedbackTextInput = document.getElementById('feedbackTextInput');
+  const btnSubmitFeedback = document.getElementById('btnSubmitFeedback');
+  const btnRefreshAdminFeedback = document.getElementById('btnRefreshAdminFeedback');
+
+  // Handle visual star interaction
+  if (feedbackRatingStars) {
+    const starSpans = feedbackRatingStars.querySelectorAll('span');
+    starSpans.forEach(span => {
+      span.addEventListener('click', (e) => {
+        const rating = parseInt(e.target.getAttribute('data-star')) || 5;
+        currentFeedbackRating = rating;
+        
+        starSpans.forEach((s, idx) => {
+          if (idx < rating) {
+            s.style.color = '#fbbf24';
+          } else {
+            s.style.color = 'var(--on-variant, #a1a1aa)';
+          }
+        });
+      });
+    });
+  }
+
+  // Submit Feedback action
+  if (btnSubmitFeedback) {
+    btnSubmitFeedback.addEventListener('click', async () => {
+      const text = feedbackTextInput ? feedbackTextInput.value.trim() : '';
+      if (!text) {
+        if (window.showCustomToast) window.showCustomToast('Please enter your feedback message first!', 'error');
+        return;
+      }
+
+      btnSubmitFeedback.disabled = true;
+      btnSubmitFeedback.textContent = 'Submitting...';
+
+      try {
+        const user = firebaseAuth ? firebaseAuth.currentUser : null;
+        const userId = user ? user.uid : 'anonymous';
+        const userEmail = user ? user.email || 'anonymous' : 'anonymous';
+
+        await firebaseDb.collection('feedbacks').add({
+          userId,
+          userEmail,
+          rating: currentFeedbackRating,
+          feedbackText: text,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        if (window.showCustomToast) window.showCustomToast('Thank you! Your feedback has been submitted.', 'success');
+        if (feedbackTextInput) feedbackTextInput.value = '';
+        
+        // Reset stars
+        currentFeedbackRating = 5;
+        if (feedbackRatingStars) {
+          feedbackRatingStars.querySelectorAll('span').forEach(s => s.style.color = '#fbbf24');
+        }
+      } catch (err) {
+        console.error('[Feedback Submission Error]:', err);
+        if (window.showCustomToast) window.showCustomToast('Failed to submit feedback: ' + err.message, 'error');
+      } finally {
+        btnSubmitFeedback.disabled = false;
+        btnSubmitFeedback.textContent = 'Submit Feedback';
+      }
+    });
+  }
+
+  // Refresh Feedbacks Button
+  if (btnRefreshAdminFeedback) {
+    btnRefreshAdminFeedback.addEventListener('click', window.renderAdminFeedback);
+  }
+
+  // Render Admin Feedback list
+  window.renderAdminFeedback = async function() {
+    const tbody = document.getElementById('adminFeedbackTableBody');
+    if (!tbody) return;
+
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="5" style="padding: 24px; text-align: center; color: var(--on-variant); font-size: 12px;">
+          ⏳ Loading feedbacks from Firestore...
+        </td>
+      </tr>
+    `;
+
+    try {
+      const snapshot = await firebaseDb.collection('feedbacks').orderBy('timestamp', 'desc').get();
+      const totalFeedbackEl = document.getElementById('statTotalFeedback');
+      const avgRatingEl = document.getElementById('statAvgFeedbackRating');
+
+      if (snapshot.empty) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" style="padding: 24px; text-align: center; color: var(--on-variant); font-size: 12px;">
+              No feedback forms received yet.
+            </td>
+          </tr>
+        `;
+        if (totalFeedbackEl) totalFeedbackEl.textContent = '0';
+        if (avgRatingEl) avgRatingEl.textContent = '0.0';
+        return;
+      }
+
+      let html = '';
+      let totalRating = 0;
+      let count = 0;
+
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const docId = doc.id;
+        const email = data.userEmail || 'Anonymous';
+        const rating = data.rating || 5;
+        const text = data.feedbackText || '';
+        const rawTime = data.timestamp;
+
+        let dateStr = 'Unknown';
+        if (rawTime) {
+          if (typeof rawTime.toDate === 'function') {
+            dateStr = rawTime.toDate().toLocaleString();
+          } else if (rawTime.seconds) {
+            dateStr = new Date(rawTime.seconds * 1000).toLocaleString();
+          } else {
+            dateStr = new Date(rawTime).toLocaleString();
+          }
+        }
+
+        totalRating += rating;
+        count++;
+
+        const starsHtml = '★'.repeat(rating) + '☆'.repeat(5 - rating);
+
+        html += `
+          <tr style="border-bottom: 1px solid var(--outline-variant);">
+            <td style="padding: 12px 14px; font-weight: 700; color: #ededf0;">${email}</td>
+            <td style="padding: 12px 14px; color: #fbbf24; font-size: 14px;">${starsHtml} (${rating})</td>
+            <td style="padding: 12px 14px; color: var(--on-surface); white-space: pre-wrap; word-break: break-word;">${text}</td>
+            <td style="padding: 12px 14px; color: var(--on-variant);">${dateStr}</td>
+            <td style="padding: 12px 14px; text-align: center;">
+              <button class="btn btn-dark small" onclick="window.deleteAdminFeedback('${docId}')" style="height: 26px; border-color: rgba(239, 68, 68, 0.3); color: #ef4444; font-size: 10px; font-weight: 700; padding: 0 10px;">🗑️ Delete</button>
+            </td>
+          </tr>
+        `;
+      });
+
+      tbody.innerHTML = html;
+      if (totalFeedbackEl) totalFeedbackEl.textContent = count.toString();
+      if (avgRatingEl) avgRatingEl.textContent = (totalRating / count).toFixed(1);
+
+    } catch (err) {
+      console.error('[Admin Feedback Render Error]:', err);
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="5" style="padding: 24px; text-align: center; color: #ef4444; font-size: 12px;">
+            ❌ Failed to fetch feedbacks. Error: ${err.message}
+          </td>
+        </tr>
+      `;
+    }
+  };
+
+  // Delete Feedback
+  window.deleteAdminFeedback = async function(docId) {
+    if (!confirm('Are you sure you want to delete this feedback?')) return;
+    try {
+      await firebaseDb.collection('feedbacks').doc(docId).delete();
+      if (window.showCustomToast) window.showCustomToast('Feedback deleted successfully!', 'success');
+      window.renderAdminFeedback();
+    } catch (err) {
+      if (window.showCustomToast) window.showCustomToast('Failed to delete feedback: ' + err.message, 'error');
+    }
+  };
 
 });
 
