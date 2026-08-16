@@ -5271,19 +5271,36 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     });
   }
 
+  function openAdminPinModal() {
+    if (adminPinModal) {
+      if (adminPinInput) adminPinInput.value = '';
+      adminPinModal.classList.remove('hidden');
+      adminPinModal.style.display = 'flex';
+      adminPinModal.style.alignItems = 'center';
+      adminPinModal.style.justifyContent = 'center';
+      setTimeout(() => { if (adminPinInput) adminPinInput.focus(); }, 100);
+    }
+  }
+
+  function closeAdminPinModal() {
+    if (adminPinModal) {
+      adminPinModal.classList.add('hidden');
+      adminPinModal.style.display = 'none';
+    }
+  }
+
   if (adminNavBtn) {
-    adminNavBtn.addEventListener('click', () => {
-      if (adminPinModal) {
-        if (adminPinInput) adminPinInput.value = '';
-        adminPinModal.classList.remove('hidden');
-        setTimeout(() => { if (adminPinInput) adminPinInput.focus(); }, 100);
-      }
+    adminNavBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      openAdminPinModal();
     });
   }
 
   if (btnCancelAdminPin) {
-    btnCancelAdminPin.addEventListener('click', () => {
-      if (adminPinModal) adminPinModal.classList.add('hidden');
+    btnCancelAdminPin.addEventListener('click', (e) => {
+      e.preventDefault();
+      closeAdminPinModal();
     });
   }
 
@@ -5292,19 +5309,26 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       e.preventDefault();
       const enteredPin = adminPinInput ? adminPinInput.value.trim() : '';
       if (enteredPin === ADMIN_PIN) {
-        if (adminPinModal) adminPinModal.classList.add('hidden');
+        closeAdminPinModal();
         
-        // Hide all views and show adminPanelView
-        document.querySelectorAll('.home-view').forEach(view => view.classList.add('hidden'));
+        // Hide all home-view sections and activate Admin Panel View
+        document.querySelectorAll('.home-view').forEach(view => {
+          view.classList.add('hidden');
+          view.style.display = 'none';
+        });
         document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+        
         if (adminNavBtn) adminNavBtn.classList.add('active');
-        if (adminPanelView) adminPanelView.classList.remove('hidden');
+        if (adminPanelView) {
+          adminPanelView.classList.remove('hidden');
+          adminPanelView.style.display = 'flex';
+        }
 
-        if (window.showCustomToast) window.showCustomToast('Welcome Admin! PIN Verified 👑', 'success');
+        if (window.showCustomToast) window.showCustomToast('Welcome Admin! PIN 6342 Verified 👑', 'success');
       } else {
         if (adminPinInput) adminPinInput.value = '';
         if (window.showCustomAlert) {
-          window.showCustomAlert('Incorrect Security PIN. Access Denied!', 'Admin Security', 'error');
+          window.showCustomAlert('Incorrect Security PIN. Please enter 6342.', 'Admin Security', 'error');
         }
       }
     });
