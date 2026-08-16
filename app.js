@@ -5531,10 +5531,40 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       if (firestoreUnsubscribe) firestoreUnsubscribe();
       try {
         firestoreUnsubscribe = firebaseDb.collection('users').onSnapshot((snapshot) => {
-          const firestoreUsers = [];
+          let firestoreUsers = [];
           snapshot.forEach(doc => {
-            firestoreUsers.push(doc.data());
+            const data = doc.data();
+            if (data && (data.uid || data.email || data.displayName)) {
+              firestoreUsers.push(data);
+            }
           });
+
+          // Ensure active currentUser is included if signed in
+          const curr = (firebaseAuth && firebaseAuth.currentUser) ? firebaseAuth.currentUser : null;
+          if (curr) {
+            const currEmail = (curr.email || '').toLowerCase();
+            let foundIdx = firestoreUsers.findIndex(u => u.uid === curr.uid || (u.email && u.email.toLowerCase() === currEmail));
+            if (foundIdx === -1) {
+              const activeCurrObj = {
+                uid: curr.uid,
+                email: curr.email || '',
+                displayName: curr.displayName || (curr.email ? curr.email.split('@')[0] : 'User'),
+                photoURL: curr.photoURL || 'https://lh3.googleusercontent.com/a/default-user',
+                provider: (curr.providerData && curr.providerData[0]) ? curr.providerData[0].providerId : 'google.com',
+                status: 'active',
+                lastActive: new Date().toISOString()
+              };
+              firestoreUsers.unshift(activeCurrObj);
+            } else {
+              // Ensure fields are populated
+              firestoreUsers[foundIdx].uid = curr.uid;
+              firestoreUsers[foundIdx].email = curr.email || firestoreUsers[foundIdx].email || '';
+              firestoreUsers[foundIdx].displayName = curr.displayName || firestoreUsers[foundIdx].displayName || (curr.email ? curr.email.split('@')[0] : 'User');
+              firestoreUsers[foundIdx].photoURL = curr.photoURL || firestoreUsers[foundIdx].photoURL || 'https://lh3.googleusercontent.com/a/default-user';
+              firestoreUsers[foundIdx].status = 'active';
+            }
+          }
+
           if (firestoreUsers.length > 0) {
             renderList(firestoreUsers);
             saveUserLogs(firestoreUsers);
@@ -5701,6 +5731,9 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     }
 
     window.showAdminSubView('adminSectionOverview');
+    if (firebaseAuth && firebaseAuth.currentUser) {
+      trackUserActivity(firebaseAuth.currentUser);
+    }
     renderAdminUserLogs();
   };
 
