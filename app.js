@@ -5580,10 +5580,10 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
 
     if (pageTitle) pageTitle.textContent = '👑 GravityLab Admin Workspace';
     if (pageTitleBadge) {
-      pageTitleBadge.textContent = 'v5.8 Admin';
-      pageTitleBadge.style.background = 'rgba(239, 68, 68, 0.15)';
-      pageTitleBadge.style.color = '#ef4444';
-      pageTitleBadge.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+      pageTitleBadge.textContent = 'v6.0 Admin';
+      pageTitleBadge.style.background = 'rgba(255, 255, 255, 0.08)';
+      pageTitleBadge.style.color = '#e4e4e7';
+      pageTitleBadge.style.borderColor = 'rgba(255, 255, 255, 0.15)';
     }
 
     if (adminPanelView) {
