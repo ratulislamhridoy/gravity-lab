@@ -5271,37 +5271,41 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     });
   }
 
-  function openAdminPinModal() {
-    if (adminPinModal) {
-      if (adminPinInput) adminPinInput.value = '';
-      adminPinModal.classList.remove('hidden');
-      adminPinModal.style.display = 'flex';
-      adminPinModal.style.alignItems = 'center';
-      adminPinModal.style.justifyContent = 'center';
-      setTimeout(() => { if (adminPinInput) adminPinInput.focus(); }, 100);
-    }
-  }
-
-  function closeAdminPinModal() {
-    if (adminPinModal) {
-      adminPinModal.classList.add('hidden');
-      adminPinModal.style.display = 'none';
-    }
-  }
-
-  if (adminNavBtn) {
-    adminNavBtn.addEventListener('click', (e) => {
+  window.openAdminPinModal = function(e) {
+    if (e) {
       e.preventDefault();
       e.stopPropagation();
-      openAdminPinModal();
-    });
+    }
+    const modal = document.getElementById('adminPinModal');
+    const input = document.getElementById('adminPinInput');
+    if (modal) {
+      if (input) input.value = '';
+      modal.classList.remove('hidden');
+      modal.style.display = 'flex';
+      modal.style.alignItems = 'center';
+      modal.style.justifyContent = 'center';
+      setTimeout(() => { if (input) input.focus(); }, 100);
+    }
+  };
+
+  window.closeAdminPinModal = function(e) {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    const modal = document.getElementById('adminPinModal');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.style.display = 'none';
+    }
+  };
+
+  if (adminNavBtn) {
+    adminNavBtn.addEventListener('click', window.openAdminPinModal);
   }
 
   if (btnCancelAdminPin) {
-    btnCancelAdminPin.addEventListener('click', (e) => {
-      e.preventDefault();
-      closeAdminPinModal();
-    });
+    btnCancelAdminPin.addEventListener('click', window.closeAdminPinModal);
   }
 
   if (adminPinForm) {
