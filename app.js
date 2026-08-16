@@ -5336,11 +5336,12 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
   }
 
   function trackUserActivity(user) {
-    if (!user || !user.email) return;
+    if (!user || !user.uid) return;
     const logs = getUserLogs();
-    const userEmail = user.email.toLowerCase();
+    const userEmail = (user.email || '').toLowerCase();
+    const userUid = user.uid;
     const now = new Date().toISOString();
-    let existingIndex = logs.findIndex(u => u.email.toLowerCase() === userEmail);
+    let existingIndex = logs.findIndex(u => u.uid === userUid || (u.email && userEmail && u.email.toLowerCase() === userEmail));
 
     const providerId = (user.providerData && user.providerData[0] && user.providerData[0].providerId) 
       ? user.providerData[0].providerId 
