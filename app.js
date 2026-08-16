@@ -5526,9 +5526,41 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     btnCancelAdminPin.addEventListener('click', window.closeAdminPinModal);
   }
 
+  window.showAdminSubView = function(targetSectionId) {
+    const sections = ['adminSectionOverview', 'adminSectionUserLogs', 'adminSectionControls'];
+    
+    sections.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        if (id === targetSectionId) {
+          el.style.display = (id === 'adminSectionOverview') ? 'grid' : 'flex';
+          el.classList.remove('hidden');
+        } else {
+          el.style.display = 'none';
+          el.classList.add('hidden');
+        }
+      }
+    });
+
+    const adminNavs = document.querySelectorAll('#navGroupAdmin .nav-item');
+    adminNavs.forEach(nav => nav.classList.remove('active'));
+
+    if (targetSectionId === 'adminSectionOverview') {
+      const btn = document.getElementById('adminNavOverview');
+      if (btn) btn.classList.add('active');
+    } else if (targetSectionId === 'adminSectionUserLogs') {
+      const btn = document.getElementById('adminNavUserLogs');
+      if (btn) btn.classList.add('active');
+    } else if (targetSectionId === 'adminSectionControls') {
+      const btn = document.getElementById('adminNavControls');
+      if (btn) btn.classList.add('active');
+    }
+  };
+
   window.enterAdminWorkspace = function() {
     const navGroupStudio = document.getElementById('navGroupStudio');
     const navGroupAdmin = document.getElementById('navGroupAdmin');
+    const sidebarBottomGroup = document.getElementById('sidebarBottomGroup');
     const pageTitle = document.getElementById('pageTitle');
     const pageTitleBadge = document.getElementById('pageTitleBadge');
     const adminPanelView = document.getElementById('adminPanelView');
@@ -5539,6 +5571,8 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     });
 
     if (navGroupStudio) navGroupStudio.style.display = 'none';
+    if (sidebarBottomGroup) sidebarBottomGroup.style.display = 'none';
+
     if (navGroupAdmin) {
       navGroupAdmin.classList.remove('hidden');
       navGroupAdmin.style.display = 'flex';
@@ -5557,12 +5591,14 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       adminPanelView.style.display = 'flex';
     }
 
+    window.showAdminSubView('adminSectionOverview');
     renderAdminUserLogs();
   };
 
   window.exitAdminWorkspace = function() {
     const navGroupStudio = document.getElementById('navGroupStudio');
     const navGroupAdmin = document.getElementById('navGroupAdmin');
+    const sidebarBottomGroup = document.getElementById('sidebarBottomGroup');
     const pageTitle = document.getElementById('pageTitle');
     const pageTitleBadge = document.getElementById('pageTitleBadge');
     const adminPanelView = document.getElementById('adminPanelView');
@@ -5581,6 +5617,10 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       navGroupStudio.style.display = 'flex';
     }
 
+    if (sidebarBottomGroup) {
+      sidebarBottomGroup.style.display = 'block';
+    }
+
     if (pageTitle) pageTitle.textContent = '🎨 Icon Sheet Studio';
     if (pageTitleBadge) {
       pageTitleBadge.textContent = 'v5.2 Bulk';
@@ -5591,25 +5631,6 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
 
     const dashNav = document.querySelector('.nav-item[data-nav="dashboard"]');
     if (dashNav) dashNav.click();
-  };
-
-  window.scrollToAdminSection = function(sectionId) {
-    const target = document.getElementById(sectionId);
-    if (target) {
-      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-    const adminNavs = document.querySelectorAll('#navGroupAdmin .nav-item');
-    adminNavs.forEach(nav => nav.classList.remove('active'));
-    if (sectionId === 'adminSectionOverview') {
-      const btn = document.getElementById('adminNavOverview');
-      if (btn) btn.classList.add('active');
-    } else if (sectionId === 'adminSectionUserLogs') {
-      const btn = document.getElementById('adminNavUserLogs');
-      if (btn) btn.classList.add('active');
-    } else if (sectionId === 'adminSectionControls') {
-      const btn = document.getElementById('adminNavControls');
-      if (btn) btn.classList.add('active');
-    }
   };
 
   if (adminPinForm) {
