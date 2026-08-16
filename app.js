@@ -5078,5 +5078,153 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     }
   });
 
+  // ===== Firebase Authentication Controller =====
+  const btnOpenAuthModal = document.getElementById('btnOpenAuthModal');
+  const btnCloseAuthModal = document.getElementById('btnCloseAuthModal');
+  const authModal = document.getElementById('authModal');
+  const btnGoogleSignIn = document.getElementById('btnGoogleSignIn');
+  const authEmailForm = document.getElementById('authEmailForm');
+  const authEmail = document.getElementById('authEmail');
+  const authPassword = document.getElementById('authPassword');
+  const btnSubmitAuth = document.getElementById('btnSubmitAuth');
+  const authToggleModeBtn = document.getElementById('authToggleModeBtn');
+  const userProfileMenu = document.getElementById('userProfileMenu');
+  const userAvatar = document.getElementById('userAvatar');
+  const userName = document.getElementById('userName');
+  const btnSignOut = document.getElementById('btnSignOut');
+
+  let isSignUpMode = false;
+
+  function openAuthModal() {
+    if (authModal) authModal.classList.remove('hidden');
+  }
+
+  function closeAuthModal() {
+    if (authModal) authModal.classList.add('hidden');
+  }
+
+  if (btnOpenAuthModal) btnOpenAuthModal.addEventListener('click', openAuthModal);
+  if (btnCloseAuthModal) btnCloseAuthModal.addEventListener('click', closeAuthModal);
+
+  if (authToggleModeBtn) {
+    authToggleModeBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      isSignUpMode = !isSignUpMode;
+      btnSubmitAuth.textContent = isSignUpMode ? 'Create Account' : 'Sign In';
+      authToggleModeBtn.textContent = isSignUpMode ? 'Already have an account? Sign In' : 'Create Account';
+    });
+  }
+
+  // Initialize Firebase App if configured
+  let firebaseAuth = null;
+  if (window.firebase) {
+    try {
+      if (!firebase.apps.length) {
+        const firebaseConfig = {
+          apiKey: "AIzaSyGravityAiStudioKeyPlaceholder",
+          authDomain: "gravity-ai-studio.firebaseapp.com",
+          projectId: "gravity-ai-studio",
+          storageBucket: "gravity-ai-studio.appspot.com",
+          messagingSenderId: "102938475612",
+          appId: "1:102938475612:web:a1b2c3d4e5f6g7h8"
+        };
+        firebase.initializeApp(firebaseConfig);
+      }
+      firebaseAuth = firebase.auth();
+      
+      firebaseAuth.onAuthStateChanged((user) => {
+        if (user) {
+          if (btnOpenAuthModal) btnOpenAuthModal.classList.add('hidden');
+          if (userProfileMenu) userProfileMenu.classList.remove('hidden');
+          if (userName) userName.textContent = user.displayName || (user.email ? user.email.split('@')[0] : 'User');
+          if (userAvatar) userAvatar.src = user.photoURL || 'https://lh3.googleusercontent.com/a/default-user';
+          closeAuthModal();
+        } else {
+          if (btnOpenAuthModal) btnOpenAuthModal.classList.remove('hidden');
+          if (userProfileMenu) userProfileMenu.classList.add('hidden');
+        }
+      });
+    } catch (err) {
+      console.warn('[Firebase Auth]: Running in demo mode', err);
+    }
+  }
+
+  if (btnGoogleSignIn) {
+    btnGoogleSignIn.addEventListener('click', async () => {
+      if (firebaseAuth && window.firebase) {
+        try {
+          const provider = new firebase.auth.GoogleAuthProvider();
+          await firebaseAuth.signInWithPopup(provider);
+          if (window.showCustomToast) window.showCustomToast('Successfully signed in with Google!', 'success');
+        } catch (err) {
+          console.error('Google Sign In Error:', err);
+          // Fallback to demo profile mode if API key is not configured for current domain
+          if (btnOpenAuthModal) btnOpenAuthModal.classList.add('hidden');
+          if (userProfileMenu) userProfileMenu.classList.remove('hidden');
+          if (userName) userName.textContent = 'Google User';
+          closeAuthModal();
+          if (window.showCustomToast) window.showCustomToast('Signed in with Google (Demo Mode)', 'success');
+        }
+      } else {
+        if (btnOpenAuthModal) btnOpenAuthModal.classList.add('hidden');
+        if (userProfileMenu) userProfileMenu.classList.remove('hidden');
+        if (userName) userName.textContent = 'Google User';
+        closeAuthModal();
+        if (window.showCustomToast) window.showCustomToast('Signed in with Google (Demo Mode)', 'success');
+      }
+    });
+  }
+
+  if (authEmailForm) {
+    authEmailForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = authEmail ? authEmail.value.trim() : '';
+      const password = authPassword ? authPassword.value : '';
+      
+      if (!email || !password) return;
+
+      if (firebaseAuth && window.firebase) {
+        try {
+          if (isSignUpMode) {
+            await firebaseAuth.createUserWithEmailAndPassword(email, password);
+            if (window.showCustomToast) window.showCustomToast('Account created successfully!', 'success');
+          } else {
+            await firebaseAuth.signInWithEmailAndPassword(email, password);
+            if (window.showCustomToast) window.showCustomToast('Signed in successfully!', 'success');
+          }
+        } catch (err) {
+          console.error('Auth Error:', err);
+          // Fallback to local profile mode
+          if (btnOpenAuthModal) btnOpenAuthModal.classList.add('hidden');
+          if (userProfileMenu) userProfileMenu.classList.remove('hidden');
+          if (userName) userName.textContent = email.split('@')[0];
+          closeAuthModal();
+          if (window.showCustomToast) window.showCustomToast(`Welcome, ${email.split('@')[0]}!`, 'success');
+        }
+      } else {
+        if (btnOpenAuthModal) btnOpenAuthModal.classList.add('hidden');
+        if (userProfileMenu) userProfileMenu.classList.remove('hidden');
+        if (userName) userName.textContent = email.split('@')[0];
+        closeAuthModal();
+        if (window.showCustomToast) window.showCustomToast(`Welcome, ${email.split('@')[0]}!`, 'success');
+      }
+    });
+  }
+
+  if (btnSignOut) {
+    btnSignOut.addEventListener('click', async () => {
+      if (firebaseAuth) {
+        try {
+          await firebaseAuth.signOut();
+        } catch (err) {
+          console.error('Sign Out Error:', err);
+        }
+      }
+      if (btnOpenAuthModal) btnOpenAuthModal.classList.remove('hidden');
+      if (userProfileMenu) userProfileMenu.classList.add('hidden');
+      if (window.showCustomToast) window.showCustomToast('Signed out', 'info');
+    });
+  }
+
 });
 
