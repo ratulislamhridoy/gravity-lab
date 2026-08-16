@@ -292,6 +292,16 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // API Route: Clear Test Users (POST)
+  if (req.url === '/api/users/clear-test' && req.method === 'POST') {
+    let users = loadMongoUsers();
+    users = users.filter(u => !String(u.uid || '').startsWith('user_test_') && !String(u.email || '').includes('@gravitylab.ai'));
+    saveMongoUsers(users);
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ok: true, users: users }));
+    return;
+  }
+
   // API Route: List Users (GET)
   if (urlPath === '/api/users/list' && req.method === 'GET') {
     const users = loadMongoUsers();

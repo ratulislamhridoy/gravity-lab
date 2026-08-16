@@ -5890,6 +5890,11 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
   const btnClearTestUsers = document.getElementById('btnClearTestUsers');
   if (btnClearTestUsers) {
     btnClearTestUsers.addEventListener('click', async () => {
+      // Clear test users from MongoDB backend
+      try {
+        await fetch('/api/users/clear-test', { method: 'POST' });
+      } catch (e) {}
+
       // Clear test users from localStorage
       const logs = getUserLogs().filter(u => !String(u.uid || '').startsWith('user_test_') && !String(u.email || '').includes('@gravitylab.ai'));
       saveUserLogs(logs);
@@ -5898,11 +5903,15 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       if (firebaseDb) {
         try {
           const snapshot = await firebaseDb.collection('users').get();
+          const batch = firebaseDb.batch();
+          let count = 0;
           snapshot.forEach(doc => {
             if (doc.id.startsWith('user_test_') || (doc.data() && doc.data().email && doc.data().email.includes('@gravitylab.ai'))) {
-              doc.ref.delete();
+              batch.delete(doc.ref);
+              count++;
             }
           });
+          if (count > 0) await batch.commit();
         } catch (e) {
           console.warn('Error clearing test users from Firestore:', e);
         }
