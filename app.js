@@ -5651,20 +5651,11 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
   }
 
   const btnRefreshAdminUserLogs = document.getElementById('btnRefreshAdminUserLogs');
-  const btnClearAdminUserLogs = document.getElementById('btnClearAdminUserLogs');
 
   if (btnRefreshAdminUserLogs) {
     btnRefreshAdminUserLogs.addEventListener('click', () => {
       renderAdminUserLogs();
-      if (window.showCustomToast) window.showCustomToast('User activity logs refreshed!', 'info');
-    });
-  }
-
-  if (btnClearAdminUserLogs) {
-    btnClearAdminUserLogs.addEventListener('click', () => {
-      localStorage.removeItem('gravity_user_activity_logs');
-      renderAdminUserLogs();
-      if (window.showCustomToast) window.showCustomToast('User activity history cleared!', 'info');
+      if (window.showCustomToast) window.showCustomToast('User activity logs refreshed from Cloud DB!', 'info');
     });
   }
 
