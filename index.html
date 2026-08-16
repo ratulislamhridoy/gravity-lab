@@ -76,10 +76,10 @@
             </button>
 
             <!-- User Profile Menu (shown when logged in) -->
-            <div id="userProfileMenu" class="hidden" style="display: flex; align-items: center; gap: 8px; cursor: pointer; background: var(--surface-low); border: 1px solid var(--outline-variant); padding: 3px 10px 3px 4px; border-radius: 20px;">
+            <div id="userProfileMenu" class="hidden" onclick="window.handleSignOut()" title="Click to Sign Out" style="display: flex; align-items: center; gap: 8px; cursor: pointer; background: var(--surface-low); border: 1px solid var(--outline-variant); padding: 3px 10px 3px 4px; border-radius: 20px;">
               <img id="userAvatar" src="https://lh3.googleusercontent.com/a/default-user" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; border: 1px solid var(--tertiary);" />
               <span id="userName" style="font-size: 11px; font-weight: 700; color: var(--on-surface); max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">User</span>
-              <button type="button" id="btnSignOut" title="Sign Out" style="background: none; border: none; color: var(--on-variant); cursor: pointer; font-size: 12px; padding: 2px 4px; display: flex; align-items: center;">🚪</button>
+              <button type="button" id="btnSignOut" title="Sign Out" onclick="window.handleSignOut()" style="background: none; border: none; color: var(--on-variant); cursor: pointer; font-size: 12px; padding: 2px 4px; display: flex; align-items: center;">🚪</button>
             </div>
           </div>
 
@@ -1048,6 +1048,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
   <script src="potrace.js?v=5.0.0"></script>
-  <script src="app.js?v=5.4.1"></script>
+  <script src="app.js?v=5.5.0"></script>
 </body>
 </html>

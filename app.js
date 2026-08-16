@@ -5049,8 +5049,9 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       });
     }
   });
-  if (uiElements.propFont) {
-    uiElements.propFont.addEventListener('focus', () => {
+  const propFont = document.getElementById('propFont');
+  if (propFont) {
+    propFont.addEventListener('focus', () => {
       saveHistoryState();
     });
   }
@@ -5298,6 +5299,30 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       modal.classList.add('hidden');
       modal.style.display = 'none';
     }
+  };
+
+  window.handleSignOut = async function(e) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    if (firebaseAuth) {
+      try {
+        await firebaseAuth.signOut();
+      } catch (err) {
+        console.error('Sign Out Error:', err);
+      }
+    }
+    const btnOpenAuth = document.getElementById('btnOpenAuthModal');
+    const profileMenu = document.getElementById('userProfileMenu');
+    const adminBtn = document.getElementById('adminNavBtn');
+    const adminView = document.getElementById('adminPanelView');
+
+    if (btnOpenAuth) btnOpenAuth.classList.remove('hidden');
+    if (profileMenu) profileMenu.classList.add('hidden');
+    if (adminBtn) adminBtn.classList.add('hidden');
+    if (adminView && !adminView.classList.contains('hidden')) {
+      const dashNav = document.querySelector('.nav-item[data-nav="dashboard"]');
+      if (dashNav) dashNav.click();
+    }
+    if (window.showCustomToast) window.showCustomToast('Signed out successfully!', 'info');
   };
 
   if (adminNavBtn) {
