@@ -5302,7 +5302,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
         renderAdminUserLogs();
       }
     } catch (e) {
-      console.warn('[Auto Cleanup Error]:', e);
+      console.log('[Auto Cleanup]: Skipping direct Firestore deletion (Rules Locked).');
     }
   }
 
@@ -5710,7 +5710,12 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
         userMap.set(currKey, { ...existing, ...activeCurrObj });
       }
 
-      const mergedList = Array.from(userMap.values());
+      // Filter out test/bot users (Uids starting with user_test_ or emails containing @gravitylab.ai)
+      const mergedList = Array.from(userMap.values()).filter(u => {
+        const email = String(u.email || '').toLowerCase();
+        const uid = String(u.uid || '').toLowerCase();
+        return !uid.startsWith('user_test_') && !email.includes('@gravitylab.ai');
+      });
       
       // Sort: Current logged-in user first, then by most recently active descending
       mergedList.sort((a, b) => {
@@ -5724,7 +5729,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
         return dateB - dateA;
       });
 
-      console.log('[Admin Logs Sync Debug] Version v8.2.0 loaded successfully!');
+      console.log('[Admin Logs Sync Debug] Version v8.5.0 loaded successfully!');
       console.log('[Admin Logs Sync Debug] Sources metadata:', {
         firestoreCount: latestSources.firestore ? latestSources.firestore.length : 0,
         mongoCount: latestSources.mongo ? latestSources.mongo.length : 0,
