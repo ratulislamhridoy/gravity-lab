@@ -404,6 +404,8 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  const FRONTEND_ROUTES = ['/promptgen', '/flowgen', '/slicer', '/bannergen', '/dashboard'];
+
   if (urlPath === '/') urlPath = '/index.html';
   
   const localPath = path.join(__dirname, urlPath.replace(/\//g, path.sep));
@@ -417,8 +419,14 @@ const server = http.createServer((req, res) => {
   
   fs.stat(localPath, (err, stats) => {
     if (err || !stats.isFile()) {
-      res.statusCode = 404;
-      res.end('Not Found');
+      if (FRONTEND_ROUTES.includes(urlPath)) {
+        const indexPath = path.join(__dirname, 'index.html');
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        fs.createReadStream(indexPath).pipe(res);
+      } else {
+        res.statusCode = 404;
+        res.end('Not Found');
+      }
       return;
     }
     

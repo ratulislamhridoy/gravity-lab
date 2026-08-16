@@ -581,26 +581,22 @@ document.addEventListener('DOMContentLoaded', () => {
   const dashNavBtn = document.querySelector('.home-nav [data-nav="dashboard"]');
   if (dashNavBtn) {
     dashNavBtn.addEventListener('click', () => {
-      if (dashboardView) dashboardView.classList.remove('hidden');
-      if (studioView) studioView.classList.add('hidden');
-      if (tool2View) tool2View.classList.add('hidden');
-      if (tool3View) tool3View.classList.add('hidden');
-      if (document.getElementById('tool4View')) document.getElementById('tool4View').classList.add('hidden');
-      if (backToDashBtn) backToDashBtn.style.display = 'none';
-      if (pageTitle) pageTitle.textContent = 'Studio Dashboard';
-      if (appBody) appBody.classList.remove('in-tool-view');
-      setSidebarActive('dashboard');
+      navigateTo('/dashboard');
     });
   }
 
-  function triggerToolLaunch(toolId) {
-    if (toolId === 'icon-sheet-prompt') {
-      launchTool1();
-    } else if (toolId === 'google-flow-gen') {
-      launchTool3();
-    } else if (toolId === 'icon-sheet-slicer') {
-      launchTool4();
+  function navigateTo(path) {
+    if (window.location.pathname !== path) {
+      history.pushState(null, '', path);
+      handleRouting();
     }
+  }
+
+  function triggerToolLaunch(toolId) {
+    if (toolId === 'icon-sheet-prompt') navigateTo('/promptgen');
+    else if (toolId === 'google-flow-gen') navigateTo('/flowgen');
+    else if (toolId === 'icon-sheet-slicer') navigateTo('/slicer');
+    else navigateTo('/' + toolId);
   }
 
   // Tool #3 Prompt Sync & Counter Logic
@@ -728,18 +724,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (backToDashBtn) {
     backToDashBtn.addEventListener('click', () => {
-      if (dashboardView) dashboardView.classList.remove('hidden');
-      if (studioView) studioView.classList.add('hidden');
-      if (tool2View) tool2View.classList.add('hidden');
-      if (tool3View) tool3View.classList.add('hidden');
-      if (document.getElementById('tool4View')) document.getElementById('tool4View').classList.add('hidden');
-      backToDashBtn.style.display = 'none';
-      pageTitle.textContent = 'Studio Dashboard';
-      appBody.classList.remove('in-tool-view');
+      navigateTo('/dashboard');
     });
   }
 
   function launchTool1() {
+    if (window.location.pathname !== '/promptgen') {
+      navigateTo('/promptgen');
+      return;
+    }
     if (dashboardView) dashboardView.classList.add('hidden');
     if (studioView) studioView.classList.remove('hidden');
     if (tool2View) tool2View.classList.add('hidden');
@@ -751,6 +744,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function launchTool2() {
+    if (window.location.pathname !== '/bannergen') {
+      navigateTo('/bannergen');
+      return;
+    }
     if (dashboardView) dashboardView.classList.add('hidden');
     if (studioView) studioView.classList.add('hidden');
     if (tool2View) tool2View.classList.remove('hidden');
@@ -763,14 +760,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function launchTool3(preloadedPrompt = '') {
-    if (dashboardView) dashboardView.classList.add('hidden');
-    if (studioView) studioView.classList.add('hidden');
-    if (tool2View) tool2View.classList.add('hidden');
-    if (document.getElementById('tool4View')) document.getElementById('tool4View').classList.add('hidden');
-    if (tool3View) tool3View.classList.remove('hidden');
-    backToDashBtn.style.display = 'inline-block';
-    pageTitle.textContent = 'Google Flow Generator';
-    appBody.classList.add('in-tool-view');
     if (preloadedPrompt) {
       const cleanPrompt = (preloadedPrompt || '')
         .replace(/[\r\n\t]+/g, ' ')
@@ -782,14 +771,34 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (flowPromptsArea) {
           flowPromptsArea.value = cleanPrompt;
         }
-        updateFlowPromptCount();
+        if (typeof updateFlowPromptCount === 'function') {
+          updateFlowPromptCount();
+        }
       }
+      navigateTo('/flowgen');
+      return;
     }
+    if (window.location.pathname !== '/flowgen') {
+      navigateTo('/flowgen');
+      return;
+    }
+    if (dashboardView) dashboardView.classList.add('hidden');
+    if (studioView) studioView.classList.add('hidden');
+    if (tool2View) tool2View.classList.add('hidden');
+    if (document.getElementById('tool4View')) document.getElementById('tool4View').classList.add('hidden');
+    if (tool3View) tool3View.classList.remove('hidden');
+    backToDashBtn.style.display = 'inline-block';
+    pageTitle.textContent = 'Google Flow Generator';
+    appBody.classList.add('in-tool-view');
     // Initialize connection to WebSocket when launching tool
     initFlowConnection();
   }
 
   function launchTool4() {
+    if (window.location.pathname !== '/slicer') {
+      navigateTo('/slicer');
+      return;
+    }
     if (dashboardView) dashboardView.classList.add('hidden');
     if (studioView) studioView.classList.add('hidden');
     if (tool2View) tool2View.classList.add('hidden');
@@ -6298,6 +6307,39 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       if (window.showCustomToast) window.showCustomToast('Failed to delete feedback: ' + err.message, 'error');
     }
   };
+
+  // Central Routing System
+  function handleRouting() {
+    let path = window.location.pathname;
+    if (!path || path === '/' || path === '/dashboard') {
+      if (dashboardView) dashboardView.classList.remove('hidden');
+      if (studioView) studioView.classList.add('hidden');
+      if (tool2View) tool2View.classList.add('hidden');
+      if (tool3View) tool3View.classList.add('hidden');
+      const t4 = document.getElementById('tool4View');
+      if (t4) t4.classList.add('hidden');
+      if (backToDashBtn) backToDashBtn.style.display = 'none';
+      if (pageTitle) pageTitle.textContent = 'Studio Dashboard';
+      if (appBody) appBody.classList.remove('in-tool-view');
+      setSidebarActive('dashboard');
+    } else if (path === '/promptgen') {
+      launchTool1();
+      setSidebarActive('icon-sheet-prompt');
+    } else if (path === '/flowgen') {
+      launchTool3();
+      setSidebarActive('google-flow-gen');
+    } else if (path === '/slicer') {
+      launchTool4();
+      setSidebarActive('icon-sheet-slicer');
+    } else if (path === '/bannergen') {
+      launchTool2();
+      setSidebarActive('icon-pack-banner');
+    }
+  }
+
+  window.addEventListener('popstate', handleRouting);
+  // Run on initial load
+  handleRouting();
 
 });
 

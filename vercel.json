@@ -3,6 +3,9 @@
   "name": "gravity-lab-studio",
   "cleanUrls": true,
   "trailingSlash": false,
+  "rewrites": [
+    { "source": "/(promptgen|flowgen|slicer|bannergen|dashboard)", "destination": "/index.html" }
+  ],
   "headers": [
     {
       "source": "/(.*)",
