@@ -5275,9 +5275,41 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
   const btnAdminResetState = document.getElementById('btnAdminResetState');
   const btnAdminExportLogs = document.getElementById('btnAdminExportLogs');
 
+  let firestoreCleanupDone = false;
+  async function performAutoCleanup() {
+    if (firestoreCleanupDone || !firebaseDb) return;
+    firestoreCleanupDone = true;
+    try {
+      fetch('/api/users/clear-test', { method: 'POST' }).catch(() => {});
+      const logs = getUserLogs().filter(u => !String(u.uid || '').startsWith('user_test_') && !String(u.email || '').includes('@gravitylab.ai'));
+      saveUserLogs(logs);
+
+      const snapshot = await firebaseDb.collection('users').get();
+      const batch = firebaseDb.batch();
+      let count = 0;
+      snapshot.forEach(doc => {
+        const data = doc.data() || {};
+        const email = String(data.email || '').toLowerCase();
+        const uid = String(doc.id || '').toLowerCase();
+        if (uid.startsWith('user_test_') || email.includes('@gravitylab.ai')) {
+          batch.delete(doc.ref);
+          count++;
+        }
+      });
+      if (count > 0) {
+        await batch.commit();
+        console.log(`[Auto Cleanup] Successfully deleted ${count} test/bot users.`);
+        renderAdminUserLogs();
+      }
+    } catch (e) {
+      console.warn('[Auto Cleanup Error]:', e);
+    }
+  }
+
   function checkAdminAccess(user) {
     if (user && user.email && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
       if (adminNavBtn) adminNavBtn.classList.remove('hidden');
+      performAutoCleanup();
     } else {
       if (adminNavBtn) adminNavBtn.classList.add('hidden');
       if (adminPanelView && !adminPanelView.classList.contains('hidden')) {
@@ -5947,79 +5979,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
   }
 
   const btnRefreshAdminUserLogs = document.getElementById('btnRefreshAdminUserLogs');
-  const btnAddTestUser = document.getElementById('btnAddTestUser');
 
-  if (btnAddTestUser) {
-    btnAddTestUser.addEventListener('click', async () => {
-      if (!firebaseDb) {
-        if (window.showCustomToast) window.showCustomToast('Firestore DB not initialized', 'warning');
-        return;
-      }
-      const randomId = Math.floor(1000 + Math.random() * 9000);
-      const testUid = 'user_test_' + randomId;
-      const names = ['Arafat Hossain', 'Tanvir Ahmed', 'Nusrat Jahan', 'Sabbir Rahman', 'Fahim Shahriar'];
-      const randomName = names[Math.floor(Math.random() * names.length)] + ' #' + randomId;
-      const testEmail = 'user' + randomId + '@gravitylab.ai';
-      
-      try {
-        await firebaseDb.collection('users').doc(testUid).set({
-          uid: testUid,
-          email: testEmail,
-          displayName: randomName,
-          photoURL: `https://api.dicebear.com/7.x/avataaars/svg?seed=${randomId}`,
-          firstLogin: firebase.firestore.FieldValue.serverTimestamp(),
-          lastActive: firebase.firestore.FieldValue.serverTimestamp(),
-          provider: 'google.com',
-          status: 'active',
-          metrics: {
-            iconSheets: { total: Math.floor(Math.random() * 10), today: Math.floor(Math.random() * 3) },
-            prompts: { total: Math.floor(Math.random() * 20), today: Math.floor(Math.random() * 5) },
-            flowImages: { total: Math.floor(Math.random() * 8), today: Math.floor(Math.random() * 2) },
-            presentations: { total: Math.floor(Math.random() * 5), today: Math.floor(Math.random() * 1) }
-          }
-        });
-        if (window.showCustomToast) window.showCustomToast(`Test user ${randomName} added to Firestore!`, 'success');
-      } catch (err) {
-        console.error('Error adding test user:', err);
-        if (window.showCustomToast) window.showCustomToast('Failed to add test user: ' + err.message, 'error');
-      }
-    });
-  }
-
-  const btnClearTestUsers = document.getElementById('btnClearTestUsers');
-  if (btnClearTestUsers) {
-    btnClearTestUsers.addEventListener('click', async () => {
-      // Clear test users from MongoDB backend
-      try {
-        await fetch('/api/users/clear-test', { method: 'POST' });
-      } catch (e) {}
-
-      // Clear test users from localStorage
-      const logs = getUserLogs().filter(u => !String(u.uid || '').startsWith('user_test_') && !String(u.email || '').includes('@gravitylab.ai'));
-      saveUserLogs(logs);
-
-      // Clear test users from Firestore if present
-      if (firebaseDb) {
-        try {
-          const snapshot = await firebaseDb.collection('users').get();
-          const batch = firebaseDb.batch();
-          let count = 0;
-          snapshot.forEach(doc => {
-            if (doc.id.startsWith('user_test_') || (doc.data() && doc.data().email && doc.data().email.includes('@gravitylab.ai'))) {
-              batch.delete(doc.ref);
-              count++;
-            }
-          });
-          if (count > 0) await batch.commit();
-        } catch (e) {
-          console.warn('Error clearing test users from Firestore:', e);
-        }
-      }
-
-      renderAdminUserLogs();
-      if (window.showCustomToast) window.showCustomToast('Test users cleared! Only real accounts remain.', 'info');
-    });
-  }
 
   if (btnRefreshAdminUserLogs) {
     btnRefreshAdminUserLogs.addEventListener('click', () => {
