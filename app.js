@@ -5936,7 +5936,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
   }
 
   window.showAdminSubView = function(targetSectionId) {
-    const sections = ['adminSectionOverview', 'adminSectionUserLogs', 'adminSectionControls', 'adminSectionFeedback'];
+    const sections = ['adminSectionOverview', 'adminSectionUserLogs', 'adminSectionControls', 'adminSectionFeedback', 'adminSectionNotice'];
     
     sections.forEach(id => {
       const el = document.getElementById(id);
@@ -5968,6 +5968,10 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       const btn = document.getElementById('adminNavFeedback');
       if (btn) btn.classList.add('active');
       renderAdminFeedback(); // Refresh feedbacks on tab selection!
+    } else if (targetSectionId === 'adminSectionNotice') {
+      const btn = document.getElementById('adminNavNotice');
+      if (btn) btn.classList.add('active');
+      window.loadAdminNoticeConfig(); // Load notice config on section view!
     }
   };
 
@@ -6308,6 +6312,273 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     }
   };
 
+  // ==========================================================================
+  // CUSTOM NOTICE POPUP CONTROLS AND SYNC LOGIC
+  // ==========================================================================
+  
+  // Alias support for toast notifications compatibility in app
+  if (!window.showCustomToast && window.showToast) {
+    window.showCustomToast = window.showToast;
+  }
+
+  // Helper to convert Google Drive sharing links to direct image source URLs
+  function convertDriveUrlToDirectLink(url) {
+    if (!url) return '';
+    url = url.trim();
+    const driveRegex = /drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)\/(view|edit|xp)/;
+    const match = url.match(driveRegex);
+    if (match && match[1]) {
+      return `https://lh3.googleusercontent.com/d/${match[1]}`;
+    }
+    const openRegex = /drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/;
+    const matchOpen = url.match(openRegex);
+    if (matchOpen && matchOpen[1]) {
+      return `https://lh3.googleusercontent.com/d/${matchOpen[1]}`;
+    }
+    return url;
+  }
+
+  let activeNoticeConfig = null;
+  let noticeConfigFetched = false;
+
+  window.closeNoticePopup = function() {
+    const modal = document.getElementById('noticePopupModal');
+    if (modal) {
+      modal.classList.add('hidden');
+    }
+  };
+
+  window.checkAndShowNoticePopup = async function() {
+    const adminPanelView = document.getElementById('adminPanelView');
+    if (!noticeConfigFetched) {
+      // 1. Try to read from Firestore database first
+      if (firebaseDb) {
+        try {
+          const doc = await firebaseDb.collection('settings').doc('notice').get();
+          if (doc.exists) {
+            activeNoticeConfig = doc.data();
+          }
+        } catch (err) {
+          console.warn('[Fetch active notice firestore failed, fallback to local]:', err);
+        }
+      }
+      
+      // 2. Fallback to localStorage if Firestore failed or was empty
+      if (!activeNoticeConfig) {
+        try {
+          activeNoticeConfig = JSON.parse(localStorage.getItem('gravity_notice_popup_settings'));
+        } catch (e) {
+          console.warn('[Fetch active notice local settings failed]:', e);
+        }
+      }
+      noticeConfigFetched = true;
+    }
+
+    if (!activeNoticeConfig || !activeNoticeConfig.enabled) {
+      const modal = document.getElementById('noticePopupModal');
+      if (modal) modal.classList.add('hidden');
+      return;
+    }
+
+    const currentPath = window.location.pathname;
+    const targetPage = activeNoticeConfig.page;
+
+    let shouldShow = false;
+    if (targetPage === 'all') {
+      if (currentPath !== '/admin' && (!adminPanelView || adminPanelView.classList.contains('hidden'))) {
+        shouldShow = true;
+      }
+    } else {
+      shouldShow = (currentPath === targetPage);
+    }
+
+    if (!shouldShow) {
+      const modal = document.getElementById('noticePopupModal');
+      if (modal) modal.classList.add('hidden');
+      return;
+    }
+
+    const modal = document.getElementById('noticePopupModal');
+    const titleEl = document.getElementById('noticePopupTitle');
+    const contentEl = document.getElementById('noticePopupContent');
+    const imageEl = document.getElementById('noticePopupImage');
+    const btnEl = document.getElementById('noticePopupBtn');
+
+    if (modal) {
+      if (titleEl) titleEl.textContent = activeNoticeConfig.title || 'Notice';
+      if (contentEl) contentEl.textContent = activeNoticeConfig.content || '';
+      
+      if (imageEl) {
+        if (activeNoticeConfig.imageUrl) {
+          imageEl.src = convertDriveUrlToDirectLink(activeNoticeConfig.imageUrl);
+          imageEl.style.display = 'block';
+        } else {
+          imageEl.style.display = 'none';
+        }
+      }
+
+      if (btnEl) {
+        if (activeNoticeConfig.btnText && activeNoticeConfig.btnLink) {
+          btnEl.textContent = activeNoticeConfig.btnText;
+          btnEl.href = activeNoticeConfig.btnLink;
+          btnEl.style.display = 'flex';
+          
+          btnEl.onclick = function(e) {
+            const link = activeNoticeConfig.btnLink;
+            if (link.startsWith('/') && !link.startsWith('//')) {
+              e.preventDefault();
+              window.closeNoticePopup();
+              if (window.navigateTo) {
+                window.navigateTo(link);
+              } else {
+                window.location.pathname = link;
+              }
+            }
+          };
+        } else {
+          btnEl.style.display = 'none';
+        }
+      }
+
+      modal.classList.remove('hidden');
+    }
+  };
+
+  window.loadAdminNoticeConfig = async function() {
+    let data = null;
+    if (firebaseDb) {
+      try {
+        const doc = await firebaseDb.collection('settings').doc('notice').get();
+        if (doc.exists) {
+          data = doc.data();
+        }
+      } catch (err) {
+        console.warn('[Load Notice Config Firestore Error, falling back to local]:', err);
+      }
+    }
+    
+    if (!data) {
+      try {
+        data = JSON.parse(localStorage.getItem('gravity_notice_popup_settings'));
+      } catch (e) {
+        console.warn('[Load Notice Config LocalStorage Error]:', e);
+      }
+    }
+
+    if (data) {
+      const toggle = document.getElementById('noticeEnableToggle');
+      if (toggle) {
+        toggle.checked = !!data.enabled;
+        updateNoticeBadge(toggle.checked);
+      }
+      const titleInput = document.getElementById('noticeTitleInput');
+      if (titleInput) titleInput.value = data.title || '';
+      const pageSelect = document.getElementById('noticePageSelect');
+      if (pageSelect) pageSelect.value = data.page || 'all';
+      const contentInput = document.getElementById('noticeContentInput');
+      if (contentInput) contentInput.value = data.content || '';
+      const imageInput = document.getElementById('noticeImageInput');
+      if (imageInput) imageInput.value = data.imageUrl || '';
+      const btnTextInput = document.getElementById('noticeBtnTextInput');
+      if (btnTextInput) btnTextInput.value = data.btnText || '';
+      const btnLinkInput = document.getElementById('noticeBtnLinkInput');
+      if (btnLinkInput) btnLinkInput.value = data.btnLink || '';
+    }
+  };
+
+  function updateNoticeBadge(enabled) {
+    const badge = document.getElementById('noticeStatusBadge');
+    if (!badge) return;
+    if (enabled) {
+      badge.style.color = '#a3e635';
+      badge.style.background = 'rgba(163, 230, 53, 0.1)';
+      badge.style.borderColor = 'rgba(163, 230, 53, 0.2)';
+      badge.innerHTML = `<span style="width: 6.5px; height: 6.5px; border-radius: 50%; background: #a3e635;"></span> Active`;
+    } else {
+      badge.style.color = '#ef4444';
+      badge.style.background = 'rgba(239, 68, 68, 0.1)';
+      badge.style.borderColor = 'rgba(239, 68, 68, 0.2)';
+      badge.innerHTML = `<span style="width: 6.5px; height: 6.5px; border-radius: 50%; background: #ef4444;"></span> Inactive`;
+    }
+  }
+
+  window.saveAdminNoticeConfig = async function() {
+    const btn = document.getElementById('btnAdminSaveNotice');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Saving...';
+    }
+
+    const enabled = document.getElementById('noticeEnableToggle')?.checked || false;
+    const title = document.getElementById('noticeTitleInput')?.value.trim() || '';
+    const page = document.getElementById('noticePageSelect')?.value || 'all';
+    const content = document.getElementById('noticeContentInput')?.value.trim() || '';
+    const imageUrl = document.getElementById('noticeImageInput')?.value.trim() || '';
+    const btnText = document.getElementById('noticeBtnTextInput')?.value.trim() || '';
+    const btnLink = document.getElementById('noticeBtnLinkInput')?.value.trim() || '';
+    const updatedAt = Date.now();
+
+    const noticeData = {
+      enabled,
+      title,
+      page,
+      content,
+      imageUrl,
+      btnText,
+      btnLink,
+      updatedAt
+    };
+
+    try {
+      localStorage.setItem('gravity_notice_popup_settings', JSON.stringify(noticeData));
+    } catch (e) {
+      console.warn('[Save Notice Config LocalStorage Error]:', e);
+    }
+
+    let savedFirestore = false;
+    let firestoreError = null;
+    if (firebaseDb) {
+      try {
+        await firebaseDb.collection('settings').doc('notice').set(noticeData);
+        savedFirestore = true;
+      } catch (err) {
+        console.error('[Save Notice Config Firestore Error]:', err);
+        firestoreError = err.message || String(err);
+      }
+    }
+
+    activeNoticeConfig = noticeData;
+
+    if (window.showCustomToast) {
+      if (savedFirestore) {
+        window.showCustomToast('Notice configuration saved to cloud database!', 'success');
+      } else {
+        const errorDetail = firestoreError ? ` (${firestoreError})` : '';
+        window.showCustomToast(`Saved notice configuration locally. Cloud Sync Skipped/Failed${errorDetail}`, 'warning');
+      }
+    }
+    updateNoticeBadge(enabled);
+
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '💾 Save Notice Configuration';
+    }
+  };
+
+  // Save Admin Notice Config Button Event Listener
+  const btnSaveNotice = document.getElementById('btnAdminSaveNotice');
+  if (btnSaveNotice) {
+    btnSaveNotice.addEventListener('click', window.saveAdminNoticeConfig);
+  }
+
+  // Update Notice status badge dynamically on Switch Toggle change
+  const noticeToggleInput = document.getElementById('noticeEnableToggle');
+  if (noticeToggleInput) {
+    noticeToggleInput.addEventListener('change', (e) => {
+      updateNoticeBadge(e.target.checked);
+    });
+  }
+
   // Central Routing System
   function handleRouting() {
     let path = window.location.pathname;
@@ -6334,6 +6605,11 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     } else if (path === '/bannergen') {
       launchTool2();
       setSidebarActive('icon-pack-banner');
+    }
+    
+    // Evaluate custom popup notice on page/subview loads or routing transitions
+    if (window.checkAndShowNoticePopup) {
+      window.checkAndShowNoticePopup();
     }
   }
 

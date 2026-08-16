@@ -23,7 +23,7 @@ try {
   console.log('Running outside Electron environment');
 }
 
-const PORT = 8080;
+const PORT = process.env.PORT || 8081;
 const FLOW_PROFILE_FILE = path.join(__dirname, 'flow-profiles.json');
 const FLOW_DEFAULT_PORT = 9222;
 
