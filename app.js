@@ -5410,6 +5410,10 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
         console.warn('[Firestore Track Error]:', e);
       }
     }
+
+    if (typeof renderAdminUserLogs === 'function') {
+      renderAdminUserLogs();
+    }
   }
 
   let firestoreUnsubscribe = null;
