@@ -5464,6 +5464,17 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
 
     if (!tbody) return;
 
+    const parseDateHelper = (val) => {
+      if (!val) return null;
+      if (typeof val === 'object') {
+        if (typeof val.toDate === 'function') return val.toDate();
+        if (val.seconds !== undefined) return new Date(val.seconds * 1000);
+        if (val._seconds !== undefined) return new Date(val._seconds * 1000);
+      }
+      const dt = new Date(val);
+      return isNaN(dt.getTime()) ? null : dt;
+    };
+
     function renderList(userList) {
       const todayStr = new Date().toISOString().split('T')[0];
       let activeCount = 0;
@@ -5480,17 +5491,23 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
 
         if (isOnline) activeCount++;
 
-        let firstDateStr = 'N/A';
+        let firstDateStr = 'Never';
         if (u.firstLogin) {
-          const dt = u.firstLogin.toDate ? u.firstLogin.toDate() : new Date(u.firstLogin);
-          firstDateStr = dt.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+          const dt = parseDateHelper(u.firstLogin);
+          if (dt) {
+            firstDateStr = dt.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+          }
         }
 
         let lastActiveStr = 'Just Now';
         if (u.lastActive) {
-          const dt = u.lastActive.toDate ? u.lastActive.toDate() : new Date(u.lastActive);
-          lastActiveStr = dt.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-          if (dt.toISOString().startsWith(todayStr)) todayCount++;
+          const dt = parseDateHelper(u.lastActive);
+          if (dt) {
+            lastActiveStr = dt.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            if (dt.toISOString().startsWith(todayStr)) todayCount++;
+          } else if (isCurrentSessionUser) {
+            todayCount++;
+          }
         } else if (isCurrentSessionUser) {
           todayCount++;
         }
@@ -5523,10 +5540,10 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
         const presentations = getMetricCounts('presentations');
 
         return `
-          <tr style="border-bottom: 1px solid var(--outline-variant); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
+          <tr style="border-bottom: 1px solid var(--outline-variant);">
             <td style="padding: 12px 14px;">
               <div style="display: flex; align-items: center; gap: 10px;">
-                <img src="${photoURL}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid var(--outline-variant);" />
+                <img src="${photoURL}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1.5px solid var(--outline);" onerror="this.src='https://lh3.googleusercontent.com/a/default-user'">
                 <div>
                   <div style="font-weight: 700; color: #ededf0; display: flex; align-items: center; gap: 6px;">
                     ${displayName}
@@ -5783,6 +5800,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     } else if (targetSectionId === 'adminSectionUserLogs') {
       const btn = document.getElementById('adminNavUserLogs');
       if (btn) btn.classList.add('active');
+      renderAdminUserLogs(); // Refresh logs on tab selection!
     } else if (targetSectionId === 'adminSectionControls') {
       const btn = document.getElementById('adminNavControls');
       if (btn) btn.classList.add('active');
