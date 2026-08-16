@@ -1242,6 +1242,11 @@ Do not include any markdown formatting outside the json codeblock. Output valid 
             rows, cols, total, lineWeight, spacingLabel, model
           });
 
+          // Track the number of prompts generated in this batch
+          if (typeof window.trackUserMetric === 'function' && batchResults.length > 0) {
+            window.trackUserMetric('prompts', batchResults.length);
+          }
+
           batchResults.forEach((res, itemIdx) => {
             const globalImgIndex = bIdx * chunkSize + itemIdx;
             const promptText = res.prompt;
@@ -1787,6 +1792,11 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
             </div>
           `;
         } else if (msg.status === 'done') {
+          // Track Flow Image metric
+          if (typeof window.trackUserMetric === 'function') {
+            window.trackUserMetric('flowImages');
+          }
+
           const fileName = msg.savedFile ? msg.savedFile.split(/[\\/]/).pop() : `google_flow_${Date.now()}.png`;
 
           // Automatic browser file download if Auto-Save is checked
@@ -5332,7 +5342,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
   }
 
   // ===== Admin User Activity Tracker =====
-  window.trackUserMetric = function(metricKey) {
+  window.trackUserMetric = function(metricKey, incrementVal = 1) {
     if (!firebaseAuth || !firebaseAuth.currentUser) return;
     const user = firebaseAuth.currentUser;
     if (!user || !user.uid) return;
@@ -5359,8 +5369,8 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
         m.total = apiKeysCount;
         m.today = apiKeysCount;
       } else {
-        m.total = (m.total || 0) + 1;
-        m.today = (m.today || 0) + 1;
+        m.total = (m.total || 0) + incrementVal;
+        m.today = (m.today || 0) + incrementVal;
       }
       saveUserLogs(logs);
 
@@ -5393,13 +5403,24 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       (async () => {
         try {
           const userRef = firebaseDb.collection('users').doc(user.uid);
+          const docSnap = await userRef.get();
+          const docData = docSnap.exists ? docSnap.data() : {};
+          const metrics = docData.metrics || {};
+          
+          if (!metrics.apiKeys) metrics.apiKeys = { total: 0, today: 0, lastDate: todayStr };
+          if (!metrics.prompts) metrics.prompts = { total: 0, today: 0, lastDate: todayStr };
+          if (!metrics.iconSheets) metrics.iconSheets = { total: 0, today: 0, lastDate: todayStr };
+          if (!metrics.presentations) metrics.presentations = { total: 0, today: 0, lastDate: todayStr };
+          if (!metrics.flowImages) metrics.flowImages = { total: 0, today: 0, lastDate: todayStr };
+
           await userRef.set({
             uid: user.uid,
             email: user.email || '',
             displayName: user.displayName || (user.email ? user.email.split('@')[0] : 'User'),
             photoURL: user.photoURL || 'https://lh3.googleusercontent.com/a/default-user',
             status: 'active',
-            lastActive: firebase.firestore.FieldValue.serverTimestamp()
+            lastActive: firebase.firestore.FieldValue.serverTimestamp(),
+            metrics: metrics
           }, { merge: true });
 
           const updateData = {};
@@ -5408,8 +5429,8 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
             updateData[`metrics.apiKeys.today`] = apiKeysCount;
             updateData[`metrics.apiKeys.lastDate`] = todayStr;
           } else {
-            updateData[`metrics.${metricKey}.total`] = firebase.firestore.FieldValue.increment(1);
-            updateData[`metrics.${metricKey}.today`] = firebase.firestore.FieldValue.increment(1);
+            updateData[`metrics.${metricKey}.total`] = firebase.firestore.FieldValue.increment(incrementVal);
+            updateData[`metrics.${metricKey}.today`] = firebase.firestore.FieldValue.increment(incrementVal);
             updateData[`metrics.${metricKey}.lastDate`] = todayStr;
           }
           await userRef.update(updateData);
@@ -5493,6 +5514,16 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       (async () => {
         try {
           const userRef = firebaseDb.collection('users').doc(user.uid);
+          const docSnap = await userRef.get();
+          const docData = docSnap.exists ? docSnap.data() : {};
+          const metrics = docData.metrics || {};
+          
+          if (!metrics.apiKeys) metrics.apiKeys = { total: 0, today: 0, lastDate: new Date().toISOString().split('T')[0] };
+          if (!metrics.prompts) metrics.prompts = { total: 0, today: 0, lastDate: new Date().toISOString().split('T')[0] };
+          if (!metrics.iconSheets) metrics.iconSheets = { total: 0, today: 0, lastDate: new Date().toISOString().split('T')[0] };
+          if (!metrics.presentations) metrics.presentations = { total: 0, today: 0, lastDate: new Date().toISOString().split('T')[0] };
+          if (!metrics.flowImages) metrics.flowImages = { total: 0, today: 0, lastDate: new Date().toISOString().split('T')[0] };
+
           await userRef.set({
             uid: user.uid,
             email: user.email || '',
@@ -5500,7 +5531,8 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
             photoURL: userData.photoURL,
             lastActive: firebase.firestore.FieldValue.serverTimestamp(),
             provider: providerId,
-            status: 'active'
+            status: 'active',
+            metrics: metrics
           }, { merge: true });
 
           const updateData = {};
