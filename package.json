@@ -1,0 +1,12 @@
+{
+  "name": "gravity-ai",
+  "version": "1.0.0",
+  "description": "Gravity AI Studio Desktop Client",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "dependencies": {
+    "mongodb": "^6.8.0"
+  }
+}

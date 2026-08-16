@@ -210,23 +210,47 @@ const MIME_TYPES = {
 const MONGODB_ATLAS_URI = process.env.MONGODB_URI || 'mongodb+srv://havenpick1_db_user:polZjE5zNHj1TXPF@cluster0.ute96fe.mongodb.net/gravity_ai?retryWrites=true&w=majority';
 const MONGODB_FILE = path.join(__dirname, 'mongodb_users.json');
 
-function loadMongoUsers() {
+let mongoClient = null;
+let useRealMongo = false;
+let dbInstance = null;
+
+try {
+  const { MongoClient } = require('mongodb');
+  mongoClient = new MongoClient(MONGODB_ATLAS_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    serverSelectionTimeoutMS: 5000
+  });
+  mongoClient.connect()
+    .then((client) => {
+      dbInstance = client.db('gravity_ai');
+      useRealMongo = true;
+      console.log('[MongoDB Atlas]: Successfully connected to database gravity_ai');
+    })
+    .catch((err) => {
+      console.error('[MongoDB Atlas]: Connection failed, falling back to local JSON storage. Error:', err.message);
+    });
+} catch (e) {
+  console.log('[MongoDB Driver Note]: mongodb package not installed, using local file-based database fallback.');
+}
+
+function loadMongoUsersLocal() {
   try {
     if (fs.existsSync(MONGODB_FILE)) {
       const data = fs.readFileSync(MONGODB_FILE, 'utf8');
       return JSON.parse(data);
     }
   } catch (e) {
-    console.error('[MongoDB Storage Read Error]:', e);
+    console.error('[MongoDB Local Storage Read Error]:', e);
   }
   return [];
 }
 
-function saveMongoUsers(users) {
+function saveMongoUsersLocal(users) {
   try {
     fs.writeFileSync(MONGODB_FILE, JSON.stringify(users, null, 2), 'utf8');
   } catch (e) {
-    console.error('[MongoDB Storage Write Error]:', e);
+    console.error('[MongoDB Local Storage Write Error]:', e);
   }
 }
 
@@ -248,7 +272,7 @@ const server = http.createServer((req, res) => {
   if (urlPath === '/api/users/track' && req.method === 'POST') {
     let body = '';
     req.on('data', chunk => { body += chunk.toString(); });
-    req.on('end', () => {
+    req.on('end', async () => {
       try {
         const userData = JSON.parse(body || '{}');
         if (!userData || (!userData.uid && !userData.email)) {
@@ -257,10 +281,7 @@ const server = http.createServer((req, res) => {
           return;
         }
 
-        let users = loadMongoUsers();
         const emailKey = (userData.email || '').toLowerCase();
-        let existingIdx = users.findIndex(u => (userData.uid && u.uid === userData.uid) || (emailKey && u.email && u.email.toLowerCase() === emailKey));
-
         const now = new Date().toISOString();
         const userObj = {
           uid: userData.uid || 'user_' + Date.now(),
@@ -270,20 +291,60 @@ const server = http.createServer((req, res) => {
           provider: userData.provider || 'google.com',
           status: 'active',
           lastActive: now,
-          firstLogin: existingIdx >= 0 ? (users[existingIdx].firstLogin || now) : now,
-          metrics: userData.metrics || (existingIdx >= 0 ? users[existingIdx].metrics : {})
+          firstLogin: now,
+          metrics: userData.metrics || {}
         };
 
-        if (existingIdx >= 0) {
-          users[existingIdx] = { ...users[existingIdx], ...userObj };
+        let finalUser = userObj;
+        let count = 0;
+
+        if (useRealMongo && dbInstance) {
+          const col = dbInstance.collection('users');
+          const query = userData.uid 
+            ? { uid: userData.uid } 
+            : { email: { $regex: new RegExp('^' + emailKey + '$', 'i') } };
+
+          const existing = await col.findOne(query);
+          if (existing) {
+            userObj.firstLogin = existing.firstLogin || now;
+            // Merge metrics safely
+            userObj.metrics = {
+              iconSheets: (userObj.metrics.iconSheets || {}).total > (existing.metrics?.iconSheets || {}).total ? userObj.metrics.iconSheets : (existing.metrics?.iconSheets || {}),
+              prompts: (userObj.metrics.prompts || {}).total > (existing.metrics?.prompts || {}).total ? userObj.metrics.prompts : (existing.metrics?.prompts || {}),
+              flowImages: (userObj.metrics.flowImages || {}).total > (existing.metrics?.flowImages || {}).total ? userObj.metrics.flowImages : (existing.metrics?.flowImages || {}),
+              presentations: (userObj.metrics.presentations || {}).total > (existing.metrics?.presentations || {}).total ? userObj.metrics.presentations : (existing.metrics?.presentations || {})
+            };
+            await col.updateOne({ _id: existing._id }, { $set: userObj });
+            finalUser = { ...existing, ...userObj };
+          } else {
+            await col.insertOne(userObj);
+          }
+          count = await col.countDocuments();
         } else {
-          users.unshift(userObj);
+          // File Fallback
+          let users = loadMongoUsersLocal();
+          let existingIdx = users.findIndex(u => (userData.uid && u.uid === userData.uid) || (emailKey && u.email && u.email.toLowerCase() === emailKey));
+
+          if (existingIdx >= 0) {
+            userObj.firstLogin = users[existingIdx].firstLogin || now;
+            userObj.metrics = {
+              iconSheets: (userObj.metrics.iconSheets || {}).total > (users[existingIdx].metrics?.iconSheets || {}).total ? userObj.metrics.iconSheets : (users[existingIdx].metrics?.iconSheets || {}),
+              prompts: (userObj.metrics.prompts || {}).total > (users[existingIdx].metrics?.prompts || {}).total ? userObj.metrics.prompts : (users[existingIdx].metrics?.prompts || {}),
+              flowImages: (userObj.metrics.flowImages || {}).total > (users[existingIdx].metrics?.flowImages || {}).total ? userObj.metrics.flowImages : (users[existingIdx].metrics?.flowImages || {}),
+              presentations: (userObj.metrics.presentations || {}).total > (users[existingIdx].metrics?.presentations || {}).total ? userObj.metrics.presentations : (users[existingIdx].metrics?.presentations || {})
+            };
+            users[existingIdx] = { ...users[existingIdx], ...userObj };
+            finalUser = users[existingIdx];
+          } else {
+            users.unshift(userObj);
+          }
+          saveMongoUsersLocal(users);
+          count = users.length;
         }
 
-        saveMongoUsers(users);
         res.setHeader('Content-Type', 'application/json');
         res.statusCode = 200;
-        res.end(JSON.stringify({ ok: true, message: 'User tracked in MongoDB DB', user: userObj, count: users.length }));
+        res.end(JSON.stringify({ ok: true, message: 'User tracked in MongoDB DB', user: finalUser, count: count }));
       } catch (err) {
         res.statusCode = 500;
         res.end(JSON.stringify({ ok: false, error: err.message }));
@@ -294,20 +355,52 @@ const server = http.createServer((req, res) => {
 
   // API Route: Clear Test Users (POST)
   if (req.url === '/api/users/clear-test' && req.method === 'POST') {
-    let users = loadMongoUsers();
-    users = users.filter(u => !String(u.uid || '').startsWith('user_test_') && !String(u.email || '').includes('@gravitylab.ai'));
-    saveMongoUsers(users);
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ ok: true, users: users }));
+    if (useRealMongo && dbInstance) {
+      const col = dbInstance.collection('users');
+      col.deleteMany({
+        $or: [
+          { uid: /^user_test_/ },
+          { email: /@gravitylab\.ai/ }
+        ]
+      })
+      .then(async () => {
+        const users = await col.find().toArray();
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, users: users }));
+      })
+      .catch((err) => {
+        res.statusCode = 500;
+        res.end(JSON.stringify({ ok: false, error: err.message }));
+      });
+    } else {
+      let users = loadMongoUsersLocal();
+      users = users.filter(u => !String(u.uid || '').startsWith('user_test_') && !String(u.email || '').includes('@gravitylab.ai'));
+      saveMongoUsersLocal(users);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true, users: users }));
+    }
     return;
   }
 
   // API Route: List Users (GET)
   if (urlPath === '/api/users/list' && req.method === 'GET') {
-    const users = loadMongoUsers();
-    res.setHeader('Content-Type', 'application/json');
-    res.statusCode = 200;
-    res.end(JSON.stringify({ ok: true, count: users.length, users }));
+    if (useRealMongo && dbInstance) {
+      dbInstance.collection('users').find().toArray()
+        .then((users) => {
+          res.setHeader('Content-Type', 'application/json');
+          res.statusCode = 200;
+          res.end(JSON.stringify({ ok: true, count: users.length, users }));
+        })
+        .catch((err) => {
+          res.statusCode = 500;
+          res.end(JSON.stringify({ ok: false, error: err.message }));
+        });
+    } else {
+      const users = loadMongoUsersLocal();
+      res.setHeader('Content-Type', 'application/json');
+      res.statusCode = 200;
+      res.end(JSON.stringify({ ok: true, count: users.length, users }));
+    }
     return;
   }
 

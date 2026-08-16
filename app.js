@@ -4360,6 +4360,11 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       btnSliceVectorize.disabled = false;
       btnSliceVectorize.textContent = `⚡ Convert ${totalTiles} Icons to Vector`;
 
+      // Track user metric for iconSheets
+      if (typeof window.trackUserMetric === 'function') {
+        window.trackUserMetric('iconSheets');
+      }
+
       // Build presentation sheet SVG
       buildBrandedSvgSheet();
 
@@ -4811,6 +4816,9 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     }
 
     if (msg.ok) {
+      if (typeof window.trackUserMetric === 'function') {
+        window.trackUserMetric('presentations');
+      }
       alert(`Successfully saved to local PC directory:\n${msg.targetDir}\n\nFiles saved:\n- Complete Branded Sheet SVG\n- ${msg.savedIconsCount} Individual Icon SVGs`);
     } else {
       alert('Failed to save to PC:\n' + msg.error);
@@ -4886,6 +4894,11 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
   if (btnDownloadAssembledSheet) {
     btnDownloadAssembledSheet.addEventListener('click', () => {
       if (!generatedAssembledSvg) return;
+
+      if (typeof window.trackUserMetric === 'function') {
+        window.trackUserMetric('presentations');
+      }
+
       const cleanSvg = getCleanSvgForExport(generatedAssembledSvg);
       const blob = new Blob([cleanSvg], { type: 'image/svg+xml' });
       const url = URL.createObjectURL(blob);
@@ -5298,6 +5311,30 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       m.total = (m.total || 0) + 1;
       m.today = (m.today || 0) + 1;
       saveUserLogs(logs);
+
+      // Sync metric update to MongoDB backend
+      const userObj = logs[existingIndex];
+      const providerId = (user.providerData && user.providerData[0] && user.providerData[0].providerId) 
+        ? user.providerData[0].providerId 
+        : (user.email ? 'google.com' : 'password');
+
+      const syncData = {
+        uid: user.uid,
+        email: user.email || '',
+        displayName: user.displayName || (user.email ? user.email.split('@')[0] : 'User'),
+        photoURL: user.photoURL || 'https://lh3.googleusercontent.com/a/default-user',
+        provider: providerId,
+        status: 'active',
+        metrics: userObj.metrics
+      };
+
+      try {
+        fetch('/api/users/track', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(syncData)
+        }).catch(err => console.warn('[MongoDB Track Metric Error]:', err));
+      } catch (e) {}
     }
 
     if (firebaseDb) {
@@ -5354,7 +5391,8 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       photoURL: user.photoURL || 'https://lh3.googleusercontent.com/a/default-user',
       lastActive: now,
       provider: providerId,
-      status: 'active'
+      status: 'active',
+      metrics: existingIndex >= 0 ? (logs[existingIndex].metrics || {}) : {}
     };
 
     if (existingIndex >= 0) {
