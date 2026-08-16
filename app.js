@@ -5860,6 +5860,32 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     });
   }
 
+  const btnClearTestUsers = document.getElementById('btnClearTestUsers');
+  if (btnClearTestUsers) {
+    btnClearTestUsers.addEventListener('click', async () => {
+      // Clear test users from localStorage
+      const logs = getUserLogs().filter(u => !String(u.uid || '').startsWith('user_test_') && !String(u.email || '').includes('@gravitylab.ai'));
+      saveUserLogs(logs);
+
+      // Clear test users from Firestore if present
+      if (firebaseDb) {
+        try {
+          const snapshot = await firebaseDb.collection('users').get();
+          snapshot.forEach(doc => {
+            if (doc.id.startsWith('user_test_') || (doc.data() && doc.data().email && doc.data().email.includes('@gravitylab.ai'))) {
+              doc.ref.delete();
+            }
+          });
+        } catch (e) {
+          console.warn('Error clearing test users from Firestore:', e);
+        }
+      }
+
+      renderAdminUserLogs();
+      if (window.showCustomToast) window.showCustomToast('Test users cleared! Only real accounts remain.', 'info');
+    });
+  }
+
   if (btnRefreshAdminUserLogs) {
     btnRefreshAdminUserLogs.addEventListener('click', () => {
       renderAdminUserLogs();
