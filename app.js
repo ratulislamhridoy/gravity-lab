@@ -5304,6 +5304,11 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       try {
         const userRef = firebaseDb.collection('users').doc(user.uid);
         const updateData = {};
+        updateData.uid = user.uid;
+        updateData.email = user.email || '';
+        updateData.displayName = user.displayName || (user.email ? user.email.split('@')[0] : 'User');
+        updateData.photoURL = user.photoURL || 'https://lh3.googleusercontent.com/a/default-user';
+        updateData.status = 'active';
         updateData[`metrics.${metricKey}.total`] = firebase.firestore.FieldValue.increment(1);
         updateData[`metrics.${metricKey}.today`] = firebase.firestore.FieldValue.increment(1);
         updateData[`metrics.${metricKey}.lastDate`] = todayStr;
@@ -5412,7 +5417,14 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       let todayCount = 0;
 
       const formattedRows = userList.map(u => {
-        const isOnline = u.status === 'active';
+        const currUser = (firebaseAuth && firebaseAuth.currentUser) ? firebaseAuth.currentUser : null;
+        const isCurrentSessionUser = currUser && (u.uid === currUser.uid || (u.email && currUser.email && u.email.toLowerCase() === currUser.email.toLowerCase()));
+
+        const displayName = u.displayName || (isCurrentSessionUser ? currUser.displayName || (currUser.email ? currUser.email.split('@')[0] : 'User') : (u.email ? u.email.split('@')[0] : 'User'));
+        const email = u.email || (isCurrentSessionUser ? currUser.email : 'N/A');
+        const photoURL = u.photoURL || (isCurrentSessionUser ? currUser.photoURL : 'https://lh3.googleusercontent.com/a/default-user') || 'https://lh3.googleusercontent.com/a/default-user';
+        const isOnline = isCurrentSessionUser || u.status === 'active';
+
         if (isOnline) activeCount++;
 
         let firstDateStr = 'N/A';
@@ -5421,11 +5433,13 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
           firstDateStr = dt.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
         }
 
-        let lastActiveStr = 'N/A';
+        let lastActiveStr = 'Just Now';
         if (u.lastActive) {
           const dt = u.lastActive.toDate ? u.lastActive.toDate() : new Date(u.lastActive);
           lastActiveStr = dt.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
           if (dt.toISOString().startsWith(todayStr)) todayCount++;
+        } else if (isCurrentSessionUser) {
+          todayCount++;
         }
 
         const providerBadge = (u.provider && u.provider.includes('google'))
@@ -5459,13 +5473,13 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
           <tr style="border-bottom: 1px solid var(--outline-variant); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
             <td style="padding: 12px 14px;">
               <div style="display: flex; align-items: center; gap: 10px;">
-                <img src="${u.photoURL || 'https://lh3.googleusercontent.com/a/default-user'}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid var(--outline-variant);" />
+                <img src="${photoURL}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid var(--outline-variant);" />
                 <div>
                   <div style="font-weight: 700; color: #ededf0; display: flex; align-items: center; gap: 6px;">
-                    ${u.displayName || 'User'}
+                    ${displayName}
                     ${providerBadge}
                   </div>
-                  <div style="font-size: 10.5px; color: var(--on-variant); font-family: var(--mono); margin-top: 1px;">${u.email}</div>
+                  <div style="font-size: 10.5px; color: var(--on-variant); font-family: var(--mono); margin-top: 1px;">${email}</div>
                 </div>
               </div>
             </td>
