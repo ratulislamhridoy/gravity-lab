@@ -831,6 +831,63 @@
           </div>
         </div>
 
+        <!-- Registered Users & User Activity Logs Section -->
+        <div style="background: var(--surface-low); border: 1px solid var(--outline-variant); border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 16px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+            <div>
+              <h3 style="margin: 0 0 2px; font-size: 15px; font-weight: 800; color: var(--on-surface);">👥 User Login & Activity Tracker</h3>
+              <p style="margin: 0; font-size: 11.5px; color: var(--on-variant);">Track registered accounts, first sign-in date, last active timestamps & real-time presence.</p>
+            </div>
+            
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-dark small" id="btnRefreshAdminUserLogs" style="height: 32px; font-weight: 700; font-size: 11px; gap: 6px;">
+                🔄 Refresh Logs
+              </button>
+              <button class="btn btn-dark small" id="btnClearAdminUserLogs" style="height: 32px; font-weight: 700; font-size: 11px; gap: 6px; color: #ef4444; border-color: rgba(239, 68, 68, 0.3);">
+                🧹 Clear Logs
+              </button>
+            </div>
+          </div>
+
+          <!-- User Quick Metrics -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px;">
+            <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--outline-variant); border-radius: 12px; padding: 12px; text-align: center;">
+              <div style="font-size: 10px; font-weight: 700; color: var(--on-variant); text-transform: uppercase;">Total Accounts</div>
+              <div style="font-size: 20px; font-weight: 800; color: #ededf0; margin-top: 2px;" id="statTotalUsers">0</div>
+            </div>
+            <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--outline-variant); border-radius: 12px; padding: 12px; text-align: center;">
+              <div style="font-size: 10px; font-weight: 700; color: var(--on-variant); text-transform: uppercase;">Active Now</div>
+              <div style="font-size: 20px; font-weight: 800; color: #cdfc52; margin-top: 2px;" id="statActiveUsers">0</div>
+            </div>
+            <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--outline-variant); border-radius: 12px; padding: 12px; text-align: center;">
+              <div style="font-size: 10px; font-weight: 700; color: var(--on-variant); text-transform: uppercase;">Logins Today</div>
+              <div style="font-size: 20px; font-weight: 800; color: #5c62ec; margin-top: 2px;" id="statLoginsToday">0</div>
+            </div>
+          </div>
+
+          <!-- User Activity Table Container -->
+          <div style="overflow-x: auto; border: 1px solid var(--outline-variant); border-radius: 14px; background: rgba(0,0,0,0.2);">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 12px;">
+              <thead>
+                <tr style="background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--outline-variant); color: var(--on-variant); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em;">
+                  <th style="padding: 12px 14px; font-weight: 700;">User Account</th>
+                  <th style="padding: 12px 14px; font-weight: 700;">First Login Date</th>
+                  <th style="padding: 12px 14px; font-weight: 700;">Last Active Time</th>
+                  <th style="padding: 12px 14px; font-weight: 700;">Provider</th>
+                  <th style="padding: 12px 14px; font-weight: 700;">Status</th>
+                </tr>
+              </thead>
+              <tbody id="adminUserLogsTableBody">
+                <tr>
+                  <td colspan="5" style="padding: 24px; text-align: center; color: var(--on-variant); font-size: 12px;">
+                    No user sign-in logs captured yet.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </div>
 
     </div>
@@ -1050,6 +1107,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
   <script src="potrace.js?v=5.0.0"></script>
-  <script src="app.js?v=5.6.0"></script>
+  <script src="app.js?v=5.7.0"></script>
 </body>
 </html>

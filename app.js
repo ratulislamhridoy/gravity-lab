@@ -5255,6 +5255,122 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     }
   }
 
+  // ===== Admin User Activity Tracker =====
+  function getUserLogs() {
+    try {
+      return JSON.parse(localStorage.getItem('gravity_user_activity_logs') || '[]');
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveUserLogs(logs) {
+    try {
+      localStorage.setItem('gravity_user_activity_logs', JSON.stringify(logs));
+    } catch (e) {}
+  }
+
+  function trackUserActivity(user) {
+    if (!user || !user.email) return;
+    const logs = getUserLogs();
+    const userEmail = user.email.toLowerCase();
+    const now = new Date().toISOString();
+    let existingIndex = logs.findIndex(u => u.email.toLowerCase() === userEmail);
+
+    const providerId = (user.providerData && user.providerData[0] && user.providerData[0].providerId) 
+      ? user.providerData[0].providerId 
+      : (user.email ? 'google.com' : 'password');
+
+    if (existingIndex >= 0) {
+      logs[existingIndex].lastActive = now;
+      logs[existingIndex].displayName = user.displayName || logs[existingIndex].displayName || userEmail.split('@')[0];
+      logs[existingIndex].photoURL = user.photoURL || logs[existingIndex].photoURL || 'https://lh3.googleusercontent.com/a/default-user';
+      logs[existingIndex].status = 'active';
+      logs[existingIndex].provider = providerId;
+    } else {
+      logs.unshift({
+        email: user.email,
+        displayName: user.displayName || userEmail.split('@')[0],
+        photoURL: user.photoURL || 'https://lh3.googleusercontent.com/a/default-user',
+        firstLogin: now,
+        lastActive: now,
+        provider: providerId,
+        status: 'active'
+      });
+    }
+
+    saveUserLogs(logs);
+  }
+
+  function renderAdminUserLogs() {
+    const logs = getUserLogs();
+    const tbody = document.getElementById('adminUserLogsTableBody');
+    const statTotalUsers = document.getElementById('statTotalUsers');
+    const statActiveUsers = document.getElementById('statActiveUsers');
+    const statLoginsToday = document.getElementById('statLoginsToday');
+
+    if (!tbody) return;
+
+    // Calculate Today's date string YYYY-MM-DD
+    const todayStr = new Date().toISOString().split('T')[0];
+    let activeCount = 0;
+    let todayCount = 0;
+
+    const formattedRows = logs.map(u => {
+      const isOnline = u.status === 'active';
+      if (isOnline) activeCount++;
+
+      if (u.lastActive && u.lastActive.startsWith(todayStr)) {
+        todayCount++;
+      }
+
+      const firstDateStr = u.firstLogin ? new Date(u.firstLogin).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A';
+      const lastActiveStr = u.lastActive ? new Date(u.lastActive).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A';
+
+      const providerBadge = (u.provider && u.provider.includes('google'))
+        ? '<span style="background: rgba(66,133,244,0.15); color: #4285f4; border: 1px solid rgba(66,133,244,0.3); padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 10px;">🌐 Google</span>'
+        : '<span style="background: rgba(92,98,236,0.15); color: #5c62ec; border: 1px solid rgba(92,98,236,0.3); padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 10px;">✉️ Email</span>';
+
+      const statusBadge = isOnline
+        ? '<span style="background: rgba(205,252,82,0.15); color: #cdfc52; border: 1px solid rgba(205,252,82,0.3); padding: 2px 8px; border-radius: 6px; font-weight: 800; font-size: 10px; display: inline-flex; align-items: center; gap: 4px;"><span style="width:6px;height:6px;border-radius:50%;background:#cdfc52;"></span> Active Now</span>'
+        : '<span style="background: rgba(255,255,255,0.06); color: var(--on-variant); border: 1px solid var(--outline-variant); padding: 2px 8px; border-radius: 6px; font-weight: 600; font-size: 10px;">⚪ Offline</span>';
+
+      return `
+        <tr style="border-bottom: 1px solid var(--outline-variant); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
+          <td style="padding: 12px 14px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <img src="${u.photoURL}" style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover; border: 1px solid var(--outline-variant);" />
+              <div>
+                <div style="font-weight: 700; color: #ededf0;">${u.displayName || 'User'}</div>
+                <div style="font-size: 10.5px; color: var(--on-variant); font-family: var(--mono);">${u.email}</div>
+              </div>
+            </div>
+          </td>
+          <td style="padding: 12px 14px; color: var(--on-variant); font-size: 11px;">${firstDateStr}</td>
+          <td style="padding: 12px 14px; color: #ededf0; font-size: 11px; font-weight: 600;">${lastActiveStr}</td>
+          <td style="padding: 12px 14px;">${providerBadge}</td>
+          <td style="padding: 12px 14px;">${statusBadge}</td>
+        </tr>
+      `;
+    }).join('');
+
+    if (statTotalUsers) statTotalUsers.textContent = logs.length;
+    if (statActiveUsers) statActiveUsers.textContent = activeCount;
+    if (statLoginsToday) statLoginsToday.textContent = todayCount;
+
+    if (logs.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="5" style="padding: 24px; text-align: center; color: var(--on-variant); font-size: 12px;">
+            No user sign-in logs captured yet.
+          </td>
+        </tr>
+      `;
+    } else {
+      tbody.innerHTML = formattedRows;
+    }
+  }
+
   // Update onAuthStateChanged handler
   if (window.firebase && firebaseAuth) {
     firebaseAuth.onAuthStateChanged((user) => {
@@ -5264,11 +5380,13 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
         if (userName) userName.textContent = user.displayName || (user.email ? user.email.split('@')[0] : 'User');
         if (userAvatar) userAvatar.src = user.photoURL || 'https://lh3.googleusercontent.com/a/default-user';
         closeAuthModal();
+        trackUserActivity(user);
       } else {
         if (btnOpenAuthModal) btnOpenAuthModal.classList.remove('hidden');
         if (userProfileMenu) userProfileMenu.classList.add('hidden');
       }
       checkAdminAccess(user);
+      renderAdminUserLogs();
     });
   }
 
@@ -5353,6 +5471,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
           adminPanelView.style.display = 'flex';
         }
 
+        renderAdminUserLogs();
         if (window.showCustomToast) window.showCustomToast('Welcome Admin! PIN 6342 Verified 👑', 'success');
       } else {
         if (adminPinInput) adminPinInput.value = '';
@@ -5360,6 +5479,24 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
           window.showCustomAlert('Incorrect Security PIN. Please enter 6342.', 'Admin Security', 'error');
         }
       }
+    });
+  }
+
+  const btnRefreshAdminUserLogs = document.getElementById('btnRefreshAdminUserLogs');
+  const btnClearAdminUserLogs = document.getElementById('btnClearAdminUserLogs');
+
+  if (btnRefreshAdminUserLogs) {
+    btnRefreshAdminUserLogs.addEventListener('click', () => {
+      renderAdminUserLogs();
+      if (window.showCustomToast) window.showCustomToast('User activity logs refreshed!', 'info');
+    });
+  }
+
+  if (btnClearAdminUserLogs) {
+    btnClearAdminUserLogs.addEventListener('click', () => {
+      localStorage.removeItem('gravity_user_activity_logs');
+      renderAdminUserLogs();
+      if (window.showCustomToast) window.showCustomToast('User activity history cleared!', 'info');
     });
   }
 
