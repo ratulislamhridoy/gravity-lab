@@ -5526,27 +5526,99 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     btnCancelAdminPin.addEventListener('click', window.closeAdminPinModal);
   }
 
+  window.enterAdminWorkspace = function() {
+    const navGroupStudio = document.getElementById('navGroupStudio');
+    const navGroupAdmin = document.getElementById('navGroupAdmin');
+    const pageTitle = document.getElementById('pageTitle');
+    const pageTitleBadge = document.getElementById('pageTitleBadge');
+    const adminPanelView = document.getElementById('adminPanelView');
+
+    document.querySelectorAll('.home-view').forEach(view => {
+      view.classList.add('hidden');
+      view.style.display = 'none';
+    });
+
+    if (navGroupStudio) navGroupStudio.style.display = 'none';
+    if (navGroupAdmin) {
+      navGroupAdmin.classList.remove('hidden');
+      navGroupAdmin.style.display = 'flex';
+    }
+
+    if (pageTitle) pageTitle.textContent = '👑 GravityLab Admin Workspace';
+    if (pageTitleBadge) {
+      pageTitleBadge.textContent = 'v5.8 Admin';
+      pageTitleBadge.style.background = 'rgba(239, 68, 68, 0.15)';
+      pageTitleBadge.style.color = '#ef4444';
+      pageTitleBadge.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+    }
+
+    if (adminPanelView) {
+      adminPanelView.classList.remove('hidden');
+      adminPanelView.style.display = 'flex';
+    }
+
+    renderAdminUserLogs();
+  };
+
+  window.exitAdminWorkspace = function() {
+    const navGroupStudio = document.getElementById('navGroupStudio');
+    const navGroupAdmin = document.getElementById('navGroupAdmin');
+    const pageTitle = document.getElementById('pageTitle');
+    const pageTitleBadge = document.getElementById('pageTitleBadge');
+    const adminPanelView = document.getElementById('adminPanelView');
+
+    if (adminPanelView) {
+      adminPanelView.classList.add('hidden');
+      adminPanelView.style.display = 'none';
+    }
+
+    if (navGroupAdmin) {
+      navGroupAdmin.classList.add('hidden');
+      navGroupAdmin.style.display = 'none';
+    }
+
+    if (navGroupStudio) {
+      navGroupStudio.style.display = 'flex';
+    }
+
+    if (pageTitle) pageTitle.textContent = '🎨 Icon Sheet Studio';
+    if (pageTitleBadge) {
+      pageTitleBadge.textContent = 'v5.2 Bulk';
+      pageTitleBadge.style.background = 'rgba(205, 252, 82, 0.12)';
+      pageTitleBadge.style.color = 'var(--primary)';
+      pageTitleBadge.style.borderColor = 'rgba(205, 252, 82, 0.3)';
+    }
+
+    const dashNav = document.querySelector('.nav-item[data-nav="dashboard"]');
+    if (dashNav) dashNav.click();
+  };
+
+  window.scrollToAdminSection = function(sectionId) {
+    const target = document.getElementById(sectionId);
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    const adminNavs = document.querySelectorAll('#navGroupAdmin .nav-item');
+    adminNavs.forEach(nav => nav.classList.remove('active'));
+    if (sectionId === 'adminSectionOverview') {
+      const btn = document.getElementById('adminNavOverview');
+      if (btn) btn.classList.add('active');
+    } else if (sectionId === 'adminSectionUserLogs') {
+      const btn = document.getElementById('adminNavUserLogs');
+      if (btn) btn.classList.add('active');
+    } else if (sectionId === 'adminSectionControls') {
+      const btn = document.getElementById('adminNavControls');
+      if (btn) btn.classList.add('active');
+    }
+  };
+
   if (adminPinForm) {
     adminPinForm.addEventListener('submit', (e) => {
       e.preventDefault();
       const enteredPin = adminPinInput ? adminPinInput.value.trim() : '';
       if (enteredPin === ADMIN_PIN) {
         closeAdminPinModal();
-        
-        // Hide all home-view sections and activate Admin Panel View
-        document.querySelectorAll('.home-view').forEach(view => {
-          view.classList.add('hidden');
-          view.style.display = 'none';
-        });
-        document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
-        
-        if (adminNavBtn) adminNavBtn.classList.add('active');
-        if (adminPanelView) {
-          adminPanelView.classList.remove('hidden');
-          adminPanelView.style.display = 'flex';
-        }
-
-        renderAdminUserLogs();
+        window.enterAdminWorkspace();
         if (window.showCustomToast) window.showCustomToast('Welcome Admin! PIN 6342 Verified 👑', 'success');
       } else {
         if (adminPinInput) adminPinInput.value = '';
@@ -5576,10 +5648,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
   }
 
   if (btnExitAdminPanel) {
-    btnExitAdminPanel.addEventListener('click', () => {
-      const dashNav = document.querySelector('.nav-item[data-nav="dashboard"]');
-      if (dashNav) dashNav.click();
-    });
+    btnExitAdminPanel.addEventListener('click', window.exitAdminWorkspace);
   }
 
   if (btnAdminClearCache) {
