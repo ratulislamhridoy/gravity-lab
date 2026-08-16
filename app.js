@@ -5667,6 +5667,15 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       }
 
       const mergedList = Array.from(userMap.values());
+      console.log('[Admin Logs Sync Debug] Version v8.1.0 loaded successfully!');
+      console.log('[Admin Logs Sync Debug] Sources metadata:', {
+        firestoreCount: latestSources.firestore ? latestSources.firestore.length : 0,
+        mongoCount: latestSources.mongo ? latestSources.mongo.length : 0,
+        localCount: latestSources.local ? latestSources.local.length : 0,
+        mergedCount: mergedList.length
+      });
+      console.log('[Admin Logs Sync Debug] Merged user records list:', mergedList);
+
       renderList(mergedList);
       saveUserLogs(mergedList);
     }
