@@ -5574,6 +5574,13 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
           }
         }, (err) => {
           console.warn('[Firestore Listen Error]:', err);
+          const liveSyncBadge = document.querySelector('#adminUserLogsTableBody')?.parentElement?.parentElement?.querySelector('.live-sync-badge');
+          if (liveSyncBadge) {
+            liveSyncBadge.innerHTML = '⚠️ Firestore Rules Locked (Read Denied)';
+            liveSyncBadge.style.background = 'rgba(239, 68, 68, 0.15)';
+            liveSyncBadge.style.color = '#ef4444';
+            liveSyncBadge.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+          }
           renderList(getUserLogs());
         });
         return;
