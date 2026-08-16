@@ -5158,16 +5158,21 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       if (firebaseAuth && window.firebase) {
         try {
           const provider = new firebase.auth.GoogleAuthProvider();
-          await firebaseAuth.signInWithPopup(provider);
-          if (window.showCustomToast) window.showCustomToast('Successfully signed in with Google!', 'success');
+          provider.setCustomParameters({ prompt: 'select_account' });
+          const result = await firebaseAuth.signInWithPopup(provider);
+          if (window.showCustomToast) window.showCustomToast(`Welcome, ${result.user.displayName || 'User'}!`, 'success');
         } catch (err) {
           console.error('Google Sign In Error:', err);
-          // Fallback to demo profile mode if API key is not configured for current domain
-          if (btnOpenAuthModal) btnOpenAuthModal.classList.add('hidden');
-          if (userProfileMenu) userProfileMenu.classList.remove('hidden');
-          if (userName) userName.textContent = 'Google User';
-          closeAuthModal();
-          if (window.showCustomToast) window.showCustomToast('Signed in with Google (Demo Mode)', 'success');
+          let errTitle = 'Google Sign-In Notice';
+          let errMsg = err.message || 'Google Sign-In failed.';
+          if (err.code === 'auth/unauthorized-domain') {
+            errMsg = 'Domain Authorization Required:\nPlease add your current URL/domain to Firebase Console -> Authentication -> Settings -> Authorized domains.';
+          } else if (err.code === 'auth/popup-blocked') {
+            errMsg = 'Pop-up blocked by browser. Please allow pop-ups for this site and try again.';
+          }
+          if (window.showCustomAlert) {
+            window.showCustomAlert(errMsg, errTitle, 'warning');
+          }
         }
       } else {
         if (btnOpenAuthModal) btnOpenAuthModal.classList.add('hidden');
@@ -5190,20 +5195,26 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       if (firebaseAuth && window.firebase) {
         try {
           if (isSignUpMode) {
-            await firebaseAuth.createUserWithEmailAndPassword(email, password);
-            if (window.showCustomToast) window.showCustomToast('Account created successfully!', 'success');
+            const res = await firebaseAuth.createUserWithEmailAndPassword(email, password);
+            if (window.showCustomToast) window.showCustomToast(`Account created for ${res.user.email}!`, 'success');
           } else {
-            await firebaseAuth.signInWithEmailAndPassword(email, password);
-            if (window.showCustomToast) window.showCustomToast('Signed in successfully!', 'success');
+            const res = await firebaseAuth.signInWithEmailAndPassword(email, password);
+            if (window.showCustomToast) window.showCustomToast(`Welcome back, ${res.user.email.split('@')[0]}!`, 'success');
           }
+          closeAuthModal();
         } catch (err) {
           console.error('Auth Error:', err);
-          // Fallback to local profile mode
-          if (btnOpenAuthModal) btnOpenAuthModal.classList.add('hidden');
-          if (userProfileMenu) userProfileMenu.classList.remove('hidden');
-          if (userName) userName.textContent = email.split('@')[0];
-          closeAuthModal();
-          if (window.showCustomToast) window.showCustomToast(`Welcome, ${email.split('@')[0]}!`, 'success');
+          let errMsg = err.message || 'Authentication failed.';
+          if (err.code === 'auth/weak-password') {
+            errMsg = 'Password is too weak. Please use at least 6 characters.';
+          } else if (err.code === 'auth/email-already-in-use') {
+            errMsg = 'This email is already registered. Please click Sign In instead.';
+          } else if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+            errMsg = 'Invalid email or password. Please check your credentials or click Create Account.';
+          }
+          if (window.showCustomAlert) {
+            window.showCustomAlert(errMsg, 'Authentication Error', 'error');
+          }
         }
       } else {
         if (btnOpenAuthModal) btnOpenAuthModal.classList.add('hidden');
