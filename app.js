@@ -6107,6 +6107,27 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
   const feedbackTextInput = document.getElementById('feedbackTextInput');
   const btnSubmitFeedback = document.getElementById('btnSubmitFeedback');
   const btnRefreshAdminFeedback = document.getElementById('btnRefreshAdminFeedback');
+  const openFeedbackModal = document.getElementById('openFeedbackModal');
+  const feedbackModal = document.getElementById('feedbackModal');
+  const btnCancelFeedback = document.getElementById('btnCancelFeedback');
+
+  // Handle open/close modal triggers
+  if (openFeedbackModal && feedbackModal) {
+    openFeedbackModal.addEventListener('click', () => {
+      feedbackModal.classList.remove('hidden');
+    });
+  }
+
+  if (btnCancelFeedback && feedbackModal) {
+    btnCancelFeedback.addEventListener('click', () => {
+      feedbackModal.classList.add('hidden');
+      if (feedbackTextInput) feedbackTextInput.value = '';
+      currentFeedbackRating = 5;
+      if (feedbackRatingStars) {
+        feedbackRatingStars.querySelectorAll('span').forEach(s => s.style.color = '#fbbf24');
+      }
+    });
+  }
 
   // Handle visual star interaction
   if (feedbackRatingStars) {
@@ -6155,10 +6176,13 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
         if (window.showCustomToast) window.showCustomToast('Thank you! Your feedback has been submitted.', 'success');
         if (feedbackTextInput) feedbackTextInput.value = '';
         
-        // Reset stars
+        // Reset stars and hide modal
         currentFeedbackRating = 5;
         if (feedbackRatingStars) {
           feedbackRatingStars.querySelectorAll('span').forEach(s => s.style.color = '#fbbf24');
+        }
+        if (feedbackModal) {
+          feedbackModal.classList.add('hidden');
         }
       } catch (err) {
         console.error('[Feedback Submission Error]:', err);

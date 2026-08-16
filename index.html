@@ -74,6 +74,10 @@
             <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--tertiary);"><path d="M21 2l-2 2m-2-2l2 2M3 11l8-8 10 10-8 8-10-10z"/><circle cx="7.5" cy="16.5" r="1.5"/></svg>
             <span style="font-weight: 700; color: var(--tertiary);">API Key Config</span>
           </button>
+          <button class="nav-item" id="openFeedbackModal" style="background: rgba(251, 191, 36, 0.08); border: 1px solid rgba(251, 191, 36, 0.25); color: #fbbf24; border-radius: 10px; margin-top: 6px;">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: #fbbf24;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <span style="font-weight: 700; color: #fbbf24;">Share Feedback</span>
+          </button>
         </div>
       </nav>
 
@@ -169,29 +173,6 @@
             </div>
           </div>
 
-        </div>
-
-        <!-- Feedback Section -->
-        <div style="margin-top: 32px; background: var(--surface-low, #181c18); border: 1px solid var(--outline-variant, rgba(255,255,255,0.08)); border-radius: 20px; padding: 24px; max-width: 600px;">
-          <h3 style="margin-top: 0; font-size: 16px; font-weight: 700; color: var(--on-surface);">Share Your Feedback</h3>
-          <p style="font-size: 11.5px; color: var(--on-variant); margin-top: 4px; margin-bottom: 16px;">We would love to hear your thoughts, suggestions, or reports about GravityLab Studio!</p>
-          <div style="display: flex; flex-direction: column; gap: 12px;">
-            <div>
-              <label style="font-size: 10px; font-weight: 800; color: var(--on-variant); text-transform: uppercase; letter-spacing: 0.5px;">Rating</label>
-              <div id="feedbackRatingStars" style="display: flex; gap: 8px; margin-top: 6px; font-size: 24px; color: #fbbf24; cursor: pointer;">
-                <span data-star="1">★</span>
-                <span data-star="2">★</span>
-                <span data-star="3">★</span>
-                <span data-star="4">★</span>
-                <span data-star="5">★</span>
-              </div>
-            </div>
-            <div>
-              <label for="feedbackTextInput" style="font-size: 10px; font-weight: 800; color: var(--on-variant); text-transform: uppercase; letter-spacing: 0.5px;">Message</label>
-              <textarea id="feedbackTextInput" rows="4" placeholder="Type your feedback here..." style="width: 100%; margin-top: 6px; padding: 12px; background: var(--surface-high, #202425); border: 1px solid var(--outline-variant, rgba(255,255,255,0.08)); border-radius: 10px; color: var(--on-surface); font-size: 13px; resize: none; box-sizing: border-box; outline: none; transition: border-color 0.15s; font-family: inherit;"></textarea>
-            </div>
-            <button class="btn btn-primary" id="btnSubmitFeedback" style="align-self: flex-start; height: 38px; padding: 0 20px; font-weight: 700; font-size: 12px; border-radius: 20px;">Submit Feedback</button>
-          </div>
         </div>
 
       </div>
@@ -988,6 +969,36 @@
 
       </div>
 
+    </div>
+  </div>
+
+  <!-- User Feedback Modal -->
+  <div class="modal-backdrop hidden" id="feedbackModal">
+    <div class="modal-box" style="max-width: 480px; display: flex; flex-direction: column; gap: 16px;">
+      <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">💬 Share Your Feedback</h3>
+      <p style="font-size: 13px; color: var(--on-variant); margin: 0;">We would love to hear your thoughts, suggestions, or reports about GravityLab Studio!</p>
+      
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div>
+          <label style="font-size: 10px; font-weight: 800; color: var(--on-variant); text-transform: uppercase; letter-spacing: 0.5px;">Feedback Rating</label>
+          <div id="feedbackRatingStars" style="display: flex; gap: 8px; margin-top: 6px; font-size: 26px; color: #fbbf24; cursor: pointer;">
+            <span data-star="1">★</span>
+            <span data-star="2">★</span>
+            <span data-star="3">★</span>
+            <span data-star="4">★</span>
+            <span data-star="5">★</span>
+          </div>
+        </div>
+        <div>
+          <label for="feedbackTextInput" style="font-size: 10px; font-weight: 800; color: var(--on-variant); text-transform: uppercase; letter-spacing: 0.5px;">Message</label>
+          <textarea id="feedbackTextInput" rows="4" placeholder="Type your feedback here..." style="width: 100%; margin-top: 6px; padding: 12px; background: var(--surface-high, #202425); border: 1px solid var(--outline-variant, rgba(255,255,255,0.08)); border-radius: 10px; color: var(--on-surface); font-size: 13px; resize: none; box-sizing: border-box; outline: none; transition: border-color 0.15s; font-family: inherit;"></textarea>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px;">
+        <button class="btn btn-dark" id="btnCancelFeedback" style="height: 38px; padding: 0 16px; font-weight: 700; font-size: 12px;">Cancel</button>
+        <button class="btn btn-primary" id="btnSubmitFeedback" style="height: 38px; padding: 0 20px; font-weight: 700; font-size: 12px;">Submit Feedback</button>
+      </div>
     </div>
   </div>
 
