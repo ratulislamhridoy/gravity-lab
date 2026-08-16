@@ -5413,6 +5413,27 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
           if (!metrics.presentations) metrics.presentations = { total: 0, today: 0, lastDate: todayStr };
           if (!metrics.flowImages) metrics.flowImages = { total: 0, today: 0, lastDate: todayStr };
 
+          // Reset daily count if date has changed
+          const allKeys = ['apiKeys', 'prompts', 'iconSheets', 'presentations', 'flowImages'];
+          allKeys.forEach(k => {
+            if (metrics[k].lastDate !== todayStr) {
+              metrics[k].today = 0;
+              metrics[k].lastDate = todayStr;
+            }
+          });
+
+          // Perform in-memory increment/update
+          if (metricKey === 'apiKeys') {
+            metrics.apiKeys.total = apiKeysCount;
+            metrics.apiKeys.today = apiKeysCount;
+            metrics.apiKeys.lastDate = todayStr;
+          } else if (metrics[metricKey]) {
+            metrics[metricKey].total = (metrics[metricKey].total || 0) + incrementVal;
+            metrics[metricKey].today = (metrics[metricKey].today || 0) + incrementVal;
+            metrics[metricKey].lastDate = todayStr;
+          }
+
+          // Single write to Firestore
           await userRef.set({
             uid: user.uid,
             email: user.email || '',
@@ -5422,18 +5443,6 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
             lastActive: firebase.firestore.FieldValue.serverTimestamp(),
             metrics: metrics
           }, { merge: true });
-
-          const updateData = {};
-          if (metricKey === 'apiKeys') {
-            updateData[`metrics.apiKeys.total`] = apiKeysCount;
-            updateData[`metrics.apiKeys.today`] = apiKeysCount;
-            updateData[`metrics.apiKeys.lastDate`] = todayStr;
-          } else {
-            updateData[`metrics.${metricKey}.total`] = firebase.firestore.FieldValue.increment(incrementVal);
-            updateData[`metrics.${metricKey}.today`] = firebase.firestore.FieldValue.increment(incrementVal);
-            updateData[`metrics.${metricKey}.lastDate`] = todayStr;
-          }
-          await userRef.update(updateData);
         } catch (err) {
           console.warn('[Firestore Metric Error]:', err);
         }
@@ -5518,12 +5527,28 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
           const docData = docSnap.exists ? docSnap.data() : {};
           const metrics = docData.metrics || {};
           
-          if (!metrics.apiKeys) metrics.apiKeys = { total: 0, today: 0, lastDate: new Date().toISOString().split('T')[0] };
-          if (!metrics.prompts) metrics.prompts = { total: 0, today: 0, lastDate: new Date().toISOString().split('T')[0] };
-          if (!metrics.iconSheets) metrics.iconSheets = { total: 0, today: 0, lastDate: new Date().toISOString().split('T')[0] };
-          if (!metrics.presentations) metrics.presentations = { total: 0, today: 0, lastDate: new Date().toISOString().split('T')[0] };
-          if (!metrics.flowImages) metrics.flowImages = { total: 0, today: 0, lastDate: new Date().toISOString().split('T')[0] };
+          const todayStr = new Date().toISOString().split('T')[0];
+          if (!metrics.apiKeys) metrics.apiKeys = { total: 0, today: 0, lastDate: todayStr };
+          if (!metrics.prompts) metrics.prompts = { total: 0, today: 0, lastDate: todayStr };
+          if (!metrics.iconSheets) metrics.iconSheets = { total: 0, today: 0, lastDate: todayStr };
+          if (!metrics.presentations) metrics.presentations = { total: 0, today: 0, lastDate: todayStr };
+          if (!metrics.flowImages) metrics.flowImages = { total: 0, today: 0, lastDate: todayStr };
 
+          // Reset daily count if date has changed
+          const allKeys = ['apiKeys', 'prompts', 'iconSheets', 'presentations', 'flowImages'];
+          allKeys.forEach(k => {
+            if (metrics[k].lastDate !== todayStr) {
+              metrics[k].today = 0;
+              metrics[k].lastDate = todayStr;
+            }
+          });
+
+          // Sync API keys count in metrics object in-memory
+          metrics.apiKeys.total = apiKeysCount;
+          metrics.apiKeys.today = apiKeysCount;
+          metrics.apiKeys.lastDate = todayStr;
+
+          // Single write to Firestore
           await userRef.set({
             uid: user.uid,
             email: user.email || '',
@@ -5534,12 +5559,6 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
             status: 'active',
             metrics: metrics
           }, { merge: true });
-
-          const updateData = {};
-          updateData['metrics.apiKeys.total'] = apiKeysCount;
-          updateData['metrics.apiKeys.today'] = apiKeysCount;
-          updateData['metrics.apiKeys.lastDate'] = new Date().toISOString().split('T')[0];
-          await userRef.update(updateData);
         } catch (e) {
           console.warn('[Firestore Track Error]:', e);
         }
@@ -5713,11 +5732,26 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
             userMap.set(key, { ...u });
           } else {
             const existing = userMap.get(key);
+            
+            // Merge metrics safely by comparing the maximum value for each key
+            const mergedMetrics = {};
+            const metricKeys = ['apiKeys', 'prompts', 'iconSheets', 'presentations', 'flowImages'];
+            metricKeys.forEach(mk => {
+              const extMetric = (existing.metrics && existing.metrics[mk]) || { total: 0, today: 0, lastDate: '' };
+              const newMetric = (u.metrics && u.metrics[mk]) || { total: 0, today: 0, lastDate: '' };
+              
+              if ((extMetric.total || 0) >= (newMetric.total || 0)) {
+                mergedMetrics[mk] = { ...extMetric };
+              } else {
+                mergedMetrics[mk] = { ...newMetric };
+              }
+            });
+
             userMap.set(key, {
               ...existing,
               ...u,
               lastActive: (new Date(u.lastActive || 0) > new Date(existing.lastActive || 0)) ? u.lastActive : existing.lastActive,
-              metrics: { ...(existing.metrics || {}), ...(u.metrics || {}) }
+              metrics: mergedMetrics
             });
           }
         });
