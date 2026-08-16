@@ -5537,13 +5537,70 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       }
     }
 
+    let latestSources = {
+      mongo: [],
+      firestore: [],
+      local: getUserLogs()
+    };
+
+    function syncAndRenderAll() {
+      let userMap = new Map();
+
+      [latestSources.mongo, latestSources.firestore, latestSources.local].forEach(sourceList => {
+        if (!Array.isArray(sourceList)) return;
+        sourceList.forEach(u => {
+          if (!u) return;
+          const key = (u.uid || u.email || '').toLowerCase();
+          if (!key) return;
+
+          if (!userMap.has(key)) {
+            userMap.set(key, { ...u });
+          } else {
+            const existing = userMap.get(key);
+            userMap.set(key, {
+              ...existing,
+              ...u,
+              lastActive: (new Date(u.lastActive || 0) > new Date(existing.lastActive || 0)) ? u.lastActive : existing.lastActive,
+              metrics: { ...(existing.metrics || {}), ...(u.metrics || {}) }
+            });
+          }
+        });
+      });
+
+      // Always include current logged-in user as Active
+      const curr = (firebaseAuth && firebaseAuth.currentUser) ? firebaseAuth.currentUser : null;
+      if (curr) {
+        const currEmail = (curr.email || '').toLowerCase();
+        const currKey = (curr.uid || currEmail).toLowerCase();
+        let existing = userMap.get(currKey);
+        const activeCurrObj = {
+          uid: curr.uid,
+          email: curr.email || (existing ? existing.email : ''),
+          displayName: curr.displayName || (curr.email ? curr.email.split('@')[0] : 'User'),
+          photoURL: curr.photoURL || 'https://lh3.googleusercontent.com/a/default-user',
+          provider: (curr.providerData && curr.providerData[0]) ? curr.providerData[0].providerId : 'google.com',
+          status: 'active',
+          lastActive: new Date().toISOString(),
+          metrics: existing ? existing.metrics : {}
+        };
+        userMap.set(currKey, { ...existing, ...activeCurrObj });
+      }
+
+      const mergedList = Array.from(userMap.values());
+      renderList(mergedList);
+      saveUserLogs(mergedList);
+    }
+
+    // Initial render from local logs
+    syncAndRenderAll();
+
     // Fetch from MongoDB backend API
     fetch('/api/users/list')
       .then(res => res.json())
       .then(data => {
-        if (data && data.ok && Array.isArray(data.users) && data.users.length > 0) {
-          renderList(data.users);
-          saveUserLogs(data.users);
+        if (data && data.ok && Array.isArray(data.users)) {
+          latestSources.mongo = data.users;
+          syncAndRenderAll();
         }
       }).catch(err => console.warn('[MongoDB List Fetch Error]:', err));
 
@@ -5560,38 +5617,8 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
             }
           });
 
-          // Ensure active currentUser is included if signed in
-          const curr = (firebaseAuth && firebaseAuth.currentUser) ? firebaseAuth.currentUser : null;
-          if (curr) {
-            const currEmail = (curr.email || '').toLowerCase();
-            let foundIdx = firestoreUsers.findIndex(u => u.uid === curr.uid || (u.email && u.email.toLowerCase() === currEmail));
-            if (foundIdx === -1) {
-              const activeCurrObj = {
-                uid: curr.uid,
-                email: curr.email || '',
-                displayName: curr.displayName || (curr.email ? curr.email.split('@')[0] : 'User'),
-                photoURL: curr.photoURL || 'https://lh3.googleusercontent.com/a/default-user',
-                provider: (curr.providerData && curr.providerData[0]) ? curr.providerData[0].providerId : 'google.com',
-                status: 'active',
-                lastActive: new Date().toISOString()
-              };
-              firestoreUsers.unshift(activeCurrObj);
-            } else {
-              // Ensure fields are populated
-              firestoreUsers[foundIdx].uid = curr.uid;
-              firestoreUsers[foundIdx].email = curr.email || firestoreUsers[foundIdx].email || '';
-              firestoreUsers[foundIdx].displayName = curr.displayName || firestoreUsers[foundIdx].displayName || (curr.email ? curr.email.split('@')[0] : 'User');
-              firestoreUsers[foundIdx].photoURL = curr.photoURL || firestoreUsers[foundIdx].photoURL || 'https://lh3.googleusercontent.com/a/default-user';
-              firestoreUsers[foundIdx].status = 'active';
-            }
-          }
-
-          if (firestoreUsers.length > 0) {
-            renderList(firestoreUsers);
-            saveUserLogs(firestoreUsers);
-          } else {
-            renderList(getUserLogs());
-          }
+          latestSources.firestore = firestoreUsers;
+          syncAndRenderAll();
         }, (err) => {
           console.warn('[Firestore Listen Error]:', err);
           const liveSyncBadge = document.querySelector('#adminUserLogsTableBody')?.parentElement?.parentElement?.querySelector('.live-sync-badge');
@@ -5601,16 +5628,12 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
             liveSyncBadge.style.color = '#ef4444';
             liveSyncBadge.style.borderColor = 'rgba(239, 68, 68, 0.3)';
           }
-          renderList(getUserLogs());
+          syncAndRenderAll();
         });
-        return;
       } catch (e) {
         console.warn('[Firestore DB Error]:', e);
       }
     }
-
-    // Fallback to localStorage if Firestore is unavailable
-    renderList(getUserLogs());
   }
 
   // Update onAuthStateChanged handler
