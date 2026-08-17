@@ -78,12 +78,25 @@ button, a { font-family: inherit; }
   height: 68px;
   padding: 0 20px;
   display: flex;
-  flex-direction: column;
-  justify-content: center;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
   border-bottom: 1px solid var(--outline-variant);
 }
-.home-brand .name { font-size: 19px; font-weight: 800; color: var(--on-surface); letter-spacing: -.02em; }
-.home-brand .sub { font-size: 11px; color: var(--tertiary); font-weight: 700; text-transform: uppercase; margin-top: 2px; letter-spacing: .08em; }
+.home-brand img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+.home-brand .brand-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.home-brand .name { font-size: 16px; font-weight: 800; color: var(--on-surface); letter-spacing: -.02em; line-height: 1.2; }
+.home-brand .sub { font-size: 9.5px; color: var(--tertiary); font-weight: 700; text-transform: uppercase; margin-top: 2px; letter-spacing: .08em; line-height: 1.1; }
 
 .home-nav { flex: 1; padding: 14px 12px; display: flex; flex-direction: column; gap: 4px; }
 .nav-item {
