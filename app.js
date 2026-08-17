@@ -6164,7 +6164,24 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userData)
-      }).catch(err => console.warn('[MongoDB Track Fetch Error]:', err));
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.ok && data.user) {
+          const freshLogs = getUserLogs();
+          const targetIdx = freshLogs.findIndex(u => u.uid === user.uid || (u.email && user.email && u.email.toLowerCase() === user.email.toLowerCase()));
+          if (targetIdx >= 0) {
+            freshLogs[targetIdx].subscription = data.user.subscription || 'free';
+            freshLogs[targetIdx].subscriptionExpiry = data.user.subscriptionExpiry || null;
+            if (data.user.creditsDaily) {
+              freshLogs[targetIdx].creditsDaily = data.user.creditsDaily;
+            }
+            saveUserLogs(freshLogs);
+            window.updateUserSubscriptionUI();
+          }
+        }
+      })
+      .catch(err => console.warn('[MongoDB Track Fetch Error]:', err));
     } catch (e) {}
 
     if (firebaseDb) {
@@ -6173,6 +6190,24 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
           const userRef = firebaseDb.collection('users').doc(user.uid);
           const docSnap = await userRef.get();
           const docData = docSnap.exists ? docSnap.data() : {};
+          
+          // Pull live sub and credits from Firestore database to sync to local storage immediately
+          const dbSub = docData.subscription || 'free';
+          const dbExpiry = docData.subscriptionExpiry || null;
+          const dbCredits = docData.creditsDaily || null;
+
+          const freshLogs = getUserLogs();
+          const targetIdx = freshLogs.findIndex(u => u.uid === user.uid || (u.email && user.email && u.email.toLowerCase() === user.email.toLowerCase()));
+          if (targetIdx >= 0) {
+            freshLogs[targetIdx].subscription = dbSub;
+            freshLogs[targetIdx].subscriptionExpiry = dbExpiry;
+            if (dbCredits) {
+              freshLogs[targetIdx].creditsDaily = dbCredits;
+            }
+            saveUserLogs(freshLogs);
+            window.updateUserSubscriptionUI();
+          }
+
           const metrics = docData.metrics || {};
           
           const todayStr = new Date().toISOString().split('T')[0];
