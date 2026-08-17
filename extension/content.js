@@ -33,7 +33,7 @@ async function handleGenerate(request) {
   }
 
   // 3. Generate enterprise reCAPTCHA token
-  const recaptchaToken = await generateRecaptcha();
+  const recaptchaToken = await generateRecaptcha(request);
   if (!recaptchaToken) {
     throw new Error('Failed to generate reCAPTCHA token.');
   }
@@ -164,65 +164,8 @@ async function fetchSessionToken() {
   }
 }
 
-async function generateRecaptcha() {
-  return new Promise((resolve) => {
-    let done = false;
-    const t = setTimeout(() => {
-      if (!done) {
-        done = true;
-        resolve(null);
-      }
-    }, 10000);
-
-    const listener = (event) => {
-      if (event.source !== window) return;
-      if (event.data && event.data.type === 'GRAVITY_RECAPTCHA_RESPONSE') {
-        if (done) return;
-        done = true;
-        clearTimeout(t);
-        window.removeEventListener('message', listener);
-        resolve(event.data.token);
-      }
-    };
-    window.addEventListener('message', listener);
-
-    const script = document.createElement('script');
-    script.textContent = `
-      (function() {
-        try {
-          if (typeof grecaptcha === 'undefined' || !grecaptcha.enterprise) {
-            window.postMessage({ type: 'GRAVITY_RECAPTCHA_RESPONSE', token: null }, '*');
-            return;
-          }
-          grecaptcha.enterprise.ready(function() {
-            grecaptcha.enterprise.execute('6LdsFiUsAAAAAIjVDZcuLhaHiDn5nnHVXVRQGeMV', { action: 'IMAGE_GENERATION' })
-              .then(function(token) {
-                window.postMessage({ type: 'GRAVITY_RECAPTCHA_RESPONSE', token: token }, '*');
-              })
-              .catch(function(err) {
-                console.error('[injected-recaptcha] error:', err);
-                window.postMessage({ type: 'GRAVITY_RECAPTCHA_RESPONSE', token: null }, '*');
-              });
-          });
-        } catch (e) {
-          console.error('[injected-recaptcha] exception:', e);
-          window.postMessage({ type: 'GRAVITY_RECAPTCHA_RESPONSE', token: null }, '*');
-        }
-      })();
-    `;
-    try {
-      (document.head || document.documentElement).appendChild(script);
-      script.remove();
-    } catch (e) {
-      console.error('[content] failed to inject recaptcha script:', e);
-      if (!done) {
-        done = true;
-        clearTimeout(t);
-        window.removeEventListener('message', listener);
-        resolve(null);
-      }
-    }
-  });
+async function generateRecaptcha(request) {
+  return request.recaptchaToken || null;
 }
 
 
