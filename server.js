@@ -307,6 +307,9 @@ const server = http.createServer((req, res) => {
           const existing = await col.findOne(query);
           if (existing) {
             userObj.firstLogin = existing.firstLogin || now;
+            userObj.subscription = existing.subscription || 'free';
+            userObj.subscriptionExpiry = existing.subscriptionExpiry || null;
+            userObj.creditsDaily = existing.creditsDaily || null;
             // Merge metrics safely
             userObj.metrics = {
               iconSheets: (userObj.metrics.iconSheets || {}).total > (existing.metrics?.iconSheets || {}).total ? userObj.metrics.iconSheets : (existing.metrics?.iconSheets || {}),
@@ -317,6 +320,9 @@ const server = http.createServer((req, res) => {
             await col.updateOne({ _id: existing._id }, { $set: userObj });
             finalUser = { ...existing, ...userObj };
           } else {
+            userObj.subscription = 'free';
+            userObj.subscriptionExpiry = null;
+            userObj.creditsDaily = { remaining: 30, lastResetDate: now.split('T')[0] };
             await col.insertOne(userObj);
           }
           count = await col.countDocuments();
@@ -327,6 +333,9 @@ const server = http.createServer((req, res) => {
 
           if (existingIdx >= 0) {
             userObj.firstLogin = users[existingIdx].firstLogin || now;
+            userObj.subscription = users[existingIdx].subscription || 'free';
+            userObj.subscriptionExpiry = users[existingIdx].subscriptionExpiry || null;
+            userObj.creditsDaily = users[existingIdx].creditsDaily || null;
             userObj.metrics = {
               iconSheets: (userObj.metrics.iconSheets || {}).total > (users[existingIdx].metrics?.iconSheets || {}).total ? userObj.metrics.iconSheets : (users[existingIdx].metrics?.iconSheets || {}),
               prompts: (userObj.metrics.prompts || {}).total > (users[existingIdx].metrics?.prompts || {}).total ? userObj.metrics.prompts : (users[existingIdx].metrics?.prompts || {}),
@@ -336,6 +345,9 @@ const server = http.createServer((req, res) => {
             users[existingIdx] = { ...users[existingIdx], ...userObj };
             finalUser = users[existingIdx];
           } else {
+            userObj.subscription = 'free';
+            userObj.subscriptionExpiry = null;
+            userObj.creditsDaily = { remaining: 30, lastResetDate: now.split('T')[0] };
             users.unshift(userObj);
           }
           saveMongoUsersLocal(users);
@@ -379,6 +391,92 @@ const server = http.createServer((req, res) => {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ ok: true, users: users }));
     }
+    return;
+  }
+
+  // API Route: Update User Plan (POST)
+  if (urlPath === '/api/users/update-plan' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', async () => {
+      try {
+        const { uid, email, plan, expiry } = JSON.parse(body || '{}');
+        if (!uid) {
+          res.statusCode = 400;
+          res.end(JSON.stringify({ ok: false, error: 'User UID is required' }));
+          return;
+        }
+
+        if (useRealMongo && dbInstance) {
+          const col = dbInstance.collection('users');
+          await col.updateOne({ uid: uid }, {
+            $set: {
+              subscription: plan,
+              subscriptionExpiry: expiry
+            }
+          });
+        } else {
+          // File Fallback
+          let users = loadMongoUsersLocal();
+          let index = users.findIndex(u => u.uid === uid || (email && u.email && u.email.toLowerCase() === email.toLowerCase()));
+          if (index >= 0) {
+            users[index].subscription = plan;
+            users[index].subscriptionExpiry = expiry;
+            saveMongoUsersLocal(users);
+          }
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, message: 'Plan updated' }));
+      } catch (err) {
+        res.statusCode = 500;
+        res.end(JSON.stringify({ ok: false, error: err.message }));
+      }
+    });
+    return;
+  }
+
+  // API Route: Update User Credits (POST)
+  if (urlPath === '/api/users/update-credits' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', async () => {
+      try {
+        const { uid, remaining, lastResetDate } = JSON.parse(body || '{}');
+        if (!uid) {
+          res.statusCode = 400;
+          res.end(JSON.stringify({ ok: false, error: 'User UID is required' }));
+          return;
+        }
+
+        if (useRealMongo && dbInstance) {
+          const col = dbInstance.collection('users');
+          await col.updateOne({ uid: uid }, {
+            $set: {
+              creditsDaily: {
+                remaining: remaining ?? 30,
+                lastResetDate: lastResetDate || new Date().toISOString().split('T')[0]
+              }
+            }
+          });
+        } else {
+          // File Fallback
+          let users = loadMongoUsersLocal();
+          let index = users.findIndex(u => u.uid === uid);
+          if (index >= 0) {
+            users[index].creditsDaily = {
+              remaining: remaining ?? 30,
+              lastResetDate: lastResetDate || new Date().toISOString().split('T')[0]
+            };
+            saveMongoUsersLocal(users);
+          }
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, message: 'Credits updated' }));
+      } catch (err) {
+        res.statusCode = 500;
+        res.end(JSON.stringify({ ok: false, error: err.message }));
+      }
+    });
     return;
   }
 

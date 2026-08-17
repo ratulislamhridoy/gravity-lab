@@ -1175,6 +1175,9 @@ Do not include any markdown formatting outside the json codeblock. Output valid 
 
   // Generate Prompt using Gemini API
   generatePromptBtn.addEventListener('click', async () => {
+    const allowed = await window.checkAndConsumeCredit('prompts', 1);
+    if (!allowed) return;
+
     const apiKeys = getApiKeys();
     if (apiKeys.length === 0) {
       updateApiKeyStatus();
@@ -2340,12 +2343,18 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     sendFlowActionSpecific('disconnect', selectedId);
   });
 
-  btnFlowStart.addEventListener('click', () => {
+  btnFlowStart.addEventListener('click', async () => {
     const prompts = getCleanFlowPrompts();
     if (!prompts.length) {
       alert('Please enter or upload prompt keywords first.');
       return;
     }
+
+    const imgCount = Number(flowImagesPerPrompt.value) || 1;
+    const countRequired = prompts.length * imgCount;
+
+    const allowed = await window.checkAndConsumeCredit('flowImages', countRequired);
+    if (!allowed) return;
 
     const checkAndStart = () => {
       // Connect verification checks before starting
@@ -4393,11 +4402,14 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
 
   // Trigger WebSocket server-assisted contour / curve tracing
   if (btnSliceVectorize) {
-    btnSliceVectorize.addEventListener('click', () => {
+    btnSliceVectorize.addEventListener('click', async () => {
       if (!loadedSheetImgs || loadedSheetImgs.length === 0 || slicedTilesData.length === 0) {
         alert('Please upload an icon sheet image first!');
         return;
       }
+
+      const allowed = await window.checkAndConsumeCredit('iconSheets', 1);
+      if (!allowed) return;
 
       btnSliceVectorize.disabled = true;
       vectorizeCompletedCount = 0;
@@ -5777,6 +5789,197 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     }
   }
 
+  // ===== Subscription & Daily Credits controller =====
+  window.updateUserSubscriptionUI = function() {
+    const badge = document.getElementById('userSubscriptionBadge');
+    if (!badge) return;
+
+    if (!firebaseAuth || !firebaseAuth.currentUser) {
+      badge.classList.add('hidden');
+      return;
+    }
+
+    const user = firebaseAuth.currentUser;
+    const logs = getUserLogs();
+    const u = logs.find(item => item.uid === user.uid || (item.email && user.email && item.email.toLowerCase() === user.email.toLowerCase()));
+
+    if (!u) {
+      badge.classList.add('hidden');
+      return;
+    }
+
+    const sub = u.subscription || 'free';
+    const expiry = u.subscriptionExpiry;
+
+    // Check if Pro subscription is active & not expired
+    let isPro = false;
+    if (sub === 'monthly' || sub === 'six_months') {
+      if (!expiry) {
+        isPro = true;
+      } else {
+        const expDate = new Date(expiry);
+        if (expDate > new Date()) {
+          isPro = true;
+        }
+      }
+    }
+
+    badge.classList.remove('hidden');
+    if (isPro) {
+      const planName = sub === 'monthly' ? 'Monthly Pro' : '6-Months Pro';
+      badge.innerHTML = `⭐ <span>${planName}</span>`;
+      badge.style.color = '#fbbf24'; // Premium Gold
+      badge.style.background = 'rgba(251,191,36,0.15)';
+      badge.style.borderColor = 'rgba(251,191,36,0.3)';
+    } else {
+      // Free User
+      const todayStr = new Date().toISOString().split('T')[0];
+      if (!u.creditsDaily) {
+        u.creditsDaily = { remaining: 30, lastResetDate: todayStr };
+      }
+      const cd = u.creditsDaily;
+      if (cd.lastResetDate !== todayStr) {
+        cd.remaining = 30;
+        cd.lastResetDate = todayStr;
+      }
+      badge.innerHTML = `🌱 <span>Free</span> • <span>${cd.remaining}/30 Credits</span>`;
+      badge.style.color = '#cdfc52'; // Premium Lime Green
+      badge.style.background = 'rgba(205,252,82,0.15)';
+      badge.style.borderColor = 'rgba(205,252,82,0.3)';
+    }
+  };
+
+  async function syncCreditsToDatabase(uid, remaining, lastResetDate) {
+    try {
+      fetch('/api/users/update-credits', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uid, remaining, lastResetDate })
+      }).catch(() => {});
+    } catch (e) {}
+
+    if (firebaseDb) {
+      try {
+        await firebaseDb.collection('users').doc(uid).set({
+          creditsDaily: { remaining, lastResetDate }
+        }, { merge: true });
+      } catch (e) {}
+    }
+  }
+
+  window.checkAndConsumeCredit = async function(metricKey, count = 1, consume = true) {
+    if (!firebaseAuth || !firebaseAuth.currentUser) {
+      return true;
+    }
+    const user = firebaseAuth.currentUser;
+    if (!user || !user.uid) return true;
+
+    const logs = getUserLogs();
+    const existingIndex = logs.findIndex(u => u.uid === user.uid || (u.email && user.email && u.email.toLowerCase() === user.email.toLowerCase()));
+
+    if (existingIndex >= 0) {
+      const u = logs[existingIndex];
+      const sub = u.subscription || 'free';
+      const expiry = u.subscriptionExpiry;
+
+      let isPro = false;
+      if (sub === 'monthly' || sub === 'six_months') {
+        if (!expiry) {
+          isPro = true;
+        } else {
+          const expDate = new Date(expiry);
+          if (expDate > new Date()) {
+            isPro = true;
+          }
+        }
+      }
+
+      if (isPro) {
+        return true;
+      }
+
+      const todayStr = new Date().toISOString().split('T')[0];
+      if (!u.creditsDaily) {
+        u.creditsDaily = { remaining: 30, lastResetDate: todayStr };
+      }
+
+      const cd = u.creditsDaily;
+      if (cd.lastResetDate !== todayStr) {
+        cd.remaining = 30;
+        cd.lastResetDate = todayStr;
+      }
+
+      if (cd.remaining < count) {
+        if (window.showCustomAlert) {
+          window.showCustomAlert(
+            `You need ${count} credit(s) to perform this action, but you only have ${cd.remaining} credit(s) remaining for today. Please upgrade your subscription to Pro for unlimited access!`,
+            'Daily Credit Limit Reached',
+            'warning'
+          );
+        } else {
+          alert(`You need ${count} credit(s) to perform this action, but you only have ${cd.remaining} credit(s) remaining for today. Please upgrade your subscription to Pro for unlimited access!`);
+        }
+        return false;
+      }
+
+      if (consume) {
+        cd.remaining -= count;
+        saveUserLogs(logs);
+        window.updateUserSubscriptionUI();
+        syncCreditsToDatabase(user.uid, cd.remaining, cd.lastResetDate);
+      }
+      return true;
+    }
+
+    return true;
+  };
+
+  window.updateUserPlan = async function(uid, email, plan, expiry) {
+    const logs = getUserLogs();
+    const existingIndex = logs.findIndex(u => u.uid === uid || (u.email && email && u.email.toLowerCase() === email.toLowerCase()));
+    if (existingIndex >= 0) {
+      logs[existingIndex].subscription = plan;
+      logs[existingIndex].subscriptionExpiry = expiry;
+      saveUserLogs(logs);
+    }
+
+    const curr = (firebaseAuth && firebaseAuth.currentUser) ? firebaseAuth.currentUser : null;
+    if (curr && (uid === curr.uid || (email && curr.email && email.toLowerCase() === curr.email.toLowerCase()))) {
+      window.updateUserSubscriptionUI();
+    }
+
+    let mongoOk = false;
+    try {
+      const res = await fetch('/api/users/update-plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uid, email, plan, expiry })
+      });
+      const data = await res.json();
+      mongoOk = data && data.ok;
+    } catch (e) {
+      console.warn('[MongoDB Plan Sync Error]:', e);
+    }
+
+    let firebaseOk = false;
+    if (firebaseDb) {
+      try {
+        await firebaseDb.collection('users').doc(uid).set({
+          subscription: plan,
+          subscriptionExpiry: expiry
+        }, { merge: true });
+        firebaseOk = true;
+      } catch (e) {
+        console.warn('[Firestore Plan Sync Error]:', e);
+      }
+    }
+
+    if (typeof renderAdminUserLogs === 'function') {
+      renderAdminUserLogs();
+    }
+    return mongoOk || firebaseOk;
+  };
+
   // ===== Admin User Activity Tracker =====
   window.trackUserMetric = function(metricKey, incrementVal = 1) {
     if (!firebaseAuth || !firebaseAuth.currentUser) return;
@@ -5923,6 +6126,9 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       lastActive: now,
       provider: providerId,
       status: 'active',
+      subscription: existingIndex >= 0 ? (logs[existingIndex].subscription || 'free') : 'free',
+      subscriptionExpiry: existingIndex >= 0 ? (logs[existingIndex].subscriptionExpiry || null) : null,
+      creditsDaily: existingIndex >= 0 ? (logs[existingIndex].creditsDaily || { remaining: 30, lastResetDate: now.split('T')[0] }) : { remaining: 30, lastResetDate: now.split('T')[0] },
       metrics: existingIndex >= 0 ? (logs[existingIndex].metrics || {}) : {}
     };
 
@@ -5938,6 +6144,9 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       logs[existingIndex].photoURL = userData.photoURL;
       logs[existingIndex].status = 'active';
       logs[existingIndex].provider = providerId;
+      logs[existingIndex].subscription = userData.subscription;
+      logs[existingIndex].subscriptionExpiry = userData.subscriptionExpiry;
+      logs[existingIndex].creditsDaily = userData.creditsDaily;
       logs[existingIndex].metrics = userData.metrics;
     } else {
       userData.firstLogin = now;
@@ -6091,6 +6300,21 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
         const flowImages = getMetricCounts('flowImages');
         const presentations = getMetricCounts('presentations');
 
+        const sub = u.subscription || 'free';
+        const expiry = u.subscriptionExpiry;
+
+        let isPro = false;
+        if (sub === 'monthly' || sub === 'six_months') {
+          if (!expiry) {
+            isPro = true;
+          } else {
+            const expDate = new Date(expiry);
+            if (expDate > new Date()) {
+              isPro = true;
+            }
+          }
+        }
+
         return `
           <tr style="border-bottom: 1px solid var(--outline-variant);">
             <td style="padding: 12px 14px;">
@@ -6126,6 +6350,16 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
                 </div>
               </div>
             </td>
+            <td style="padding: 12px 14px;">
+              <select class="admin-sub-select" data-uid="${u.uid}" data-email="${email}" style="background: rgba(0,0,0,0.4); border: 1px solid var(--outline-variant); color: #ededf0; font-size: 11px; border-radius: 6px; padding: 4.5px 8px; width: 140px; font-weight: 700; cursor: pointer; outline: none; transition: border-color .2s;">
+                <option value="free" ${sub === 'free' ? 'selected' : ''}>🌱 Free (30cr/day)</option>
+                <option value="monthly" ${sub === 'monthly' ? 'selected' : ''}>⭐ Monthly (৳100)</option>
+                <option value="six_months" ${sub === 'six_months' ? 'selected' : ''}>👑 6-Months (৳500)</option>
+              </select>
+              <div style="font-size: 9.5px; color: var(--on-variant); margin-top: 4px; font-family: var(--mono);">
+                ${isPro ? `Exp: ${expiry ? new Date(expiry).toLocaleDateString() : 'Forever'}` : `Credits: ${(u.creditsDaily?.remaining ?? 30)}/30`}
+              </div>
+            </td>
             <td style="padding: 12px 14px;">${statusBadge}</td>
           </tr>
         `;
@@ -6138,13 +6372,42 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       if (userList.length === 0) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="5" style="padding: 24px; text-align: center; color: var(--on-variant); font-size: 12px;">
+            <td colspan="6" style="padding: 24px; text-align: center; color: var(--on-variant); font-size: 12px;">
               No user sign-in logs captured yet.
             </td>
           </tr>
         `;
       } else {
         tbody.innerHTML = formattedRows;
+
+        // Attach change listeners to admin sub selects
+        tbody.querySelectorAll('.admin-sub-select').forEach(select => {
+          select.addEventListener('change', async (e) => {
+            const uid = e.target.getAttribute('data-uid');
+            const userEmail = e.target.getAttribute('data-email');
+            const plan = e.target.value;
+
+            let planExpiry = null;
+            if (plan === 'monthly') {
+              const d = new Date();
+              d.setDate(d.getDate() + 30);
+              planExpiry = d.toISOString();
+            } else if (plan === 'six_months') {
+              const d = new Date();
+              d.setDate(d.getDate() + 180);
+              planExpiry = d.toISOString();
+            }
+
+            const success = await window.updateUserPlan(uid, userEmail, plan, planExpiry);
+            if (success) {
+              if (window.showCustomToast) {
+                window.showCustomToast('User subscription updated successfully!', 'success');
+              } else {
+                alert('User subscription updated successfully!');
+              }
+            }
+          });
+        });
       }
     }
 
@@ -6305,6 +6568,9 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       }
       checkAdminAccess(user);
       renderAdminUserLogs();
+      if (typeof window.updateUserSubscriptionUI === 'function') {
+        window.updateUserSubscriptionUI();
+      }
     });
   }
 

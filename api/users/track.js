@@ -51,6 +51,9 @@ module.exports = async (req, res) => {
       const existing = await col.findOne(query);
       if (existing) {
         userObj.firstLogin = existing.firstLogin || now;
+        userObj.subscription = existing.subscription || 'free';
+        userObj.subscriptionExpiry = existing.subscriptionExpiry || null;
+        userObj.creditsDaily = existing.creditsDaily || null;
         // Merge metrics safely
         userObj.metrics = {
           iconSheets: (userObj.metrics.iconSheets || {}).total > (existing.metrics?.iconSheets || {}).total ? userObj.metrics.iconSheets : (existing.metrics?.iconSheets || {}),
@@ -61,6 +64,9 @@ module.exports = async (req, res) => {
         await col.updateOne({ _id: existing._id }, { $set: userObj });
         finalUser = { ...existing, ...userObj };
       } else {
+        userObj.subscription = 'free';
+        userObj.subscriptionExpiry = null;
+        userObj.creditsDaily = { remaining: 30, lastResetDate: now.split('T')[0] };
         await col.insertOne(userObj);
       }
       count = await col.countDocuments();
@@ -71,6 +77,9 @@ module.exports = async (req, res) => {
 
       if (existingIdx >= 0) {
         userObj.firstLogin = users[existingIdx].firstLogin || now;
+        userObj.subscription = users[existingIdx].subscription || 'free';
+        userObj.subscriptionExpiry = users[existingIdx].subscriptionExpiry || null;
+        userObj.creditsDaily = users[existingIdx].creditsDaily || null;
         userObj.metrics = {
           iconSheets: (userObj.metrics.iconSheets || {}).total > (users[existingIdx].metrics?.iconSheets || {}).total ? userObj.metrics.iconSheets : (users[existingIdx].metrics?.iconSheets || {}),
           prompts: (userObj.metrics.prompts || {}).total > (users[existingIdx].metrics?.prompts || {}).total ? userObj.metrics.prompts : (users[existingIdx].metrics?.prompts || {}),
@@ -80,6 +89,9 @@ module.exports = async (req, res) => {
         users[existingIdx] = { ...users[existingIdx], ...userObj };
         finalUser = users[existingIdx];
       } else {
+        userObj.subscription = 'free';
+        userObj.subscriptionExpiry = null;
+        userObj.creditsDaily = { remaining: 30, lastResetDate: now.split('T')[0] };
         users.unshift(userObj);
       }
       saveMongoUsersLocal(users);

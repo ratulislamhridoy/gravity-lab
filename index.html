@@ -109,8 +109,12 @@
         <div class="topbar-right" style="display: flex; gap: 8px; align-items: center;">
           <button class="btn btn-dark small" id="themeToggleBtn">🌙 Dark</button>
           
-          <!-- User Authentication Section -->
-          <div id="authNavWrapper" style="position: relative;">
+          <div id="authNavWrapper" style="position: relative; display: flex; align-items: center; gap: 8px;">
+            <!-- Subscription Badge -->
+            <div id="userSubscriptionBadge" class="hidden" style="font-size: 10px; font-weight: 800; color: #cdfc52; background: rgba(205,252,82,0.15); border: 1px solid rgba(205,252,82,0.3); padding: 3px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;">
+              🌱 <span>Free</span> • <span>30/30 Credits</span>
+            </div>
+
             <button class="btn btn-primary small" id="btnOpenAuthModal" style="height: 32px; padding: 0 12px; font-size: 11px; font-weight: 800; border-radius: 20px; gap: 6px; display: flex; align-items: center;">
               <span>👤</span> Sign In
             </button>
@@ -938,6 +942,7 @@
                   <th style="padding: 12px 14px; font-weight: 700;">First Login / Last Active</th>
                   <th style="padding: 12px 14px; font-weight: 700;">API Keys</th>
                   <th style="padding: 12px 14px; font-weight: 700;">Usage Metrics (Lifetime / Today)</th>
+                  <th style="padding: 12px 14px; font-weight: 700;">Subscription Plan</th>
                   <th style="padding: 12px 14px; font-weight: 700;">Status</th>
                 </tr>
               </thead>
