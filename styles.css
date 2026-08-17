@@ -827,24 +827,24 @@ input[type="number"] {
 }
 
 /* === Authentication Gate Styling === */
-#appBody.not-authenticated #sidebar,
-#appBody.not-authenticated .home-main,
-#appBody.not-authenticated .sidebar-toggle {
+body.not-authenticated #sidebar,
+body.not-authenticated .home-main,
+body.not-authenticated .sidebar-toggle {
   display: none !important;
 }
 
-#appBody.not-authenticated #authModal {
+body.not-authenticated #authModal {
   display: flex !important;
   background: radial-gradient(circle at center, #181c2f 0%, #060812 100%) !important;
   backdrop-filter: blur(40px) !important;
 }
 
-#appBody.not-authenticated #authModal .modal-box {
+body.not-authenticated #authModal .modal-box {
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
   box-shadow: 0 30px 70px rgba(0, 0, 0, 0.95) !important;
 }
 
-#appBody.not-authenticated #btnCloseAuthModal {
+body.not-authenticated #btnCloseAuthModal {
   display: none !important;
 }
 
