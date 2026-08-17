@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div class="home-body" id="appBody">
+  <div class="home-body not-authenticated" id="appBody">
     <button class="sidebar-toggle" id="sidebarToggle" type="button" title="Toggle sidebar">
       <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>
     </button>
@@ -1241,7 +1241,7 @@
   </div>
 
   <!-- Firebase Dark Glass Authentication Modal Popup -->
-  <div class="modal-backdrop hidden" id="authModal" style="z-index: 999999;">
+  <div class="modal-backdrop" id="authModal" style="z-index: 999999;">
     <div class="modal-box" style="max-width: 420px; width: 90%; border-radius: 24px; padding: 28px; background: rgba(18, 18, 22, 0.96); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.12); box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7); display: flex; flex-direction: column; gap: 20px; text-align: center;">
       
       <!-- Modal Header -->
