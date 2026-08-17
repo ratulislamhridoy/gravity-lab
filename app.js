@@ -6190,24 +6190,16 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
           const userRef = firebaseDb.collection('users').doc(user.uid);
           const docSnap = await userRef.get();
           const docData = docSnap.exists ? docSnap.data() : {};
-          
-          // Pull live sub and credits from Firestore database to sync to local storage immediately
-          if (docSnap.exists && docData.hasOwnProperty('subscription')) {
-            const dbSub = docData.subscription || 'free';
-            const dbExpiry = docData.subscriptionExpiry || null;
-            const dbCredits = docData.creditsDaily || null;
-
-            const freshLogs = getUserLogs();
-            const targetIdx = freshLogs.findIndex(u => u.uid === user.uid || (u.email && user.email && u.email.toLowerCase() === user.email.toLowerCase()));
-            if (targetIdx >= 0) {
-              freshLogs[targetIdx].subscription = dbSub;
-              freshLogs[targetIdx].subscriptionExpiry = dbExpiry;
-              if (dbCredits) {
-                freshLogs[targetIdx].creditsDaily = dbCredits;
-              }
-              saveUserLogs(freshLogs);
-              window.updateUserSubscriptionUI();
-            }
+          // Pull live sub and credits from Firestore database to sync to local storage immediately is removed
+          // Subscriptions are managed exclusively by MongoDB backend APIs for security and state authority
+          const freshLogs = getUserLogs();
+          const targetIdx = freshLogs.findIndex(u => u.uid === user.uid || (u.email && user.email && u.email.toLowerCase() === user.email.toLowerCase()));
+          if (targetIdx >= 0 && !freshLogs[targetIdx].subscription) {
+            // Initialize defaults if not present
+            freshLogs[targetIdx].subscription = 'free';
+            freshLogs[targetIdx].subscriptionExpiry = null;
+            saveUserLogs(freshLogs);
+            window.updateUserSubscriptionUI();
           }
 
           const metrics = docData.metrics || {};
