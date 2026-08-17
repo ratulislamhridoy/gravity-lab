@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const MONGODB_ATLAS_URI = process.env.MONGODB_URI || 'mongodb+srv://havenpick1_db_user:polZjE5zNHj1TXPF@cluster0.ute96fe.mongodb.net/gravity_ai?retryWrites=true&w=majority';
+const MONGODB_ATLAS_URI = process.env.MONGODB_URI || 'mongodb+srv://havenpick1_db_user:gravitylab63@cluster0.ute96fe.mongodb.net/gravity_ai?retryWrites=true&w=majority';
 const MONGODB_FILE = path.join(process.cwd(), 'mongodb_users.json');
 
 let cachedDb = null;
