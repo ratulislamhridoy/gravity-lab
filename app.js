@@ -1849,7 +1849,12 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
         if (showAlertOnError) {
           alert('Error: WebSocket backend offline. Please ensure the local server is running on port 8080 or 8081.');
         }
-        flowProfilesCached.forEach(p => { p.connected = false; p.browserRunning = false; });
+        flowProfilesCached.forEach(p => {
+          if (p.id !== 'chrome_extension') {
+            p.connected = false;
+            p.browserRunning = false;
+          }
+        });
         updateActiveProfileCard();
         return;
       }
