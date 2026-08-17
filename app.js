@@ -2174,15 +2174,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     const profile = flowProfilesCached.find(p => p.id === selectedId);
     if (!profile) return;
 
-    // Toggle Extension ID input container visibility
-    const extIdContainer = document.getElementById('flowExtensionIdContainer');
-    const inputFlowExtId = document.getElementById('inputFlowExtensionId');
-    if (extIdContainer) {
-      extIdContainer.style.display = selectedId === 'chrome_extension' ? 'flex' : 'none';
-      if (inputFlowExtId) {
-        inputFlowExtId.value = flowExtensionId;
-      }
-    }
+
 
     // Checkbox state
     const isChecked = localStorage.getItem(`flow_use_profile_${selectedId}`) !== 'false';
@@ -2367,16 +2359,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     sendFlowAction('stop');
   });
 
-  const inputFlowExtId = document.getElementById('inputFlowExtensionId');
-  if (inputFlowExtId) {
-    inputFlowExtId.addEventListener('input', (e) => {
-      const val = e.target.value.trim();
-      if (val) {
-        flowExtensionId = val;
-        localStorage.setItem('flow_extension_id', val);
-      }
-    });
-  }
+
 
   // Folder Directory Picker logic
   const flowDirPicker = document.getElementById('flowDirPicker');
