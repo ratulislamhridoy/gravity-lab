@@ -5567,9 +5567,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
 
   function openAuthModal() {
     if (authModal) {
-      if (document.body.classList.contains('not-authenticated')) {
-        authModal.scrollIntoView({ behavior: 'smooth' });
-      } else {
+      if (!document.body.classList.contains('not-authenticated')) {
         authModal.classList.remove('hidden');
       }
     }
