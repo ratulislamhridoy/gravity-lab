@@ -2288,43 +2288,60 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       return;
     }
 
-    // Connect verification checks before starting
-    if (!extensionDetected) {
-      const setupModal = document.getElementById('extensionSetupModal');
-      if (setupModal) {
-        setupModal.classList.remove('hidden');
-      } else {
-        alert('Chrome Extension is not installed. Please follow the setup guide.');
+    const checkAndStart = () => {
+      // Connect verification checks before starting
+      if (!extensionDetected) {
+        const setupModal = document.getElementById('extensionSetupModal');
+        if (setupModal) {
+          setupModal.classList.remove('hidden');
+        } else {
+          alert('Chrome Extension is not installed. Please follow the setup guide.');
+        }
+        return;
       }
-      return;
-    }
 
-    const extProfile = flowProfilesCached.find(p => p.id === 'chrome_extension');
-    if (!extProfile || !extProfile.connected) {
-      const connAlertModal = document.getElementById('flowConnectionAlertModal');
-      if (connAlertModal) {
-        connAlertModal.classList.remove('hidden');
-      } else {
-        alert('Please connect to Google Flow first.');
+      const extProfile = flowProfilesCached.find(p => p.id === 'chrome_extension');
+      if (!extProfile || !extProfile.connected) {
+        const connAlertModal = document.getElementById('flowConnectionAlertModal');
+        if (connAlertModal) {
+          connAlertModal.classList.remove('hidden');
+        } else {
+          alert('Please connect to Google Flow first.');
+        }
+        return;
       }
-      return;
-    }
 
-    const activeIds = flowProfilesCached
-      .filter(p => localStorage.getItem(`flow_use_profile_${p.id}`) !== 'false')
-      .map(p => p.id);
+      const activeIds = flowProfilesCached
+        .filter(p => localStorage.getItem(`flow_use_profile_${p.id}`) !== 'false')
+        .map(p => p.id);
 
-    if (!activeIds.length) {
-      alert('Please select at least one active connected browser profile.');
-      return;
-    }
+      if (!activeIds.length) {
+        alert('Please select at least one active connected browser profile.');
+        return;
+      }
 
-    const imgCount = Number(flowImagesPerPrompt.value) || 1;
-    const clientSideTotal = prompts.length * imgCount;
+      const imgCount = Number(flowImagesPerPrompt.value) || 1;
+      const clientSideTotal = prompts.length * imgCount;
 
-    if (activeIds.includes('chrome_extension')) {
-      btnFlowStart.disabled = true;
-      btnFlowStop.disabled = false;
+      if (activeIds.includes('chrome_extension')) {
+        btnFlowStart.disabled = true;
+        btnFlowStop.disabled = false;
+
+        flowResultGallery.innerHTML = '';
+        flowResultGallery.appendChild(flowEmptyState);
+        flowEmptyState.style.display = 'none';
+
+        flowProgressBar.style.display = 'block';
+        flowProgressBarInner.style.width = '0%';
+        flowRunProgress.style.display = 'inline-block';
+        flowRunProgress.textContent = `Progress: 0/${clientSideTotal}`;
+
+        runExtensionFlowGeneration(prompts, imgCount, {
+          model: flowModel.value,
+          aspectRatio: flowAspectRatio.value
+        });
+        return;
+      }
 
       flowResultGallery.innerHTML = '';
       flowResultGallery.appendChild(flowEmptyState);
@@ -2335,40 +2352,39 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       flowRunProgress.style.display = 'inline-block';
       flowRunProgress.textContent = `Progress: 0/${clientSideTotal}`;
 
-      runExtensionFlowGeneration(prompts, imgCount, {
-        model: flowModel.value,
-        aspectRatio: flowAspectRatio.value
+      btnFlowStart.disabled = true;
+      btnFlowStop.disabled = false;
+
+      const flowAutoSaveToggle = document.getElementById('flowAutoSaveToggle');
+      const autoSaveEnabled = flowAutoSaveToggle ? flowAutoSaveToggle.checked : true;
+      const targetOutputDir = autoSaveEnabled ? (flowOutputDir.value.trim() || 'Downloads/Gravity_Flow') : null;
+
+      sendFlowActionSpecific('generate', 'default', {
+        prompts,
+        runId: Date.now(),
+        profileIds: activeIds,
+        imagesPerPrompt: imgCount,
+        options: {
+          model: flowModel.value,
+          aspectRatio: flowAspectRatio.value
+        },
+        outputDir: targetOutputDir
       });
-      return;
+    };
+
+    // If extension is not detected yet, try a quick ping right now before executing checks
+    if (!extensionDetected && typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+      chrome.runtime.sendMessage(flowExtensionId, { action: 'ping' }, response => {
+        if (!chrome.runtime.lastError && response && response.ok) {
+          console.log('[flow-client] Proactive setup check: Chrome Extension found!');
+          extensionDetected = true;
+          addExtensionProfileOption();
+        }
+        checkAndStart();
+      });
+    } else {
+      checkAndStart();
     }
-
-    flowResultGallery.innerHTML = '';
-    flowResultGallery.appendChild(flowEmptyState);
-    flowEmptyState.style.display = 'none';
-
-    flowProgressBar.style.display = 'block';
-    flowProgressBarInner.style.width = '0%';
-    flowRunProgress.style.display = 'inline-block';
-    flowRunProgress.textContent = `Progress: 0/${clientSideTotal}`;
-
-    btnFlowStart.disabled = true;
-    btnFlowStop.disabled = false;
-
-    const flowAutoSaveToggle = document.getElementById('flowAutoSaveToggle');
-    const autoSaveEnabled = flowAutoSaveToggle ? flowAutoSaveToggle.checked : true;
-    const targetOutputDir = autoSaveEnabled ? (flowOutputDir.value.trim() || 'Downloads/Gravity_Flow') : null;
-
-    sendFlowActionSpecific('generate', 'default', {
-      prompts,
-      runId: Date.now(),
-      profileIds: activeIds,
-      imagesPerPrompt: imgCount,
-      options: {
-        model: flowModel.value,
-        aspectRatio: flowAspectRatio.value
-      },
-      outputDir: targetOutputDir
-    });
   });
 
   btnFlowStop.addEventListener('click', () => {
