@@ -23,7 +23,7 @@ try {
   console.log('Running outside Electron environment');
 }
 
-const PORT = process.env.PORT || 8081;
+const PORT = process.env.PORT || 8080;
 const FLOW_PROFILE_FILE = path.join(__dirname, 'flow-profiles.json');
 const FLOW_DEFAULT_PORT = 9222;
 
@@ -512,10 +512,13 @@ wss.on('connection', (ws) => {
             const profile = requireFlowProfile(targetProfileId);
             await withFlowProfileOperation(targetProfileId, async () => {
               const client = getFlowClient(targetProfileId);
-              // Use openLoginWindow to load Chrome and direct to Flow URL
-              const res = await client.launchChrome(targetProfileId); 
-              // Wait for CDP to connect to flow tab
-              await client.openLoginWindow ? await client.openLoginWindow() : null;
+              // Open Chrome in visible mode for user login
+              await client.openLoginWindow(targetProfileId);
+              try {
+                await client.connect();
+              } catch (e) {
+                console.log('Connect during login route:', e.message);
+              }
               
               sendToClient('login', { ok: true, profileId: targetProfileId, status: flowProfileStatus(profile) });
             });

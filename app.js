@@ -1640,6 +1640,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
   // ==========================================
   let flowSocket = null;
   let flowProfilesCached = [];
+  const flowMessageQueue = [];
 
   function initFlowConnection() {
     if (flowSocket && (flowSocket.readyState === WebSocket.OPEN || flowSocket.readyState === WebSocket.CONNECTING)) {
@@ -1647,40 +1648,90 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       return;
     }
 
-    try {
-      // Connect to local WebSocket backend on the current host/port
-      const wsUrl = (window.location.protocol === 'https:' ? 'wss://' : 'ws://') + window.location.host;
-      flowSocket = new WebSocket(wsUrl);
-
-      flowSocket.onopen = () => {
-        console.log('[flow-client] Connected to local automation websocket host');
-        sendFlowAction('profiles');
-      };
-
-      flowSocket.onmessage = (event) => {
-        try {
-          const msg = JSON.parse(event.data);
-          handleFlowServerMessage(msg);
-        } catch (e) {
-          console.error('[flow-client] failed parsing message:', e);
-        }
-      };
-
-      flowSocket.onclose = () => {
-        console.warn('[flow-client] Connection closed');
-        flowProfilesCached.forEach(p => { p.connected = false; p.browserRunning = false; });
-        updateActiveProfileCard();
-      };
-
-      flowSocket.onerror = (err) => {
-        console.error('[flow-client] WebSocket socket failure:', err);
-        flowProfilesCached.forEach(p => { p.connected = false; p.browserRunning = false; });
-        updateActiveProfileCard();
-      };
-
-    } catch (err) {
-      console.error('[flow-client] init exception:', err);
+    // List of candidate WebSocket URLs to try in sequence
+    const candidates = [];
+    
+    // 1. Try the current host first
+    const primaryHost = window.location.host;
+    candidates.push((window.location.protocol === 'https:' ? 'wss://' : 'ws://') + primaryHost);
+    
+    // 2. Add local defaults if not already tried
+    if (primaryHost !== '127.0.0.1:8080' && primaryHost !== 'localhost:8080') {
+      candidates.push('ws://127.0.0.1:8080');
     }
+    if (primaryHost !== '127.0.0.1:8081' && primaryHost !== 'localhost:8081') {
+      candidates.push('ws://127.0.0.1:8081');
+    }
+
+    let attemptIndex = 0;
+
+    function tryNextCandidate() {
+      if (attemptIndex >= candidates.length) {
+        console.error('[flow-client] All WebSocket connection attempts failed.');
+        alert('Error: WebSocket backend offline. Please ensure the local server is running on port 8080 or 8081.');
+        flowProfilesCached.forEach(p => { p.connected = false; p.browserRunning = false; });
+        updateActiveProfileCard();
+        return;
+      }
+
+      const wsUrl = candidates[attemptIndex++];
+      console.log(`[flow-client] Attempting connection to ${wsUrl}...`);
+      
+      try {
+        const tempSocket = new WebSocket(wsUrl);
+        
+        tempSocket.onopen = () => {
+          console.log(`[flow-client] Connected successfully to ${wsUrl}`);
+          flowSocket = tempSocket;
+          
+          flowSocket.onmessage = (event) => {
+            try {
+              const msg = JSON.parse(event.data);
+              handleFlowServerMessage(msg);
+            } catch (e) {
+              console.error('[flow-client] failed parsing message:', e);
+            }
+          };
+
+          flowSocket.onclose = () => {
+            console.warn('[flow-client] Connection closed');
+            flowProfilesCached.forEach(p => { p.connected = false; p.browserRunning = false; });
+            updateActiveProfileCard();
+          };
+
+          flowSocket.onerror = (err) => {
+            console.error('[flow-client] WebSocket socket failure:', err);
+            flowProfilesCached.forEach(p => { p.connected = false; p.browserRunning = false; });
+            updateActiveProfileCard();
+          };
+
+          // Re-send status request
+          sendFlowAction('profiles');
+
+          // Flush queued messages
+          while (flowMessageQueue.length > 0) {
+            const nextMsg = flowMessageQueue.shift();
+            try {
+              flowSocket.send(nextMsg);
+            } catch (queueErr) {
+              console.error('[flow-client] Failed to send queued message:', queueErr);
+            }
+          }
+        };
+
+        tempSocket.onerror = (err) => {
+          console.warn(`[flow-client] Failed connection to ${wsUrl}:`, err);
+          tempSocket.close();
+          tryNextCandidate();
+        };
+        
+      } catch (err) {
+        console.warn(`[flow-client] Exception creating WebSocket for ${wsUrl}:`, err);
+        tryNextCandidate();
+      }
+    }
+
+    tryNextCandidate();
   }
 
   function sendFlowAction(action, payload = {}) {
@@ -1689,29 +1740,14 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
   }
 
   function sendFlowActionSpecific(action, targetProfileId, payload = {}) {
+    const rawMsg = JSON.stringify({ action, profileId: targetProfileId, ...payload });
     if (flowSocket && flowSocket.readyState === WebSocket.OPEN) {
-      flowSocket.send(JSON.stringify({ action, profileId: targetProfileId, ...payload }));
+      flowSocket.send(rawMsg);
     } else {
-      const waitOpen = () => {
-        if (flowSocket && flowSocket.readyState === WebSocket.OPEN) {
-          flowSocket.send(JSON.stringify({ action, profileId: targetProfileId, ...payload }));
-        } else {
-          alert('Error: WebSocket backend offline. Please ensure the local server is running.');
-        }
-        if (flowSocket) {
-          flowSocket.removeEventListener('open', waitOpen);
-        }
-      };
-      
+      flowMessageQueue.push(rawMsg);
       if (!flowSocket || flowSocket.readyState === WebSocket.CLOSED || flowSocket.readyState === WebSocket.CLOSING) {
         console.warn('[flow-client] Connection offline, attempting connection');
         initFlowConnection();
-      }
-      
-      if (flowSocket) {
-        flowSocket.addEventListener('open', waitOpen);
-      } else {
-        alert('Error: WebSocket client initialization failed.');
       }
     }
   }
