@@ -1642,7 +1642,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
   let flowProfilesCached = [];
   const flowMessageQueue = [];
 
-  function initFlowConnection() {
+  function initFlowConnection(showAlertOnError = false) {
     if (flowSocket && (flowSocket.readyState === WebSocket.OPEN || flowSocket.readyState === WebSocket.CONNECTING)) {
       sendFlowAction('profiles'); // Ask profiles status
       return;
@@ -1668,7 +1668,9 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     function tryNextCandidate() {
       if (attemptIndex >= candidates.length) {
         console.error('[flow-client] All WebSocket connection attempts failed.');
-        alert('Error: WebSocket backend offline. Please ensure the local server is running on port 8080 or 8081.');
+        if (showAlertOnError) {
+          alert('Error: WebSocket backend offline. Please ensure the local server is running on port 8080 or 8081.');
+        }
         flowProfilesCached.forEach(p => { p.connected = false; p.browserRunning = false; });
         updateActiveProfileCard();
         return;
@@ -1747,7 +1749,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       flowMessageQueue.push(rawMsg);
       if (!flowSocket || flowSocket.readyState === WebSocket.CLOSED || flowSocket.readyState === WebSocket.CLOSING) {
         console.warn('[flow-client] Connection offline, attempting connection');
-        initFlowConnection();
+        initFlowConnection(true);
       }
     }
   }
