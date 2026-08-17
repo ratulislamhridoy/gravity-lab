@@ -6948,7 +6948,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
 
   if (btnModalFlowConnect && btnFlowConnect) {
     btnModalFlowConnect.addEventListener('click', () => {
-      btnModalFlowConnect.click();
+      btnFlowConnect.click();
     });
   }
 
