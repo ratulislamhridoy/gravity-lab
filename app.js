@@ -6100,6 +6100,9 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
   function saveUserLogs(logs) {
     try {
       localStorage.setItem('gravity_user_activity_logs', JSON.stringify(logs));
+      if (typeof latestSources !== 'undefined') {
+        latestSources.local = logs;
+      }
     } catch (e) {}
   }
 
@@ -6418,6 +6421,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     };
 
     function syncAndRenderAll() {
+      latestSources.local = getUserLogs();
       let userMap = new Map();
 
       [latestSources.mongo, latestSources.firestore, latestSources.local].forEach(sourceList => {
