@@ -1785,6 +1785,20 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
   }
 
   function initFlowConnection(showAlertOnError = false) {
+    let extProfile = flowProfilesCached.find(p => p.id === 'chrome_extension');
+    if (!extProfile) {
+      flowProfilesCached.push({
+        id: 'chrome_extension',
+        label: 'Chrome Extension (SaaS Direct)',
+        port: 'Extension',
+        connected: extensionDetected,
+        browserRunning: extensionDetected,
+        hasTokens: extensionDetected,
+        projectId: 'Discovered'
+      });
+    }
+    populateProfileDropdown(flowProfilesCached);
+
     checkExtension();
     if (flowSocket && (flowSocket.readyState === WebSocket.OPEN || flowSocket.readyState === WebSocket.CONNECTING)) {
       sendFlowAction('profiles'); // Ask profiles status
