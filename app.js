@@ -1655,6 +1655,13 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
           if (chrome.runtime.lastError) {
             console.log('[flow-client] Chrome Extension check error:', chrome.runtime.lastError.message);
             extensionDetected = false;
+            let extProfile = flowProfilesCached.find(p => p.id === 'chrome_extension');
+            if (extProfile) {
+              extProfile.connected = false;
+              extProfile.browserRunning = false;
+              extProfile.hasTokens = false;
+              updateActiveProfileCard();
+            }
             // Try backup development ID
             const backupId = 'jdfkndpifckgimphkhlmgeigpeidlkch';
             if (flowExtensionId !== backupId) {
@@ -1694,10 +1701,14 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       };
       flowProfilesCached = flowProfilesCached.filter(p => p.id !== 'chrome_extension');
       flowProfilesCached.push(extProfile);
-      populateProfileDropdown(flowProfilesCached);
-      flowProfileSelect.value = 'chrome_extension';
-      updateActiveProfileCard();
+    } else {
+      extProfile.connected = true;
+      extProfile.browserRunning = true;
+      extProfile.hasTokens = true;
     }
+    populateProfileDropdown(flowProfilesCached);
+    flowProfileSelect.value = 'chrome_extension';
+    updateActiveProfileCard();
   }
 
   function sendExtensionGenerate(prompt, options) {
