@@ -1316,22 +1316,25 @@
   </div>
 
   <!-- Live Notice Popup modal -->
-  <div class="modal-backdrop hidden" id="noticePopupModal" style="z-index: 10000; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);">
-    <div class="modal-box" id="noticePopupBox" style="max-width: 440px; border: 1px solid var(--outline-variant); border-radius: 24px; padding: 24px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 16px; background: var(--surface-low); position: relative; box-shadow: 0 20px 48px rgba(0,0,0,0.5);">
-      <!-- Close button on top-right -->
-      <button onclick="window.closeNoticePopup()" style="position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,0.06); border: 1px solid var(--outline-variant); border-radius: 50%; color: var(--on-surface); font-size: 14px; width: 30px; height: 30px; cursor: pointer; display: flex; align-items: center; justify-content: center; outline: none; transition: .2s;">&times;</button>
+  <div class="modal-backdrop hidden" id="noticePopupModal" style="z-index: 10000; background: rgba(8, 8, 10, 0.7); backdrop-filter: blur(12px);">
+    <div class="modal-box" id="noticePopupBox" style="max-width: 420px; width: 90%; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 28px; padding: 28px 24px 24px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 20px; background: rgba(18, 18, 22, 0.85); backdrop-filter: blur(20px); position: relative; box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);">
+      <!-- Close button on top-right (subtle & premium) -->
+      <button onclick="window.closeNoticePopup()" style="position: absolute; top: 18px; right: 18px; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 50%; color: rgba(255,255,255,0.6); font-size: 16px; width: 28px; height: 28px; cursor: pointer; display: flex; align-items: center; justify-content: center; outline: none; transition: all 0.2s ease;" onmouseover="this.style.background='rgba(239, 68, 68, 0.15)'; this.style.borderColor='rgba(239, 68, 68, 0.3)'; this.style.color='#ef4444';" onmouseout="this.style.background='rgba(255,255,255,0.04)'; this.style.borderColor='rgba(255,255,255,0.08)'; this.style.color='rgba(255,255,255,0.6)';">&times;</button>
       
-      <!-- Custom Notice Image -->
-      <img id="noticePopupImage" src="" alt="Notice Notice" style="width: 100%; max-height: 180px; object-fit: cover; border-radius: 16px; display: none;">
+      <!-- Custom Notice Image (High quality, sleek shadow & border) -->
+      <img id="noticePopupImage" src="" alt="Notice Notice" style="width: 100%; max-height: 190px; object-fit: cover; border-radius: 18px; border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 8px 24px rgba(0,0,0,0.3); display: none;">
       
       <!-- Custom Notice header & body -->
-      <div style="display: flex; flex-direction: column; gap: 6px; width: 100%;">
-        <h2 id="noticePopupTitle" style="margin: 0; font-size: 18px; font-weight: 800; color: var(--on-surface);">Notice Title</h2>
-        <p id="noticePopupContent" style="margin: 0; font-size: 13px; color: var(--on-variant); line-height: 1.5; white-space: pre-wrap;">Notice body text goes here.</p>
+      <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+        <h2 id="noticePopupTitle" style="margin: 0; font-size: 20px; font-weight: 800; color: #ffffff; background: linear-gradient(135deg, #ffffff 0%, #d1d1d6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 2px 4px rgba(0,0,0,0.15);">Notice Title</h2>
+        <p id="noticePopupContent" style="margin: 0; font-size: 13.5px; color: rgba(255, 255, 255, 0.7); line-height: 1.6; white-space: pre-wrap; word-break: break-word;">Notice body text goes here.</p>
       </div>
 
-      <!-- Custom Notice Button/CTA -->
-      <a id="noticePopupBtn" href="#" target="_blank" class="btn btn-primary" style="text-decoration: none; width: 100%; height: 44px; display: none; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; border-radius: 12px;">Action Button</a>
+      <!-- Action Row Container (Side-by-side: Dismiss / Action) -->
+      <div style="display: flex; gap: 12px; width: 100%; margin-top: 4px;">
+        <button onclick="window.closeNoticePopup()" style="flex: 1; height: 44px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; border-radius: 14px; border: 1px solid rgba(255, 255, 255, 0.08); background: rgba(255, 255, 255, 0.05); color: #ffffff; cursor: pointer; transition: all 0.2s ease; outline: none;" onmouseover="this.style.background='rgba(255, 255, 255, 0.08)'; this.style.borderColor='rgba(255, 255, 255, 0.15)';" onmouseout="this.style.background='rgba(255, 255, 255, 0.05)'; this.style.borderColor='rgba(255, 255, 255, 0.08)';">Close</button>
+        <a id="noticePopupBtn" href="#" target="_blank" class="btn btn-primary" style="text-decoration: none; flex: 1; height: 44px; display: none; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; border-radius: 14px; margin: 0; box-shadow: 0 6px 20px rgba(205, 252, 82, 0.25); border: none; outline: none; transition: all 0.2s ease;">Action Button</a>
+      </div>
     </div>
   </div>
   <!-- Chrome Extension Setup Modal -->
