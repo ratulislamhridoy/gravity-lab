@@ -2225,12 +2225,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
   }
 
   function updateStartButtonState() {
-    const startBtn = document.getElementById('btnFlowStart');
-    const isAnyActiveAndChecked = flowProfilesCached.some(p => {
-      const isChecked = localStorage.getItem(`flow_use_profile_${p.id}`) !== 'false';
-      return isChecked && p.connected;
-    });
-    startBtn.disabled = !isAnyActiveAndChecked;
+    // Keep start button clickable so user can click to trigger connection warnings
   }
 
   // --- UI Action Event Bindings ---
