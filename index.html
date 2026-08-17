@@ -304,6 +304,10 @@
           <div class="studio-controls" id="tool3Controls" style="width: 360px; max-width: 100%; box-sizing: border-box; display: flex; flex-direction: column; padding: 0;">
             <div class="studio-controls-scroll" style="flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px;">
               <h3>Google Flow Settings</h3>
+              
+              <button class="btn btn-primary" id="btnSetupExtensionModal" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700; padding: 10px; background: var(--accent); border-radius: 12px; margin-bottom: 4px; box-shadow: 0 4px 12px rgba(8, 126, 164, 0.15);">
+                🔧 Setup Extension
+              </button>
 
               <!-- Browser Profile Selector Card -->
               <div class="ctl-group" style="background: var(--surface-lowest); border: 1px solid var(--outline-variant); padding: 14px; border-radius: 14px; display: flex; flex-direction: column; gap: 10px;">
@@ -1341,7 +1345,67 @@
       <a id="noticePopupBtn" href="#" target="_blank" class="btn btn-primary" style="text-decoration: none; width: 100%; height: 44px; display: none; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; border-radius: 12px;">Action Button</a>
     </div>
   </div>
+  <!-- Chrome Extension Setup Modal -->
+  <div class="modal-backdrop hidden" id="extensionSetupModal" style="z-index: 999999;">
+    <div class="modal-box" style="max-width: 500px; width: 90%; border-radius: 24px; padding: 28px; background: rgba(18, 18, 22, 0.96); backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.12); box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7); display: flex; flex-direction: column; gap: 20px; color: #ededf0;">
+      <!-- Header -->
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 10px; text-align: left;">
+          <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(8, 126, 164, 0.15); border: 1px solid rgba(8, 126, 164, 0.3); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 20px;">
+            🔌
+          </div>
+          <div>
+            <h3 style="margin: 0; font-size: 17px; font-weight: 800; color: #ededf0;">Chrome Extension Setup</h3>
+            <span style="font-size: 11px; color: var(--on-variant);">Enable zero-config serverless generation</span>
+          </div>
+        </div>
+        <button type="button" class="btn btn-dark small" id="btnCloseExtensionSetupModal" style="width: 30px; height: 30px; padding: 0; border-radius: 50%; font-size: 14px; justify-content: center; display: flex; align-items: center;">✕</button>
+      </div>
 
+      <!-- Steps container with animation/graphics -->
+      <div style="display: flex; flex-direction: column; gap: 16px; text-align: left; font-size: 12.5px; line-height: 1.5;">
+        
+        <!-- Step 1: Download -->
+        <div style="display: flex; gap: 12px; background: rgba(255,255,255,0.02); padding: 12px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.04);">
+          <div style="font-size: 14px; font-weight: 800; background: var(--accent); color: #fff; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; animation: pulse 2s infinite;">1</div>
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+            <strong style="color: #ffffff;">Download ZIP File</strong>
+            <span style="color: var(--on-variant); font-size: 11.5px;">Download the pre-configured extension zip file to your computer.</span>
+            <a href="./gravity-flow-extension.zip" download class="btn btn-primary small" style="margin-top: 4px; gap: 6px; padding: 6px 12px; font-size: 11px; height: 32px; font-weight: 700; width: fit-content; text-decoration: none; border-radius: 8px; justify-content: center; display: inline-flex; align-items: center; background: var(--accent); color: #fff;">
+              📥 Download Extension Zip
+            </a>
+          </div>
+        </div>
+
+        <!-- Step 2: Open Extensions Page & Turn Developer Mode On -->
+        <div style="display: flex; gap: 12px; background: rgba(255,255,255,0.02); padding: 12px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.04);">
+          <div style="font-size: 14px; font-weight: 800; background: var(--tertiary); color: #fff; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">2</div>
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+            <strong style="color: #ffffff;">Open Extensions Page & Developer Mode</strong>
+            <span style="color: var(--on-variant); font-size: 11.5px;">Go to the extension management page in your browser and enable <b>Developer Mode</b> on the top right.</span>
+            <div style="display: flex; gap: 6px; align-items: center; margin-top: 4px;">
+              <button class="btn btn-dark small" id="btnCopyExtensionsUrl" style="padding: 0 12px; font-size: 11px; height: 32px; font-weight: 700; border-radius: 8px; gap: 6px; display: inline-flex; align-items: center;">
+                📋 Copy url
+              </button>
+              <span id="copyUrlStatus" style="font-size: 11.5px; color: #10b981; display: none; font-weight: 700;">Copied: chrome://extensions</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3: Extract and Load -->
+        <div style="display: flex; gap: 12px; background: rgba(255,255,255,0.02); padding: 12px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.04);">
+          <div style="font-size: 14px; font-weight: 800; background: var(--primary); color: #1a1a24; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">3</div>
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+            <strong style="color: #ffffff;">Extract & Load Unpacked</strong>
+            <span style="color: var(--on-variant); font-size: 11.5px;">Unzip/Extract the downloaded file, click <b>"Load unpacked"</b> on the top-left of the Extensions tab, and choose your extracted folder.</span>
+          </div>
+        </div>
+
+      </div>
+      
+      <button class="btn btn-dark" id="btnConfirmExtensionLoaded" style="width: 100%; height: 40px; font-weight: 800; border-radius: 12px; margin-top: 6px; background: var(--surface-highest); color: var(--on-surface);">Done, Let's Connect!</button>
+    </div>
+  </div>
   <!-- Global Toast Notification Container -->
   <div id="toastContainer" style="position: fixed; bottom: 24px; right: 24px; z-index: 9999999; display: flex; flex-direction: column; gap: 10px; pointer-events: none;"></div>
 

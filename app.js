@@ -6884,6 +6884,71 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     });
   }
 
+  // ===== Chrome Extension Setup Modal Handlers =====
+  const btnSetupExtensionModal = document.getElementById('btnSetupExtensionModal');
+  const extensionSetupModal = document.getElementById('extensionSetupModal');
+  const btnCloseExtensionSetupModal = document.getElementById('btnCloseExtensionSetupModal');
+  const btnConfirmExtensionLoaded = document.getElementById('btnConfirmExtensionLoaded');
+  const btnCopyExtensionsUrl = document.getElementById('btnCopyExtensionsUrl');
+  const copyUrlStatus = document.getElementById('copyUrlStatus');
+
+  if (btnSetupExtensionModal && extensionSetupModal) {
+    btnSetupExtensionModal.addEventListener('click', () => {
+      extensionSetupModal.classList.remove('hidden');
+    });
+  }
+
+  const closeExtensionModal = () => {
+    if (extensionSetupModal) {
+      extensionSetupModal.classList.add('hidden');
+    }
+  };
+
+  if (btnCloseExtensionSetupModal) {
+    btnCloseExtensionSetupModal.addEventListener('click', closeExtensionModal);
+  }
+  if (btnConfirmExtensionLoaded) {
+    btnConfirmExtensionLoaded.addEventListener('click', closeExtensionModal);
+  }
+
+  if (extensionSetupModal) {
+    extensionSetupModal.addEventListener('click', (e) => {
+      if (e.target === extensionSetupModal) {
+        closeExtensionModal();
+      }
+    });
+  }
+
+  if (btnCopyExtensionsUrl) {
+    btnCopyExtensionsUrl.addEventListener('click', () => {
+      navigator.clipboard.writeText('chrome://extensions')
+        .then(() => {
+          if (copyUrlStatus) {
+            copyUrlStatus.style.display = 'inline';
+            setTimeout(() => {
+              copyUrlStatus.style.display = 'none';
+            }, 3000);
+          }
+        })
+        .catch(err => {
+          console.error('[Copy Error]:', err);
+          // Fallback copy using input copy trick
+          const el = document.createElement('textarea');
+          el.value = 'chrome://extensions';
+          document.body.appendChild(el);
+          el.select();
+          document.execCommand('copy');
+          document.body.removeChild(el);
+          if (copyUrlStatus) {
+            copyUrlStatus.style.display = 'inline';
+            setTimeout(() => {
+              copyUrlStatus.style.display = 'none';
+            }, 3000);
+          }
+        });
+    });
+  }
+
   // Central Routing System
   function handleRouting() {
     let path = window.location.pathname;
