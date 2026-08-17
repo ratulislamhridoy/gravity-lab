@@ -5556,15 +5556,22 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
   let isSignUpMode = false;
 
   function openAuthModal() {
-    if (authModal) authModal.classList.remove('hidden');
+    if (authModal) {
+      if (document.body.classList.contains('not-authenticated')) {
+        authModal.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        authModal.classList.remove('hidden');
+      }
+    }
   }
 
   function closeAuthModal() {
-    if (authModal) authModal.classList.add('hidden');
+    if (authModal && !document.body.classList.contains('not-authenticated')) {
+      authModal.classList.add('hidden');
+    }
   }
 
   if (btnOpenAuthModal) btnOpenAuthModal.addEventListener('click', openAuthModal);
-  if (btnCloseAuthModal) btnCloseAuthModal.addEventListener('click', closeAuthModal);
 
   if (authToggleModeBtn) {
     authToggleModeBtn.addEventListener('click', (e) => {
@@ -7139,6 +7146,21 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     if (window.checkAndShowNoticePopup) {
       window.checkAndShowNoticePopup();
     }
+  }
+
+  // Scroll Reveal Observer for Landing Page
+  const revealElements = document.querySelectorAll('.reveal-on-scroll');
+  if ('IntersectionObserver' in window && revealElements.length > 0) {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('revealed');
+        }
+      });
+    }, { threshold: 0.08 });
+    revealElements.forEach(el => observer.observe(el));
+  } else {
+    revealElements.forEach(el => el.classList.add('revealed'));
   }
 
   window.addEventListener('popstate', handleRouting);

@@ -1240,60 +1240,304 @@
     </div>
   </div>
 
-  <!-- Firebase Dark Glass Authentication Modal Popup -->
-  <div class="modal-backdrop" id="authModal" style="z-index: 999999;">
-    <div class="modal-box" style="max-width: 420px; width: 90%; border-radius: 24px; padding: 28px; background: rgba(18, 18, 22, 0.96); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.12); box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7); display: flex; flex-direction: column; gap: 20px; text-align: center;">
-      
-      <!-- Modal Header -->
-      <div style="display: flex; align-items: center; justify-content: space-between;">
-        <div style="display: flex; align-items: center; gap: 10px; text-align: left;">
-          <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(205, 252, 82, 0.12); border: 1px solid rgba(205, 252, 82, 0.3); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 20px;">
-            ✨
+  <!-- SaaS Landing Page & Login Gate -->
+  <div class="landing-page" id="landingPage">
+    <!-- Header -->
+    <header class="landing-header">
+      <a href="#" class="landing-logo">
+        <img src="logo.png" alt="GravityLab Logo" />
+        <div class="title">Gravity<span>Lab</span></div>
+      </a>
+      <nav class="landing-nav">
+        <a href="#features" class="landing-nav-link">Features</a>
+        <a href="#pricing" class="landing-nav-link">Pricing</a>
+        <a href="#testimonials" class="landing-nav-link">Reviews</a>
+        <a href="#faq" class="landing-nav-link">FAQ</a>
+      </nav>
+      <button class="landing-btn-login" onclick="document.getElementById('authModal').scrollIntoView({ behavior: 'smooth' })">Get Started</button>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="landing-hero">
+      <div class="hero-content reveal-on-scroll">
+        <div class="hero-badge">Sparked by Gemini</div>
+        <h1>Automate Your Creative Workflow</h1>
+        <p>GravityLab helps you generate icon sheets, slice layouts, vectorize graphics, and execute Google Flow actions with state-of-the-art AI tooling inside an unified creator environment.</p>
+        <div class="hero-features-list">
+          <div class="hero-feature-item">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Generates complete icon grid spreadsheets instantly</span>
           </div>
-          <div>
-            <h3 style="margin: 0; font-size: 17px; font-weight: 800; color: #ededf0;">GravityLab Sign In</h3>
-            <span style="font-size: 11px; color: var(--on-variant);">Access prompts, assets & cloud features</span>
+          <div class="hero-feature-item">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Seamless real-time integration with Google Flow Extension</span>
+          </div>
+          <div class="hero-feature-item">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Local SVG Vector worker engine runs offline in your browser</span>
           </div>
         </div>
-        <button type="button" class="btn btn-dark small" id="btnCloseAuthModal" style="width: 30px; height: 30px; padding: 0; border-radius: 50%; font-size: 14px; justify-content: center;">✕</button>
       </div>
 
-      <!-- Google 1-Click Sign-In Button -->
-      <button type="button" id="btnGoogleSignIn" style="width: 100%; height: 44px; background: #ffffff; color: #1f1f1f; border: none; border-radius: 12px; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; box-shadow: 0 4px 15px rgba(255, 255, 255, 0.15); transition: all 0.2s;">
-        <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
-        Sign in with Google
-      </button>
+      <div class="hero-form-container reveal-on-scroll">
+        <!-- Auth Card -->
+        <div class="landing-auth-card" id="authModal">
+          <!-- Auth Form Header -->
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+            <div style="display: flex; align-items: center; gap: 10px; text-align: left;">
+              <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(205, 252, 82, 0.12); border: 1px solid rgba(205, 252, 82, 0.3); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                ✨
+              </div>
+              <div>
+                <h3 style="margin: 0; font-size: 17px; font-weight: 800; color: #ededf0;">GravityLab Login</h3>
+                <span style="font-size: 11px; color: var(--on-variant);">Access prompts, assets & cloud features</span>
+              </div>
+            </div>
+          </div>
 
-      <!-- Divider -->
-      <div style="display: flex; align-items: center; gap: 12px; margin: 2px 0;">
-        <div style="flex: 1; height: 1px; background: var(--outline-variant);"></div>
-        <span style="font-size: 10.5px; color: var(--on-variant); font-weight: 600; text-transform: uppercase;">Or with email</span>
-        <div style="flex: 1; height: 1px; background: var(--outline-variant);"></div>
-      </div>
-
-      <!-- Email / Password Form -->
-      <form id="authEmailForm" style="display: flex; flex-direction: column; gap: 10px; text-align: left;">
-        <div>
-          <label style="font-size: 10px; font-weight: 700; color: var(--on-variant); margin-bottom: 4px; display: block;">Email Address</label>
-          <input type="email" class="ctl-input" id="authEmail" placeholder="you@example.com" required style="height: 36px; padding: 6px 12px; font-size: 12px;" />
-        </div>
-        <div>
-          <label style="font-size: 10px; font-weight: 700; color: var(--on-variant); margin-bottom: 4px; display: block;">Password</label>
-          <input type="password" class="ctl-input" id="authPassword" placeholder="••••••••" required style="height: 36px; padding: 6px 12px; font-size: 12px;" />
-        </div>
-
-        <div style="display: flex; gap: 10px; margin-top: 4px;">
-          <button type="submit" class="btn btn-primary" id="btnSubmitAuth" style="flex: 1; height: 38px; justify-content: center; font-weight: 800; border-radius: 10px;">
-            Sign In
+          <!-- Google 1-Click Sign-In Button -->
+          <button type="button" id="btnGoogleSignIn" style="width: 100%; height: 44px; background: #ffffff; color: #1f1f1f; border: none; border-radius: 12px; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; box-shadow: 0 4px 15px rgba(255, 255, 255, 0.15); transition: all 0.2s;">
+            <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+            Sign in with Google
           </button>
+
+          <!-- Divider -->
+          <div style="display: flex; align-items: center; gap: 12px; margin: 15px 0;">
+            <div style="flex: 1; height: 1px; background: var(--outline-variant);"></div>
+            <span style="font-size: 10px; color: var(--on-variant); font-weight: 600; text-transform: uppercase;">Or with email</span>
+            <div style="flex: 1; height: 1px; background: var(--outline-variant);"></div>
+          </div>
+
+          <!-- Email / Password Form -->
+          <form id="authEmailForm" style="display: flex; flex-direction: column; gap: 10px; text-align: left;">
+            <div>
+              <label style="font-size: 10px; font-weight: 700; color: var(--on-variant); margin-bottom: 4px; display: block;">Email Address</label>
+              <input type="email" class="ctl-input" id="authEmail" placeholder="you@example.com" required style="height: 36px; padding: 6px 12px; font-size: 12px;" />
+            </div>
+            <div>
+              <label style="font-size: 10px; font-weight: 700; color: var(--on-variant); margin-bottom: 4px; display: block;">Password</label>
+              <input type="password" class="ctl-input" id="authPassword" placeholder="••••••••" required style="height: 36px; padding: 6px 12px; font-size: 12px;" />
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 4px;">
+              <button type="submit" class="btn btn-primary" id="btnSubmitAuth" style="flex: 1; height: 38px; justify-content: center; font-weight: 800; border-radius: 10px;">
+                Sign In
+              </button>
+            </div>
+          </form>
+
+          <div style="font-size: 11px; color: var(--on-variant); text-align: center; margin-top: 15px;">
+            Don't have an account? <a href="#" id="authToggleModeBtn" style="color: var(--primary); font-weight: 700; text-decoration: none;">Create Account</a>
+          </div>
         </div>
-      </form>
-
-      <div style="font-size: 11px; color: var(--on-variant);">
-        Don't have an account? <a href="#" id="authToggleModeBtn" style="color: var(--primary); font-weight: 700; text-decoration: none;">Create Account</a>
       </div>
+    </section>
 
-    </div>
+    <!-- How It Works Section -->
+    <section id="features" class="landing-section-title reveal-on-scroll">
+      <h2>How GravityLab Works</h2>
+      <p>A unified suite designed to shorten prompt loops, automate spreadsheet executions, and optimize SVG icons.</p>
+    </section>
+    <section class="tools-showcase">
+      <div class="tool-showcase-card reveal-on-scroll">
+        <div class="tool-icon-wrap" style="background: rgba(92, 98, 236, 0.12); color: #5c62ec;">📝</div>
+        <h3>Prompt Generator</h3>
+        <p>Shorten text structures using style controls. Select layouts, spacing parameters, and generate batch layouts.</p>
+      </div>
+      <div class="tool-showcase-card reveal-on-scroll">
+        <div class="tool-icon-wrap" style="background: rgba(205, 252, 82, 0.12); color: var(--primary);">⚙️</div>
+        <h3>Google Flow Bridge</h3>
+        <p>Sync assets inside active browser tabs. Dispatch queue instructions and monitor real-time WebSockets.</p>
+      </div>
+      <div class="tool-showcase-card reveal-on-scroll">
+        <div class="tool-icon-wrap" style="background: rgba(244, 63, 94, 0.12); color: #f43f5e;">📐</div>
+        <h3>Slicer & Vectorizer</h3>
+        <p>Isolate key icons under micro-layout engines. Generate clean vector paths offline using local browser CPU workers.</p>
+      </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section id="pricing" class="landing-section-title reveal-on-scroll">
+      <h2>Flexible Pricing Plans</h2>
+      <p>Choose the level of speed and volume you need for your asset pipelines.</p>
+    </section>
+    <section class="pricing-section">
+      <!-- Plan 1 -->
+      <div class="pricing-plan-card reveal-on-scroll">
+        <div class="plan-header">
+          <h3>Starter</h3>
+          <div class="plan-price">$0<span>/month</span></div>
+        </div>
+        <ul class="plan-features">
+          <li class="plan-feature-row">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>10 prompt generations / month</span>
+          </li>
+          <li class="plan-feature-row">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Standard offline vectorizing</span>
+          </li>
+          <li class="plan-feature-row">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Google Flow community plugin</span>
+          </li>
+        </ul>
+        <button class="btn-plan-select" onclick="document.getElementById('authModal').scrollIntoView({ behavior: 'smooth' })">Get Started</button>
+      </div>
+      <!-- Plan 2 -->
+      <div class="pricing-plan-card popular reveal-on-scroll">
+        <div class="plan-header">
+          <h3>Pro Plan</h3>
+          <div class="plan-price">$19<span>/month</span></div>
+        </div>
+        <ul class="plan-features">
+          <li class="plan-feature-row">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Unlimited prompt generation loops</span>
+          </li>
+          <li class="plan-feature-row">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Fast batch vectorizer processes</span>
+          </li>
+          <li class="plan-feature-row">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Priority WebSocket stream sockets</span>
+          </li>
+          <li class="plan-feature-row">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>24/7 priority customer support</span>
+          </li>
+        </ul>
+        <button class="btn-plan-select" onclick="document.getElementById('authModal').scrollIntoView({ behavior: 'smooth' })">Upgrade to Pro</button>
+      </div>
+      <!-- Plan 3 -->
+      <div class="pricing-plan-card reveal-on-scroll">
+        <div class="plan-header">
+          <h3>Team</h3>
+          <div class="plan-price">$49<span>/month</span></div>
+        </div>
+        <ul class="plan-features">
+          <li class="plan-feature-row">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>All Pro features included</span>
+          </li>
+          <li class="plan-feature-row">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Up to 15 team member slots</span>
+          </li>
+          <li class="plan-feature-row">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Shared organization asset vault</span>
+          </li>
+        </ul>
+        <button class="btn-plan-select" onclick="document.getElementById('authModal').scrollIntoView({ behavior: 'smooth' })">Contact Sales</button>
+      </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section id="testimonials" class="landing-section-title reveal-on-scroll">
+      <h2>Loved by Creative Designers</h2>
+      <p>Here is what creative professionals say about GravityLab's flow acceleration.</p>
+    </section>
+    <section class="testimonials-section">
+      <!-- Testimonial 1 -->
+      <div class="testimonial-card reveal-on-scroll">
+        <div class="testimonial-stars">★★★★★</div>
+        <p class="testimonial-text">"GravityLab completely transformed my UI workflows. I can batch-generate SVG icon libraries in under 5 minutes now!"</p>
+        <div class="testimonial-user">
+          <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150" alt="Sarah J." />
+          <div class="testimonial-user-info">
+            <div class="testimonial-user-name">Sarah Jenkins</div>
+            <div class="testimonial-user-title">Lead Product Designer</div>
+          </div>
+        </div>
+      </div>
+      <!-- Testimonial 2 -->
+      <div class="testimonial-card reveal-on-scroll">
+        <div class="testimonial-stars">★★★★★</div>
+        <p class="testimonial-text">"The Web Worker-driven vectorizer is incredibly responsive. Running vector path creation directly in the browser offline is magic."</p>
+        <div class="testimonial-user">
+          <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150" alt="Alex M." />
+          <div class="testimonial-user-info">
+            <div class="testimonial-user-name">Alex Rivera</div>
+            <div class="testimonial-user-title">Independent Creator</div>
+          </div>
+        </div>
+      </div>
+      <!-- Testimonial 3 -->
+      <div class="testimonial-card reveal-on-scroll">
+        <div class="testimonial-stars">★★★★★</div>
+        <p class="testimonial-text">"Integrating Google Flow and seeing our cards sync right away saved us hours of copy-pasting. Highly recommended!"</p>
+        <div class="testimonial-user">
+          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150" alt="Emma T." />
+          <div class="testimonial-user-info">
+            <div class="testimonial-user-name">Emma Thomsen</div>
+            <div class="testimonial-user-title">Design Operations at Spotify</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section id="faq" class="landing-section-title reveal-on-scroll">
+      <h2>Frequently Asked Questions</h2>
+      <p>Have questions about GravityLab? Find your answers here.</p>
+    </section>
+    <section class="faq-section">
+      <!-- FAQ 1 -->
+      <div class="faq-item reveal-on-scroll">
+        <div class="faq-header" onclick="this.parentElement.classList.toggle('active'); var p = this.nextElementSibling; if(this.parentElement.classList.contains('active')){ p.style.maxHeight = p.scrollHeight + 'px'; } else { p.style.maxHeight = '0'; }">
+          <h3>What is GravityLab?</h3>
+          <div class="faq-toggle-icon">+</div>
+        </div>
+        <div class="faq-body">
+          <div class="faq-content">
+            GravityLab is a comprehensive suite built specifically for creators, offering high-speed AI prompt configurations, automatic layout slicing, vectorizing nodes, and custom Chrome Extension sync bridges.
+          </div>
+        </div>
+      </div>
+      <!-- FAQ 2 -->
+      <div class="faq-item reveal-on-scroll">
+        <div class="faq-header" onclick="this.parentElement.classList.toggle('active'); var p = this.nextElementSibling; if(this.parentElement.classList.contains('active')){ p.style.maxHeight = p.scrollHeight + 'px'; } else { p.style.maxHeight = '0'; }">
+          <h3>How does the Google Flow integration work?</h3>
+          <div class="faq-toggle-icon">+</div>
+        </div>
+        <div class="faq-body">
+          <div class="faq-content">
+            When you run the GravityLab Chrome Extension alongside the workspace player, it directly passes generation prompts and listens to background updates, eliminating manual copy-pasting loops.
+          </div>
+        </div>
+      </div>
+      <!-- FAQ 3 -->
+      <div class="faq-item reveal-on-scroll">
+        <div class="faq-header" onclick="this.parentElement.classList.toggle('active'); var p = this.nextElementSibling; if(this.parentElement.classList.contains('active')){ p.style.maxHeight = p.scrollHeight + 'px'; } else { p.style.maxHeight = '0'; }">
+          <h3>Can I use the generated icons commercially?</h3>
+          <div class="faq-toggle-icon">+</div>
+        </div>
+        <div class="faq-body">
+          <div class="faq-content">
+            Yes! All vectors and asset designs generated using GravityLab are fully yours to use across commercial client projects, templates, apps, or print layouts.
+          </div>
+        </div>
+      </div>
+      <!-- FAQ 4 -->
+      <div class="faq-item reveal-on-scroll">
+        <div class="faq-header" onclick="this.parentElement.classList.toggle('active'); var p = this.nextElementSibling; if(this.parentElement.classList.contains('active')){ p.style.maxHeight = p.scrollHeight + 'px'; } else { p.style.maxHeight = '0'; }">
+          <h3>How do I upgrade to the Pro plan?</h3>
+          <div class="faq-toggle-icon">+</div>
+        </div>
+        <div class="faq-body">
+          <div class="faq-content">
+            Simply sign in, go to the profile settings, and click Upgrade. Upgrades are processed instantly via our secure merchant partner with instant billing activation.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="landing-footer">
+      &copy; 2026 GravityLab. All rights reserved. Powered by AI and WebSocket synchronizations.
+    </footer>
   </div>
 
   <!-- Dark Glass Admin PIN Verification Modal -->
