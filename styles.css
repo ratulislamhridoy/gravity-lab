@@ -827,12 +827,6 @@ input[type="number"] {
 }
 
 /* === Authentication Gate Styling === */
-body.not-authenticated {
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
-  height: auto !important;
-  max-height: none !important;
-}
 body.not-authenticated #appBody {
   display: none !important;
 }
@@ -843,10 +837,16 @@ body.not-authenticated .landing-page {
 /* === Landing page container === */
 .landing-page {
   display: none;
-  width: 100%;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 999999;
   background: radial-gradient(circle at 50% 30%, #171822 0%, #030408 100%);
   color: #ededf0;
-  position: relative;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* === Landing page header === */
