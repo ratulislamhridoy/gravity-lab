@@ -1642,7 +1642,150 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
   let flowProfilesCached = [];
   const flowMessageQueue = [];
 
+  // --- Chrome Extension Integration ---
+  let flowExtensionId = localStorage.getItem('flow_extension_id') || 'dfmbofhgepjnhbghhicdbfegpnbhcooa';
+  let extensionDetected = false;
+  let extensionRunAborted = false;
+
+  function checkExtension() {
+    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+      try {
+        console.log('[flow-client] Pinging extension ID:', flowExtensionId);
+        chrome.runtime.sendMessage(flowExtensionId, { action: 'ping' }, response => {
+          if (chrome.runtime.lastError) {
+            console.log('[flow-client] Chrome Extension check error:', chrome.runtime.lastError.message);
+            extensionDetected = false;
+            // Try backup development ID
+            const backupId = 'jdfkndpifckgimphkhlmgeigpeidlkch';
+            if (flowExtensionId !== backupId) {
+              chrome.runtime.sendMessage(backupId, { action: 'ping' }, backupResp => {
+                if (!chrome.runtime.lastError && backupResp && backupResp.ok) {
+                  console.log('[flow-client] Chrome Extension found using backup ID:', backupId);
+                  flowExtensionId = backupId;
+                  localStorage.setItem('flow_extension_id', backupId);
+                  extensionDetected = true;
+                  addExtensionProfileOption();
+                }
+              });
+            }
+          } else if (response && response.ok) {
+            console.log('[flow-client] Chrome Extension responded OK!');
+            extensionDetected = true;
+            addExtensionProfileOption();
+          }
+        });
+      } catch (err) {
+        console.warn('[flow-client] Chrome Extension check exception:', err);
+      }
+    }
+  }
+
+  function addExtensionProfileOption() {
+    let extProfile = flowProfilesCached.find(p => p.id === 'chrome_extension');
+    if (!extProfile) {
+      extProfile = {
+        id: 'chrome_extension',
+        label: 'Chrome Extension (SaaS Direct)',
+        port: 'Extension',
+        connected: true,
+        browserRunning: true,
+        hasTokens: true,
+        projectId: 'Discovered'
+      };
+      flowProfilesCached = flowProfilesCached.filter(p => p.id !== 'chrome_extension');
+      flowProfilesCached.push(extProfile);
+      populateProfileDropdown(flowProfilesCached);
+      flowProfileSelect.value = 'chrome_extension';
+      updateActiveProfileCard();
+    }
+  }
+
+  function sendExtensionGenerate(prompt, options) {
+    return new Promise((resolve) => {
+      if (typeof chrome === 'undefined' || !chrome.runtime || !chrome.runtime.sendMessage) {
+        resolve({ ok: false, error: 'Chrome extension API is not available on this browser/page.' });
+        return;
+      }
+      chrome.runtime.sendMessage(flowExtensionId, {
+        action: 'generate',
+        prompt: prompt,
+        options: options
+      }, response => {
+        if (chrome.runtime.lastError) {
+          resolve({ ok: false, error: 'Extension connection error: ' + chrome.runtime.lastError.message });
+        } else {
+          resolve(response);
+        }
+      });
+    });
+  }
+
+  async function runExtensionFlowGeneration(prompts, imgCount, options) {
+    extensionRunAborted = false;
+    const clientSideTotal = prompts.length * imgCount;
+    handleFlowServerMessage({ type: 'flow-progress', completed: 0, total: clientSideTotal });
+    let completedCount = 0;
+
+    for (let pIdx = 0; pIdx < prompts.length; pIdx++) {
+      const promptText = prompts[pIdx];
+
+      for (let iIdx = 0; iIdx < imgCount; iIdx++) {
+        if (extensionRunAborted) {
+          console.warn('[flow-client] Run cancelled by user.');
+          return;
+        }
+
+        const cardIndex = (pIdx * 100) + iIdx;
+        handleFlowServerMessage({
+          type: 'flow-item',
+          index: cardIndex,
+          status: 'processing'
+        });
+
+        try {
+          const response = await sendExtensionGenerate(promptText, options);
+          if (extensionRunAborted) return;
+
+          if (response && response.ok && response.media && response.media.length > 0) {
+            const mediaItem = response.media[0];
+            const dataUrl = `data:image/png;base64,${mediaItem.encodedImage}`;
+            handleFlowServerMessage({
+              type: 'flow-item',
+              index: cardIndex,
+              status: 'done',
+              dataUrl: dataUrl,
+              seed: options.seed || Math.floor(Math.random() * 2147483648),
+              model: options.model,
+              prompt: promptText
+            });
+          } else {
+            throw new Error((response && response.error) || 'Empty backend media payload returned');
+          }
+        } catch (err) {
+          if (extensionRunAborted) return;
+          handleFlowServerMessage({
+            type: 'flow-item',
+            index: cardIndex,
+            status: 'error',
+            error: err.message || String(err)
+          });
+        }
+
+        completedCount++;
+        handleFlowServerMessage({
+          type: 'flow-progress',
+          completed: completedCount,
+          total: clientSideTotal
+        });
+      }
+    }
+
+    btnFlowStart.disabled = false;
+    btnFlowStop.disabled = true;
+  }
+
   function initFlowConnection(showAlertOnError = false) {
+    checkExtension();
     if (flowSocket && (flowSocket.readyState === WebSocket.OPEN || flowSocket.readyState === WebSocket.CONNECTING)) {
       sendFlowAction('profiles'); // Ask profiles status
       return;
@@ -1747,10 +1890,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       flowSocket.send(rawMsg);
     } else {
       flowMessageQueue.push(rawMsg);
-      if (!flowSocket || flowSocket.readyState === WebSocket.CLOSED || flowSocket.readyState === WebSocket.CLOSING) {
-        console.warn('[flow-client] Connection offline, attempting connection');
-        initFlowConnection(true);
-      }
+      console.warn('[flow-client] Connection offline, message queued');
     }
   }
 
@@ -1762,7 +1902,21 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       case 'profile-add': {
         if (msg.ok && msg.profiles) {
           flowProfilesCached = msg.profiles;
-          populateProfileDropdown(msg.profiles);
+          if (extensionDetected) {
+            let extProfile = flowProfilesCached.find(p => p.id === 'chrome_extension');
+            if (!extProfile) {
+              flowProfilesCached.push({
+                id: 'chrome_extension',
+                label: 'Chrome Extension (SaaS Direct)',
+                port: 'Extension',
+                connected: true,
+                browserRunning: true,
+                hasTokens: true,
+                projectId: 'Discovered'
+              });
+            }
+          }
+          populateProfileDropdown(flowProfilesCached);
         }
         if (msg.error) {
           alert('Error: ' + msg.error);
@@ -1784,7 +1938,21 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
           }
         } else if (msg.profiles) {
           flowProfilesCached = msg.profiles;
-          populateProfileDropdown(msg.profiles);
+          if (extensionDetected) {
+            let extProfile = flowProfilesCached.find(p => p.id === 'chrome_extension');
+            if (!extProfile) {
+              flowProfilesCached.push({
+                id: 'chrome_extension',
+                label: 'Chrome Extension (SaaS Direct)',
+                port: 'Extension',
+                connected: true,
+                browserRunning: true,
+                hasTokens: true,
+                projectId: 'Discovered'
+              });
+            }
+          }
+          populateProfileDropdown(flowProfilesCached);
         }
         if (msg.error) {
           alert('Action error: ' + msg.error);
@@ -1956,7 +2124,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     const currentVal = flowProfileSelect.value || 'default';
     flowProfileSelect.innerHTML = '';
     
-    if (profiles.length >= 3) {
+    if (profiles.length >= 4) {
       addProfileBtn.style.display = 'none';
     } else {
       addProfileBtn.style.display = 'block';
@@ -1965,7 +2133,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     profiles.forEach(p => {
       const opt = document.createElement('option');
       opt.value = p.id;
-      opt.textContent = `${p.label} (Port ${p.port})`;
+      opt.textContent = p.id === 'chrome_extension' ? p.label : `${p.label} (Port ${p.port})`;
       flowProfileSelect.appendChild(opt);
     });
 
@@ -1981,22 +2149,40 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     const profile = flowProfilesCached.find(p => p.id === selectedId);
     if (!profile) return;
 
+    // Toggle Extension ID input container visibility
+    const extIdContainer = document.getElementById('flowExtensionIdContainer');
+    const inputFlowExtId = document.getElementById('inputFlowExtensionId');
+    if (extIdContainer) {
+      extIdContainer.style.display = selectedId === 'chrome_extension' ? 'flex' : 'none';
+      if (inputFlowExtId) {
+        inputFlowExtId.value = flowExtensionId;
+      }
+    }
+
     // Checkbox state
     const isChecked = localStorage.getItem(`flow_use_profile_${selectedId}`) !== 'false';
     flowProfileUseCheckbox.checked = isChecked;
 
     // Disconnect button state
-    btnFlowDisconnect.disabled = !profile.connected;
+    btnFlowDisconnect.disabled = selectedId === 'chrome_extension' ? true : !profile.connected;
 
     // Status badge and details
     if (profile.connected) {
       connectionBadge.textContent = 'Active';
       connectionBadge.style.background = 'rgba(52, 168, 83, 0.15)';
       connectionBadge.style.color = '#34a853';
-      connectionDetail.innerHTML = `
-        Port: <strong>${profile.port}</strong> · Project: <strong>${profile.projectId || 'None'}</strong><br/>
-        Tokens: <strong style="color:${profile.hasTokens ? '#34a853':'#fbbc05'}">${profile.hasTokens ? 'Acquired' : 'Pending'}</strong>
-      `;
+      
+      if (selectedId === 'chrome_extension') {
+        connectionDetail.innerHTML = `
+          Type: <strong>SaaS extension</strong><br/>
+          Status: <strong>Connected and Active</strong>
+        `;
+      } else {
+        connectionDetail.innerHTML = `
+          Port: <strong>${profile.port}</strong> · Project: <strong>${profile.projectId || 'None'}</strong><br/>
+          Tokens: <strong style="color:${profile.hasTokens ? '#34a853':'#fbbc05'}">${profile.hasTokens ? 'Acquired' : 'Pending'}</strong>
+        `;
+      }
     } else {
       connectionBadge.textContent = 'Offline';
       connectionBadge.style.background = 'rgba(234, 67, 53, 0.15)';
@@ -2041,6 +2227,10 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
 
   btnFlowOpen.addEventListener('click', () => {
     const selectedId = flowProfileSelect.value || 'default';
+    if (selectedId === 'chrome_extension') {
+      window.open('https://labs.google/fx/tools/flow', '_blank');
+      return;
+    }
     sendFlowActionSpecific('login', selectedId);
     let count = 0;
     const interval = setInterval(() => {
@@ -2051,11 +2241,25 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
 
   btnFlowConnect.addEventListener('click', () => {
     const selectedId = flowProfileSelect.value || 'default';
+    if (selectedId === 'chrome_extension') {
+      checkExtension();
+      setTimeout(() => {
+        if (extensionDetected) {
+          alert('Chrome Extension connection verified successfully!');
+        } else {
+          alert('Chrome Extension not found. Please ensure the extension is loaded in this browser and the extension ID matches.');
+        }
+      }, 600);
+      return;
+    }
     sendFlowActionSpecific('init', selectedId);
   });
 
   btnFlowDisconnect.addEventListener('click', () => {
     const selectedId = flowProfileSelect.value || 'default';
+    if (selectedId === 'chrome_extension') {
+      return;
+    }
     sendFlowActionSpecific('disconnect', selectedId);
   });
 
@@ -2077,6 +2281,26 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
 
     const imgCount = Number(flowImagesPerPrompt.value) || 1;
     const clientSideTotal = prompts.length * imgCount;
+
+    if (activeIds.includes('chrome_extension')) {
+      btnFlowStart.disabled = true;
+      btnFlowStop.disabled = false;
+
+      flowResultGallery.innerHTML = '';
+      flowResultGallery.appendChild(flowEmptyState);
+      flowEmptyState.style.display = 'none';
+
+      flowProgressBar.style.display = 'block';
+      flowProgressBarInner.style.width = '0%';
+      flowRunProgress.style.display = 'inline-block';
+      flowRunProgress.textContent = `Progress: 0/${clientSideTotal}`;
+
+      runExtensionFlowGeneration(prompts, imgCount, {
+        model: flowModel.value,
+        aspectRatio: flowAspectRatio.value
+      });
+      return;
+    }
 
     flowResultGallery.innerHTML = '';
     flowResultGallery.appendChild(flowEmptyState);
@@ -2108,8 +2332,26 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
   });
 
   btnFlowStop.addEventListener('click', () => {
+    const selectedId = flowProfileSelect.value || 'default';
+    if (selectedId === 'chrome_extension' || flowProfileSelect.value === 'chrome_extension') {
+      extensionRunAborted = true;
+      btnFlowStart.disabled = false;
+      btnFlowStop.disabled = true;
+      return;
+    }
     sendFlowAction('stop');
   });
+
+  const inputFlowExtId = document.getElementById('inputFlowExtensionId');
+  if (inputFlowExtId) {
+    inputFlowExtId.addEventListener('input', (e) => {
+      const val = e.target.value.trim();
+      if (val) {
+        flowExtensionId = val;
+        localStorage.setItem('flow_extension_id', val);
+      }
+    });
+  }
 
   // Folder Directory Picker logic
   const flowDirPicker = document.getElementById('flowDirPicker');
