@@ -1709,6 +1709,12 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     populateProfileDropdown(flowProfilesCached);
     flowProfileSelect.value = 'chrome_extension';
     updateActiveProfileCard();
+
+    // Auto-close connection warning modal if it was open
+    const connAlert = document.getElementById('flowConnectionAlertModal');
+    if (connAlert) {
+      connAlert.classList.add('hidden');
+    }
   }
 
   function sendExtensionGenerate(prompt, options) {
@@ -2284,6 +2290,28 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     const prompts = getCleanFlowPrompts();
     if (!prompts.length) {
       alert('Please enter or upload prompt keywords first.');
+      return;
+    }
+
+    // Connect verification checks before starting
+    if (!extensionDetected) {
+      const setupModal = document.getElementById('extensionSetupModal');
+      if (setupModal) {
+        setupModal.classList.remove('hidden');
+      } else {
+        alert('Chrome Extension is not installed. Please follow the setup guide.');
+      }
+      return;
+    }
+
+    const extProfile = flowProfilesCached.find(p => p.id === 'chrome_extension');
+    if (!extProfile || !extProfile.connected) {
+      const connAlertModal = document.getElementById('flowConnectionAlertModal');
+      if (connAlertModal) {
+        connAlertModal.classList.remove('hidden');
+      } else {
+        alert('Please connect to Google Flow first.');
+      }
       return;
     }
 
@@ -6878,6 +6906,38 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
   if (btnSetupExtensionModal && extensionSetupModal) {
     btnSetupExtensionModal.addEventListener('click', () => {
       extensionSetupModal.classList.remove('hidden');
+    });
+  }
+
+  // ===== Connection Alert Modal Handlers =====
+  const flowConnectionAlertModal = document.getElementById('flowConnectionAlertModal');
+  const btnCloseConnectionAlertModal = document.getElementById('btnCloseConnectionAlertModal');
+  const btnModalFlowOpen = document.getElementById('btnModalFlowOpen');
+  const btnModalFlowConnect = document.getElementById('btnModalFlowConnect');
+
+  if (btnCloseConnectionAlertModal) {
+    btnCloseConnectionAlertModal.addEventListener('click', () => {
+      if (flowConnectionAlertModal) flowConnectionAlertModal.classList.add('hidden');
+    });
+  }
+
+  if (flowConnectionAlertModal) {
+    flowConnectionAlertModal.addEventListener('click', (e) => {
+      if (e.target === flowConnectionAlertModal) {
+        flowConnectionAlertModal.classList.add('hidden');
+      }
+    });
+  }
+
+  if (btnModalFlowOpen && btnFlowOpen) {
+    btnModalFlowOpen.addEventListener('click', () => {
+      btnFlowOpen.click();
+    });
+  }
+
+  if (btnModalFlowConnect && btnFlowConnect) {
+    btnModalFlowConnect.addEventListener('click', () => {
+      btnModalFlowConnect.click();
     });
   }
 
