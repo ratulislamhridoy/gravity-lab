@@ -6726,6 +6726,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
 
   let activeNoticeConfig = null;
   let noticeConfigFetched = false;
+  let hasOpenedTool = false;
 
   window.closeNoticePopup = function() {
     const modal = document.getElementById('noticePopupModal');
@@ -6776,6 +6777,10 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       }
     } else {
       shouldShow = (currentPath === targetPage);
+    }
+
+    if (hasOpenedTool && (currentPath === '/' || currentPath === '/dashboard')) {
+      shouldShow = false;
     }
 
     if (!shouldShow) {
@@ -7077,15 +7082,19 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       if (appBody) appBody.classList.remove('in-tool-view');
       setSidebarActive('dashboard');
     } else if (path === '/promptgen') {
+      hasOpenedTool = true;
       launchTool1();
       setSidebarActive('icon-sheet-prompt');
     } else if (path === '/flowgen') {
+      hasOpenedTool = true;
       launchTool3();
       setSidebarActive('google-flow-gen');
     } else if (path === '/slicer' || path === '/vectorizer' || path === '/Vectorizer') {
+      hasOpenedTool = true;
       launchTool4();
       setSidebarActive('icon-sheet-slicer');
     } else if (path === '/bannergen') {
+      hasOpenedTool = true;
       launchTool2();
       setSidebarActive('icon-pack-banner');
     }
