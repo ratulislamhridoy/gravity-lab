@@ -1643,7 +1643,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
   const flowMessageQueue = [];
 
   // --- Chrome Extension Integration ---
-  let flowExtensionId = localStorage.getItem('flow_extension_id') || 'dfmbofhgepjnhbghhicdbfegpnbhcooa';
+  let flowExtensionId = localStorage.getItem('flow_extension_id') || 'mphomofodghejiaebailloadoeenpnee';
   let extensionDetected = false;
   let extensionRunAborted = false;
 

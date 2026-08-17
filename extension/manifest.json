@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "Gravity AI Flow Automation Client",
+  "version": "1.0.0",
+  "description": "Chrome automation integration for Gravity AI Studio Google Flow Generator.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://labs.google/*",
+    "https://*.googleapis.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://labs.google/fx/tools/flow",
+        "https://labs.google/fx/tools/flow/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "externally_connectable": {
+    "matches": [
+      "*://*.gravitylab.app/*",
+      "*://localhost/*",
+      "*://127.0.0.1/*"
+    ]
+  },
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzcPVj6A+5/1iOVbE8MoYI/lO76kP+WHrrP/H2AQG1j5ZWXo83EzGUmK9NQetYoSKvpp1X/ped1jyuuAmiWvsyRXRYOD1VsYGqZ/kGVgR08sbiPav4SlwlAhyrqufTmbHSVGWF2mqK5nQ13b7ZQN2Q33+V7zCFG8ceVCD4SeJn2nbYC5HO03gsI64nmh3KJ7qIoG5fIgnWIa4cOWxUnEVm+Yt3RcO1TgdGKkGcUDEo5dsZij5MwNpMtQYjOC6qGa9wNFuFpsM8CKK45QxYGnJxvX1B99Q9bVQtI0zhM21iXoYC9ZRA/tuKJ0cV0exN5UzmjhhNPKG8qnFT5/sqIJNAQIDAQAB"
+}
