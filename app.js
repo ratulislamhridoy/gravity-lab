@@ -6192,20 +6192,22 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
           const docData = docSnap.exists ? docSnap.data() : {};
           
           // Pull live sub and credits from Firestore database to sync to local storage immediately
-          const dbSub = docData.subscription || 'free';
-          const dbExpiry = docData.subscriptionExpiry || null;
-          const dbCredits = docData.creditsDaily || null;
+          if (docSnap.exists && docData.hasOwnProperty('subscription')) {
+            const dbSub = docData.subscription || 'free';
+            const dbExpiry = docData.subscriptionExpiry || null;
+            const dbCredits = docData.creditsDaily || null;
 
-          const freshLogs = getUserLogs();
-          const targetIdx = freshLogs.findIndex(u => u.uid === user.uid || (u.email && user.email && u.email.toLowerCase() === user.email.toLowerCase()));
-          if (targetIdx >= 0) {
-            freshLogs[targetIdx].subscription = dbSub;
-            freshLogs[targetIdx].subscriptionExpiry = dbExpiry;
-            if (dbCredits) {
-              freshLogs[targetIdx].creditsDaily = dbCredits;
+            const freshLogs = getUserLogs();
+            const targetIdx = freshLogs.findIndex(u => u.uid === user.uid || (u.email && user.email && u.email.toLowerCase() === user.email.toLowerCase()));
+            if (targetIdx >= 0) {
+              freshLogs[targetIdx].subscription = dbSub;
+              freshLogs[targetIdx].subscriptionExpiry = dbExpiry;
+              if (dbCredits) {
+                freshLogs[targetIdx].creditsDaily = dbCredits;
+              }
+              saveUserLogs(freshLogs);
+              window.updateUserSubscriptionUI();
             }
-            saveUserLogs(freshLogs);
-            window.updateUserSubscriptionUI();
           }
 
           const metrics = docData.metrics || {};

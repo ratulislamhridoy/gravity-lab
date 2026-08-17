@@ -409,7 +409,13 @@ const server = http.createServer((req, res) => {
 
         if (useRealMongo && dbInstance) {
           const col = dbInstance.collection('users');
-          await col.updateOne({ uid: uid }, {
+          const query = {
+            $or: [
+              { uid: uid },
+              { email: { $regex: new RegExp('^' + (email || '').replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&') + '$', 'i') } }
+            ]
+          };
+          await col.updateOne(query, {
             $set: {
               subscription: plan,
               subscriptionExpiry: expiry

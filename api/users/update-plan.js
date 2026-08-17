@@ -27,7 +27,12 @@ module.exports = async (req, res) => {
 
     if (useRealMongo && db) {
       const col = db.collection('users');
-      const query = { uid: uid };
+      const query = {
+        $or: [
+          { uid: uid },
+          { email: { $regex: new RegExp('^' + (email || '').replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&') + '$', 'i') } }
+        ]
+      };
       await col.updateOne(query, {
         $set: {
           subscription: plan,
