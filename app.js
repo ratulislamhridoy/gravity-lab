@@ -1646,6 +1646,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
   let flowExtensionId = localStorage.getItem('flow_extension_id') || 'mphomofodghejiaebailloadoeenpnee';
   let extensionDetected = false;
   let extensionRunAborted = false;
+  let activeResolveCallback = null;
 
   function checkExtension() {
     if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
@@ -1723,7 +1724,9 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
 
   function sendExtensionGenerate(prompt, options) {
     return new Promise((resolve) => {
+      activeResolveCallback = resolve;
       if (typeof chrome === 'undefined' || !chrome.runtime || !chrome.runtime.sendMessage) {
+        activeResolveCallback = null;
         resolve({ ok: false, error: 'Chrome extension API is not available on this browser/page.' });
         return;
       }
@@ -1732,6 +1735,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
         prompt: prompt,
         options: options
       }, response => {
+        activeResolveCallback = null;
         if (chrome.runtime.lastError) {
           resolve({ ok: false, error: 'Extension connection error: ' + chrome.runtime.lastError.message });
         } else {
@@ -1739,6 +1743,21 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
         }
       });
     });
+  }
+
+  function cleanupStoppedCards(startP, startI, totalPrompts, imagesPerPrompt) {
+    for (let p = startP; p < totalPrompts; p++) {
+      const initI = (p === startP) ? startI : 0;
+      for (let i = initI; i < imagesPerPrompt; i++) {
+        const cardIndex = (p * 100) + i;
+        handleFlowServerMessage({
+          type: 'flow-item',
+          index: cardIndex,
+          status: 'error',
+          error: 'Stopped'
+        });
+      }
+    }
   }
 
   async function runExtensionFlowGeneration(prompts, imgCount, options) {
@@ -1752,7 +1771,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
 
       for (let iIdx = 0; iIdx < imgCount; iIdx++) {
         if (extensionRunAborted) {
-          console.warn('[flow-client] Run cancelled by user.');
+          cleanupStoppedCards(pIdx, iIdx, prompts.length, imgCount);
           return;
         }
 
@@ -1765,7 +1784,10 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
 
         try {
           const response = await sendExtensionGenerate(promptText, options);
-          if (extensionRunAborted) return;
+          if (extensionRunAborted) {
+            cleanupStoppedCards(pIdx, iIdx, prompts.length, imgCount);
+            return;
+          }
 
           if (response && response.ok && response.media && response.media.length > 0) {
             const mediaItem = response.media[0];
@@ -1783,7 +1805,10 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
             throw new Error((response && response.error) || 'Empty backend media payload returned');
           }
         } catch (err) {
-          if (extensionRunAborted) return;
+          if (extensionRunAborted) {
+            cleanupStoppedCards(pIdx, iIdx, prompts.length, imgCount);
+            return;
+          }
           handleFlowServerMessage({
             type: 'flow-item',
             index: cardIndex,
@@ -2428,6 +2453,11 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       extensionRunAborted = true;
       btnFlowStart.disabled = false;
       btnFlowStop.disabled = true;
+      
+      // Immediately resolve the pending extension generation promise
+      if (activeResolveCallback) {
+        activeResolveCallback({ ok: false, error: 'Stopped by user' });
+      }
       return;
     }
     sendFlowAction('stop');
