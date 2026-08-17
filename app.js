@@ -1671,14 +1671,16 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
                   flowExtensionId = backupId;
                   localStorage.setItem('flow_extension_id', backupId);
                   extensionDetected = true;
-                  addExtensionProfileOption();
+                  const isTabOpen = backupResp.tabOpen === true;
+                  addExtensionProfileOption(isTabOpen);
                 }
               });
             }
           } else if (response && response.ok) {
             console.log('[flow-client] Chrome Extension responded OK!');
             extensionDetected = true;
-            addExtensionProfileOption();
+            const isTabOpen = response.tabOpen === true;
+            addExtensionProfileOption(isTabOpen);
           }
         });
       } catch (err) {
@@ -1687,33 +1689,35 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     }
   }
 
-  function addExtensionProfileOption() {
+  function addExtensionProfileOption(connected = true) {
     let extProfile = flowProfilesCached.find(p => p.id === 'chrome_extension');
     if (!extProfile) {
       extProfile = {
         id: 'chrome_extension',
         label: 'Chrome Extension (SaaS Direct)',
         port: 'Extension',
-        connected: true,
-        browserRunning: true,
-        hasTokens: true,
+        connected: connected,
+        browserRunning: connected,
+        hasTokens: connected,
         projectId: 'Discovered'
       };
       flowProfilesCached = flowProfilesCached.filter(p => p.id !== 'chrome_extension');
       flowProfilesCached.push(extProfile);
     } else {
-      extProfile.connected = true;
-      extProfile.browserRunning = true;
-      extProfile.hasTokens = true;
+      extProfile.connected = connected;
+      extProfile.browserRunning = connected;
+      extProfile.hasTokens = connected;
     }
     populateProfileDropdown(flowProfilesCached);
     flowProfileSelect.value = 'chrome_extension';
     updateActiveProfileCard();
 
-    // Auto-close connection warning modal if it was open
-    const connAlert = document.getElementById('flowConnectionAlertModal');
-    if (connAlert) {
-      connAlert.classList.add('hidden');
+    // Auto-close connection warning modal if it was open and connection is active
+    if (connected) {
+      const connAlert = document.getElementById('flowConnectionAlertModal');
+      if (connAlert) {
+        connAlert.classList.add('hidden');
+      }
     }
   }
 
@@ -2378,7 +2382,8 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
         if (!chrome.runtime.lastError && response && response.ok) {
           console.log('[flow-client] Proactive setup check: Chrome Extension found!');
           extensionDetected = true;
-          addExtensionProfileOption();
+          const isTabOpen = response.tabOpen === true;
+          addExtensionProfileOption(isTabOpen);
         }
         checkAndStart();
       });

@@ -2,7 +2,10 @@ chrome.runtime.onMessageExternal.addListener((request, sender, sendResponse) => 
   console.log('[background] Received external message:', request, 'from:', sender);
 
   if (request.action === 'ping') {
-    sendResponse({ ok: true, status: 'active', version: '1.0.0' });
+    chrome.tabs.query({ url: "*://labs.google/fx/tools/flow*" }, (tabs) => {
+      const tabOpen = tabs && tabs.length > 0;
+      sendResponse({ ok: true, status: 'active', version: '1.0.0', tabOpen: tabOpen });
+    });
     return true;
   }
 
