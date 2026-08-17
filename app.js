@@ -1350,9 +1350,9 @@ Do not include any markdown formatting outside the json codeblock. Output valid 
 
             const textLabelSelect = document.getElementById('textLabelSelect');
             const textLabelOpt = textLabelSelect ? textLabelSelect.value : 'none';
-            let textLabelInstruction = '- Strictly isolated icons ONLY with NO text, NO labels, NO typography underneath the icon cells.';
+            let textLabelInstruction = '- Strictly isolated icons ONLY with NO text, NO labels, NO typography, NO words, NO letters underneath the icon cells. In your output prompt, you MUST explicitly append the negative phrase: "no text, no labels, no typography, no words, no letters, no captions, no headers".';
             if (textLabelOpt === 'with-text') {
-              textLabelInstruction = '- Clear text label under each icon cell in clean typography.';
+              textLabelInstruction = '- Clear text label under each icon cell in clean typography. In your output prompt, you must specify: "each icon cell has a clean text label underneath".';
             }
 
             let systemInstruction = `You are a master AI art prompt engineer for Midjourney v6 and DALL-E 3. 
@@ -1367,7 +1367,8 @@ Requirements:
 - Icon Grid: A mathematically aligned tabular array layout of exactly ${rows} rows by ${cols} columns (${total} total icons) with ${spacingLabel} on a solid pure white background.
 - Icons: Exactly ${total} distinct, creative icons matching the niche '${niche}'. Weave all ${total} icon subjects naturally into a smooth descriptive sentence.
 - Slicing alignment: Every icon occupies its own distinct grid cell with a subtle container outline line, centered with uniform cell dimensions.
-- Style & Aesthetic: ${lineWeight}, crisp black line-art, flat vector design, zero color, zero 3D rendering, zero shading, high contrast, clean typography if requested. ${textLabelInstruction}
+- Label & Text Option: ${textLabelInstruction}
+- Style & Aesthetic: ${lineWeight}, crisp black line-art, flat vector design, zero color, zero 3D rendering, zero shading, high contrast.
 - Seed Modifier: ${seedInt}.
 
 Output ONLY the final production AI prompt string ready to copy-paste. Do not include any chat formatting or quotes.`;
