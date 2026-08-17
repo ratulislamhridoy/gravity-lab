@@ -43,10 +43,10 @@ async function handleGenerate(request) {
   const arMode = request.options?.aspectRatio || '16:9';
   const aspectRatios = {
     '1:1': 'IMAGE_ASPECT_RATIO_SQUARE',
-    '16:9': 'IMAGE_ASPECT_RATIO_WIDE_LANDSCAPE',
-    '9:16': 'IMAGE_ASPECT_RATIO_WIDE_PORTRAIT',
-    '4:3': 'IMAGE_ASPECT_RATIO_STANDARD_LANDSCAPE',
-    '3:4': 'IMAGE_ASPECT_RATIO_STANDARD_PORTRAIT'
+    '16:9': 'IMAGE_ASPECT_RATIO_LANDSCAPE',
+    '9:16': 'IMAGE_ASPECT_RATIO_PORTRAIT',
+    '4:3': 'IMAGE_ASPECT_RATIO_LANDSCAPE_FOUR_THREE',
+    '3:4': 'IMAGE_ASPECT_RATIO_PORTRAIT_THREE_FOUR'
   };
   const arKey = aspectRatios[arMode] || aspectRatios['16:9'];
 
