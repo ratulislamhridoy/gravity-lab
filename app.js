@@ -1929,6 +1929,40 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     }
   }
 
+  function updateProfilesCached(newProfiles) {
+    let extConnected = false;
+    let extBrowserRunning = false;
+    let extHasTokens = false;
+
+    let oldExt = flowProfilesCached.find(p => p.id === 'chrome_extension');
+    if (oldExt) {
+      extConnected = oldExt.connected;
+      extBrowserRunning = oldExt.browserRunning;
+      extHasTokens = oldExt.hasTokens;
+    }
+
+    flowProfilesCached = newProfiles;
+
+    if (extensionDetected) {
+      let extProfile = flowProfilesCached.find(p => p.id === 'chrome_extension');
+      if (!extProfile) {
+        flowProfilesCached.push({
+          id: 'chrome_extension',
+          label: 'Chrome Extension (SaaS Direct)',
+          port: 'Extension',
+          connected: extConnected,
+          browserRunning: extBrowserRunning,
+          hasTokens: extHasTokens,
+          projectId: 'Discovered'
+        });
+      } else {
+        extProfile.connected = extConnected;
+        extProfile.browserRunning = extBrowserRunning;
+        extProfile.hasTokens = extHasTokens;
+      }
+    }
+  }
+
   function handleFlowServerMessage(msg) {
     console.log('[flow-client] msg', msg);
     
@@ -1936,21 +1970,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       case 'profiles':
       case 'profile-add': {
         if (msg.ok && msg.profiles) {
-          flowProfilesCached = msg.profiles;
-          if (extensionDetected) {
-            let extProfile = flowProfilesCached.find(p => p.id === 'chrome_extension');
-            if (!extProfile) {
-              flowProfilesCached.push({
-                id: 'chrome_extension',
-                label: 'Chrome Extension (SaaS Direct)',
-                port: 'Extension',
-                connected: true,
-                browserRunning: true,
-                hasTokens: true,
-                projectId: 'Discovered'
-              });
-            }
-          }
+          updateProfilesCached(msg.profiles);
           populateProfileDropdown(flowProfilesCached);
         }
         if (msg.error) {
@@ -1972,21 +1992,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
             sendFlowActionSpecific('profiles', 'default');
           }
         } else if (msg.profiles) {
-          flowProfilesCached = msg.profiles;
-          if (extensionDetected) {
-            let extProfile = flowProfilesCached.find(p => p.id === 'chrome_extension');
-            if (!extProfile) {
-              flowProfilesCached.push({
-                id: 'chrome_extension',
-                label: 'Chrome Extension (SaaS Direct)',
-                port: 'Extension',
-                connected: true,
-                browserRunning: true,
-                hasTokens: true,
-                projectId: 'Discovered'
-              });
-            }
-          }
+          updateProfilesCached(msg.profiles);
           populateProfileDropdown(flowProfilesCached);
         }
         if (msg.error) {
