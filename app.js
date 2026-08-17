@@ -2280,6 +2280,15 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
   btnFlowDisconnect.addEventListener('click', () => {
     const selectedId = flowProfileSelect.value || 'default';
     if (selectedId === 'chrome_extension') {
+      let extProfile = flowProfilesCached.find(p => p.id === 'chrome_extension');
+      if (extProfile) {
+        extProfile.connected = false;
+        extProfile.browserRunning = false;
+        extProfile.hasTokens = false;
+      }
+      populateProfileDropdown(flowProfilesCached);
+      flowProfileSelect.value = 'chrome_extension';
+      updateActiveProfileCard();
       return;
     }
     sendFlowActionSpecific('disconnect', selectedId);
