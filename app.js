@@ -226,7 +226,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const flowImagesPerPrompt = document.getElementById('flowImagesPerPrompt');
   const flowAspectRatio = document.getElementById('flowAspectRatio');
   const flowModel = document.getElementById('flowModel');
-  const btnUploadTxt = document.getElementById('btnUploadTxt');
   const txtFileInput = document.getElementById('txtFileInput');
   const flowPromptsArea = document.getElementById('flowPromptsArea');
   const btnFlowStart = document.getElementById('btnFlowStart');
@@ -2485,11 +2484,6 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       }
     });
   }
-
-  // TXT file loader
-  btnUploadTxt.addEventListener('click', () => {
-    txtFileInput.click();
-  });
 
   txtFileInput.addEventListener('change', (e) => {
     const file = e.target.files[0];
