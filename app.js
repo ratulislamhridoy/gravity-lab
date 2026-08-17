@@ -2089,11 +2089,11 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
               <span>Prompt #${parentIndex + 1} (Image ${subIndex + 1})</span>
               <span style="color: #ea4335;">❌ Failed</span>
             </div>
-            <div style="aspect-ratio: 1; background: rgba(234, 67, 53, 0.04); border-radius: 8px; border: 1px solid rgba(234, 67, 53, 0.15); display: grid; place-items: center; color: #ea4335; font-size: 12px; padding: 18px; text-align: center;">
+            <div style="min-height: 180px; background: rgba(234, 67, 53, 0.04); border-radius: 8px; border: 1px solid rgba(234, 67, 53, 0.15); display: flex; align-items: center; justify-content: center; color: #ea4335; font-size: 12px; padding: 16px; text-align: center; box-sizing: border-box;">
               <div>
                 <span style="font-size: 24px;">⚠️</span>
                 <div style="margin-top: 6px; font-weight: 700;">Generation Error</div>
-                <div style="font-size: 11px; opacity: 0.85; margin-top: 4px; line-height: 1.3;">${msg.message || msg.error}</div>
+                <div style="font-size: 11px; opacity: 0.85; margin-top: 4px; line-height: 1.3; word-break: break-word;">${msg.message || msg.error}</div>
               </div>
             </div>
           `;
