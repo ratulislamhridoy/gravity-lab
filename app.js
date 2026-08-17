@@ -5191,26 +5191,51 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       if (!generatedAssembledSvg) return;
 
       const outputDir = sheetSaveDir ? sheetSaveDir.value.trim() : '';
-      if (!outputDir) {
-        alert('Please enter a target Save Directory!');
-        return;
+
+      // If WebSocket is open and we have a valid output directory, save via server
+      if (flowSocket && flowSocket.readyState === WebSocket.OPEN && outputDir) {
+        btnSaveToPC.disabled = true;
+        btnSaveToPC.textContent = '⏳ Saving...';
+
+        // Send all clean sanitized SVGs (for each sheet) to PC
+        const allCleanSheets = Object.keys(generatedBrandedSheetsMap).map(key => ({
+          name: key,
+          svg: getCleanSvgForExport(generatedBrandedSheetsMap[key])
+        }));
+
+        sendFlowActionSpecific('save-vector-sheet', 'default', {
+          outputDir: outputDir,
+          sheetSvg: getCleanSvgForExport(generatedAssembledSvg),
+          allSheets: allCleanSheets,
+          iconSvgs: slicedTilesData.map(t => t.svgContent)
+        });
+      } else {
+        // Fallback: Direct browser download of the currently selected Branded Presentation Sheet SVG!
+        try {
+          const cleanSvg = getCleanSvgForExport(generatedAssembledSvg);
+          const blob = new Blob([cleanSvg], { type: 'image/svg+xml' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.style.display = 'none';
+          a.href = url;
+          // Use safe naming based on the active sheet
+          const activeTab = document.querySelector('.sheet-tab-btn.active');
+          const sheetName = activeTab ? activeTab.textContent.trim() : 'Presentation_Sheet';
+          const safeName = sheetName.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
+          a.download = `Branded_Sheet_${safeName}.svg`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          
+          if (typeof window.trackUserMetric === 'function') {
+            window.trackUserMetric('presentations');
+          }
+        } catch (err) {
+          console.error('[Fallback download failed]:', err);
+          alert('Failed to download presentation sheet: ' + err.message);
+        }
       }
-
-      btnSaveToPC.disabled = true;
-      btnSaveToPC.textContent = '⏳ Saving...';
-
-      // Send all clean sanitized SVGs (for each sheet) to PC
-      const allCleanSheets = Object.keys(generatedBrandedSheetsMap).map(key => ({
-        name: key,
-        svg: getCleanSvgForExport(generatedBrandedSheetsMap[key])
-      }));
-
-      sendFlowActionSpecific('save-vector-sheet', 'default', {
-        outputDir: outputDir,
-        sheetSvg: getCleanSvgForExport(generatedAssembledSvg),
-        allSheets: allCleanSheets,
-        iconSvgs: slicedTilesData.map(t => t.svgContent)
-      });
     });
   }
 
