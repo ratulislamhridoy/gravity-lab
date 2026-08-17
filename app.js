@@ -6470,7 +6470,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
             userMap.set(key, { ...u });
           } else {
             const existing = userMap.get(key);
-            
+
             // Merge metrics safely by comparing the maximum value for each key
             const mergedMetrics = {};
             const metricKeys = ['apiKeys', 'prompts', 'iconSheets', 'presentations', 'flowImages'];
@@ -6485,9 +6485,67 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
               }
             });
 
+            // Decide subscription priority
+            let mergedSubscription = existing.subscription || 'free';
+            let mergedExpiry = existing.subscriptionExpiry || null;
+            let mergedCredits = existing.creditsDaily || null;
+
+            if (sourceList === latestSources.local) {
+              // Local is being merged over database.
+              // ONLY keep local subscription if database has no active plan
+              const dbSubActive = (mergedSubscription === 'monthly' || mergedSubscription === 'six_months');
+              const localSubActive = (u.subscription === 'monthly' || u.subscription === 'six_months');
+              
+              if (dbSubActive) {
+                // Keep database subscription details
+              } else if (localSubActive) {
+                mergedSubscription = u.subscription;
+                mergedExpiry = u.subscriptionExpiry;
+              } else {
+                mergedSubscription = u.subscription || 'free';
+                mergedExpiry = u.subscriptionExpiry || null;
+              }
+
+              // Credits merge:
+              if (u.creditsDaily) {
+                if (!mergedCredits || mergedCredits.lastResetDate !== u.creditsDaily.lastResetDate) {
+                  mergedCredits = u.creditsDaily;
+                } else {
+                  // Keep the lower remaining credits to prevent local storage reset bypasses
+                  mergedCredits = {
+                    remaining: Math.min(mergedCredits.remaining, u.creditsDaily.remaining),
+                    lastResetDate: mergedCredits.lastResetDate
+                  };
+                }
+              }
+            } else {
+              // Database is being merged over database (mongo / firestore)
+              // If u has an active plan, override existing
+              const newSubActive = (u.subscription === 'monthly' || u.subscription === 'six_months');
+              if (newSubActive) {
+                mergedSubscription = u.subscription;
+                mergedExpiry = u.subscriptionExpiry;
+              } else if (mergedSubscription === 'free') {
+                mergedSubscription = u.subscription || 'free';
+                mergedExpiry = u.subscriptionExpiry || null;
+              }
+
+              if (u.creditsDaily) {
+                if (!mergedCredits || mergedCredits.lastResetDate !== u.creditsDaily.lastResetDate) {
+                  mergedCredits = u.creditsDaily;
+                } else {
+                  // Keep database credits value (they are the authoritative master sync points)
+                  mergedCredits = u.creditsDaily;
+                }
+              }
+            }
+
             userMap.set(key, {
               ...existing,
               ...u,
+              subscription: mergedSubscription,
+              subscriptionExpiry: mergedExpiry,
+              creditsDaily: mergedCredits,
               lastActive: (new Date(u.lastActive || 0) > new Date(existing.lastActive || 0)) ? u.lastActive : existing.lastActive,
               metrics: mergedMetrics
             });
