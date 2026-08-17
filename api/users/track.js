@@ -44,9 +44,14 @@ module.exports = async (req, res) => {
 
     if (useRealMongo && db) {
       const col = db.collection('users');
-      const query = userData.uid 
-        ? { uid: userData.uid } 
-        : { email: { $regex: new RegExp('^' + emailKey + '$', 'i') } };
+      const query = (userData.uid && emailKey)
+        ? {
+            $or: [
+              { uid: userData.uid },
+              { email: { $regex: new RegExp('^' + emailKey.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&') + '$', 'i') } }
+            ]
+          }
+        : (userData.uid ? { uid: userData.uid } : { email: { $regex: new RegExp('^' + emailKey.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&') + '$', 'i') } });
 
       const existing = await col.findOne(query);
       if (existing) {
