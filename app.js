@@ -5555,6 +5555,16 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
 
   let isSignUpMode = false;
 
+  function toggleAuthGate(notAuth) {
+    if (notAuth) {
+      document.body.classList.add('not-authenticated');
+      document.documentElement.classList.add('not-authenticated');
+    } else {
+      document.body.classList.remove('not-authenticated');
+      document.documentElement.classList.remove('not-authenticated');
+    }
+  }
+
   function openAuthModal() {
     if (authModal) {
       if (document.body.classList.contains('not-authenticated')) {
@@ -5609,14 +5619,14 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       
       firebaseAuth.onAuthStateChanged((user) => {
         if (user) {
-          document.body.classList.remove('not-authenticated');
+          toggleAuthGate(false);
           if (btnOpenAuthModal) btnOpenAuthModal.classList.add('hidden');
           if (userProfileMenu) userProfileMenu.classList.remove('hidden');
           if (userName) userName.textContent = user.displayName || (user.email ? user.email.split('@')[0] : 'User');
           if (userAvatar) userAvatar.src = user.photoURL || 'https://lh3.googleusercontent.com/a/default-user';
           closeAuthModal();
         } else {
-          document.body.classList.add('not-authenticated');
+          toggleAuthGate(true);
           if (btnOpenAuthModal) btnOpenAuthModal.classList.remove('hidden');
           if (userProfileMenu) userProfileMenu.classList.add('hidden');
           openAuthModal();
@@ -5624,7 +5634,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       });
     } catch (err) {
       console.warn('[Firebase Auth]: Running in demo mode', err);
-      document.body.classList.add('not-authenticated');
+      toggleAuthGate(true);
       openAuthModal();
     }
   }
@@ -5651,7 +5661,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
           }
         }
       } else {
-        document.body.classList.remove('not-authenticated');
+        toggleAuthGate(false);
         if (btnOpenAuthModal) btnOpenAuthModal.classList.add('hidden');
         if (userProfileMenu) userProfileMenu.classList.remove('hidden');
         if (userName) userName.textContent = 'Google User';
@@ -5694,7 +5704,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
           }
         }
       } else {
-        document.body.classList.remove('not-authenticated');
+        toggleAuthGate(false);
         if (btnOpenAuthModal) btnOpenAuthModal.classList.add('hidden');
         if (userProfileMenu) userProfileMenu.classList.remove('hidden');
         if (userName) userName.textContent = email.split('@')[0];
@@ -6338,7 +6348,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
         console.error('Sign Out Error:', err);
       }
     }
-    document.body.classList.add('not-authenticated');
+    toggleAuthGate(true);
     openAuthModal();
     
     const btnOpenAuth = document.getElementById('btnOpenAuthModal');
