@@ -2191,7 +2191,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     flowProfileUseCheckbox.checked = isChecked;
 
     // Disconnect button state
-    btnFlowDisconnect.disabled = selectedId === 'chrome_extension' ? true : !profile.connected;
+    btnFlowDisconnect.disabled = !profile.connected;
 
     // Status badge and details
     if (profile.connected) {
