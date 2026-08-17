@@ -1875,13 +1875,23 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
 
           flowSocket.onclose = () => {
             console.warn('[flow-client] Connection closed');
-            flowProfilesCached.forEach(p => { p.connected = false; p.browserRunning = false; });
+            flowProfilesCached.forEach(p => {
+              if (p.id !== 'chrome_extension') {
+                p.connected = false;
+                p.browserRunning = false;
+              }
+            });
             updateActiveProfileCard();
           };
 
           flowSocket.onerror = (err) => {
             console.error('[flow-client] WebSocket socket failure:', err);
-            flowProfilesCached.forEach(p => { p.connected = false; p.browserRunning = false; });
+            flowProfilesCached.forEach(p => {
+              if (p.id !== 'chrome_extension') {
+                p.connected = false;
+                p.browserRunning = false;
+              }
+            });
             updateActiveProfileCard();
           };
 
