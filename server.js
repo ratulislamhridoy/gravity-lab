@@ -399,6 +399,27 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // API Route: Debug DB Users (GET)
+  if (req.url === '/api/users/debug-db' && req.method === 'GET') {
+    if (useRealMongo && dbInstance) {
+      const col = dbInstance.collection('users');
+      col.find().toArray()
+        .then(users => {
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ ok: true, count: users.length, users }));
+        })
+        .catch(err => {
+          res.statusCode = 500;
+          res.end(JSON.stringify({ ok: false, error: err.message }));
+        });
+    } else {
+      let users = loadMongoUsersLocal();
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true, count: users.length, users, fallback: true }));
+    }
+    return;
+  }
+
   // API Route: Update User Plan (POST)
   if (urlPath === '/api/users/update-plan' && req.method === 'POST') {
     let body = '';
