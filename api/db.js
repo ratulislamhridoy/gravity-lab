@@ -64,8 +64,32 @@ function saveMongoUsersLocal(users) {
   }
 }
 
+function loadMongoRequestsLocal() {
+  const reqFile = path.join(process.cwd(), 'mongodb_requests.json');
+  try {
+    if (fs.existsSync(reqFile)) {
+      const data = fs.readFileSync(reqFile, 'utf8');
+      return JSON.parse(data);
+    }
+  } catch (e) {
+    console.error('[MongoDB Local Requests Read Error]:', e);
+  }
+  return [];
+}
+
+function saveMongoRequestsLocal(requests) {
+  const reqFile = path.join(process.cwd(), 'mongodb_requests.json');
+  try {
+    fs.writeFileSync(reqFile, JSON.stringify(requests, null, 2), 'utf8');
+  } catch (e) {
+    console.error('[MongoDB Local Requests Write Error]:', e);
+  }
+}
+
 module.exports = {
   connectToDatabase,
   loadMongoUsersLocal,
-  saveMongoUsersLocal
+  saveMongoUsersLocal,
+  loadMongoRequestsLocal,
+  saveMongoRequestsLocal
 };

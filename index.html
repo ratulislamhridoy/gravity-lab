@@ -957,6 +957,43 @@
           </div>
         </div>
 
+        <!-- Subscription Payments Approval Logs Section -->
+        <div id="adminSectionPayments" style="background: var(--surface-low); border: 1px solid var(--outline-variant); border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 16px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+            <div>
+              <h3 style="margin: 0 0 2px; font-size: 15px; font-weight: 800; color: var(--on-surface);">💳 Premium Billing & Subscription Requests</h3>
+              <p style="margin: 0; font-size: 11.5px; color: var(--on-variant);">Verify manual bKash/Nagad/Rocket transaction records and grant subscription periods.</p>
+            </div>
+            
+            <button class="btn btn-dark small" id="btnRefreshAdminPayments" style="height: 32px; font-weight: 700; font-size: 11px; gap: 6px; border-color: var(--outline-variant);">
+              🔄 Refresh Requests
+            </button>
+          </div>
+
+          <!-- Subscription Requests Table Container -->
+          <div style="overflow-x: auto; border: 1px solid var(--outline-variant); border-radius: 14px; background: rgba(0,0,0,0.2);">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 12px;">
+              <thead>
+                <tr style="background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--outline-variant); color: var(--on-variant); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em;">
+                  <th style="padding: 12px 14px; font-weight: 700;">User Account</th>
+                  <th style="padding: 12px 14px; font-weight: 700;">Package Plan</th>
+                  <th style="padding: 12px 14px; font-weight: 700;">Payment Details</th>
+                  <th style="padding: 12px 14px; font-weight: 700;">Submission Date</th>
+                  <th style="padding: 12px 14px; font-weight: 700;">Status</th>
+                  <th style="padding: 12px 14px; font-weight: 700; text-align: center; width: 180px;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="adminPaymentsTableBody">
+                <tr>
+                  <td colspan="6" style="padding: 24px; text-align: center; color: var(--on-variant); font-size: 12px;">
+                    No payment requests recorded yet.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         <!-- User Feedback Logs Section -->
         <div id="adminSectionFeedback" class="hidden" style="background: var(--surface-low); border: 1px solid var(--outline-variant); border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 16px; display: none;">
           <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
@@ -1242,6 +1279,92 @@
       <h3 id="customAlertTitle" style="margin: 0 0 10px; font-size: 18px; font-weight: 800; color: #ededf0;">Attention</h3>
       <p id="customAlertMessage" style="margin: 0 0 24px; font-size: 14px; color: #a0a0ab; line-height: 1.55; font-weight: 500; white-space: pre-line;"></p>
       <button class="btn btn-primary" id="customAlertOkBtn" style="width: 100%; justify-content: center; padding: 11px; font-size: 14px; font-weight: 700; border-radius: 12px; cursor: pointer;">Got It</button>
+    </div>
+  </div>
+
+  <!-- Subscription Checkout Modal -->
+  <div class="modal-backdrop hidden" id="checkoutModal" style="z-index: 999999;">
+    <div class="modal-box" style="max-width: 580px; width: 95%; border-radius: 24px; padding: 24px; background: rgba(18, 18, 22, 0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.12); box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6); display: flex; flex-direction: column; gap: 16px; position: relative;">
+      
+      <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--outline-variant); padding-bottom: 12px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(205, 252, 82, 0.15); border: 1px solid rgba(205, 252, 82, 0.3); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 18px;">
+            👑
+          </div>
+          <div>
+            <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #ededf0;">Upgrade to Premium</h3>
+            <span style="font-size: 11px; color: var(--on-variant);">Choose a plan and transfer payment to activate</span>
+          </div>
+        </div>
+        <button type="button" class="btn btn-dark small" id="btnCloseCheckoutModal" style="width: 28px; height: 28px; padding: 0; border-radius: 50%; font-size: 14px; justify-content: center; display: flex; align-items: center;">✕</button>
+      </div>
+
+      <!-- Step 1: Select Plan Grid -->
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <label style="font-size: 10.5px; font-weight: 800; color: var(--tertiary); text-transform: uppercase; letter-spacing: 0.5px;">1. Select Subscription Package</label>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div id="planOptionMonthly" class="checkout-plan-card active" onclick="window.selectCheckoutPlan('monthly')" style="border: 2px solid var(--primary); background: rgba(205,252,82,0.05); border-radius: 14px; padding: 14px; cursor: pointer; text-align: center; display: flex; flex-direction: column; gap: 4px; transition: all 0.2s;">
+            <div style="font-size: 13px; font-weight: 800; color: #ffffff;">Monthly Pro</div>
+            <div style="font-size: 16px; font-weight: 900; color: var(--primary);">৳৫০ <span style="font-size: 11px; font-weight: 600; color: var(--on-variant);">/ month</span></div>
+            <div style="font-size: 10px; color: var(--on-variant);">100 credits/day • Slicing & Vectors</div>
+          </div>
+          <div id="planOptionSixMonths" class="checkout-plan-card" onclick="window.selectCheckoutPlan('six_months')" style="border: 1px solid var(--outline-variant); background: rgba(255,255,255,0.02); border-radius: 14px; padding: 14px; cursor: pointer; text-align: center; display: flex; flex-direction: column; gap: 4px; transition: all 0.2s;">
+            <div style="font-size: 13px; font-weight: 800; color: #ffffff;">6 Months Pro</div>
+            <div style="font-size: 16px; font-weight: 900; color: var(--tertiary);">৳২৫০ <span style="font-size: 11px; font-weight: 600; color: var(--on-variant);">/ 6 months</span></div>
+            <div style="font-size: 10px; color: var(--on-variant);">Unlimited credits • Priority stream</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Payment Provider Tabs -->
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <label style="font-size: 10.5px; font-weight: 800; color: var(--tertiary); text-transform: uppercase; letter-spacing: 0.5px;">2. Choose Payment Method</label>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
+          <button type="button" class="btn btn-dark payment-method-btn active" id="btnPayBkash" onclick="window.selectPaymentMethod('bkash')" style="padding: 10px; border-radius: 10px; justify-content: center; font-size: 11px; font-weight: 700; height: 38px;">
+            bKash
+          </button>
+          <button type="button" class="btn btn-dark payment-method-btn" id="btnPayNagad" onclick="window.selectPaymentMethod('nagad')" style="padding: 10px; border-radius: 10px; justify-content: center; font-size: 11px; font-weight: 700; height: 38px;">
+            Nagad
+          </button>
+          <button type="button" class="btn btn-dark payment-method-btn" id="btnPayRocket" onclick="window.selectPaymentMethod('rocket')" style="padding: 10px; border-radius: 10px; justify-content: center; font-size: 11px; font-weight: 700; height: 38px;">
+            Rocket
+          </button>
+          <button type="button" class="btn btn-dark payment-method-btn" id="btnPayWhatsApp" onclick="window.selectPaymentMethod('whatsapp')" style="padding: 10px; border-radius: 10px; justify-content: center; font-size: 11px; font-weight: 700; height: 38px;">
+            Others
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 3: Instructions Area -->
+      <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--outline-variant); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 8px;">
+        <label style="font-size: 10.5px; font-weight: 800; color: var(--on-variant); text-transform: uppercase; letter-spacing: 0.5px;">3. Step-by-Step Payment Instructions</label>
+        
+        <!-- Instruction Body -->
+        <div id="paymentInstructionsText" style="font-size: 12px; color: #ededf0; line-height: 1.6;">
+          <!-- Will be set dynamically by JavaScript -->
+        </div>
+
+        <!-- WhatsApp Button wrapper -->
+        <div id="whatsappBtnWrapper" class="hidden" style="margin-top: 6px;">
+          <a href="https://wa.me/8801700000000?text=Hello,%20I%20want%20to%20upgrade%20my%20GravityLab%20account." target="_blank" class="btn btn-primary" style="background: #25D366; border-color: #25D366; color: #fff; font-weight: 800; font-size: 12px; height: 38px; text-decoration: none; justify-content: center; display: inline-flex; align-items: center; gap: 6px; width: 100%;">
+            💬 Contact Admin on WhatsApp
+          </a>
+        </div>
+      </div>
+
+      <!-- Step 4: Sender's phone input -->
+      <div id="checkoutPhoneSection" style="display: flex; flex-direction: column; gap: 6px;">
+        <label for="checkoutPhoneInput" style="font-size: 10.5px; font-weight: 800; color: var(--tertiary); text-transform: uppercase; letter-spacing: 0.5px;">4. Sender's Mobile Number</label>
+        <input type="text" class="ctl-input" id="checkoutPhoneInput" placeholder="e.g. 017XXXXXXXX" style="height: 38px; padding: 6px 12px; font-size: 13px;" />
+        <span style="font-size: 10.5px; color: var(--on-variant);">Provide the number you sent the money from. Admin will verify it manually.</span>
+      </div>
+
+      <!-- Footer Buttons -->
+      <div style="display: flex; gap: 10px; margin-top: 4px;">
+        <button type="button" class="btn btn-dark" id="btnCancelCheckout" style="flex: 1; height: 40px; justify-content: center; font-weight: 700; border-radius: 12px;">Cancel</button>
+        <button type="button" class="btn btn-primary" id="btnSubmitCheckout" style="flex: 1; height: 40px; justify-content: center; font-weight: 800; border-radius: 12px;">✓ Submit Payment Status</button>
+      </div>
+
     </div>
   </div>
 

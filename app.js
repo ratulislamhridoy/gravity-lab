@@ -5780,6 +5780,9 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     if (isAdminUser(user)) {
       if (adminNavBtn) adminNavBtn.classList.remove('hidden');
       performAutoCleanup();
+      if (typeof window.refreshAdminPayments === 'function') {
+        window.refreshAdminPayments();
+      }
     } else {
       if (adminNavBtn) adminNavBtn.classList.add('hidden');
       if (adminPanelView && !adminPanelView.classList.contains('hidden')) {
@@ -6641,6 +6644,132 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
         console.warn('[Firestore DB Error]:', e);
       }
     }
+  }
+
+  // --- Admin Billing Approval Logic ---
+  window.refreshAdminPayments = function() {
+    const tbody = document.getElementById('adminPaymentsTableBody');
+    if (!tbody) return;
+
+    fetch('/api/subscriptions/list')
+      .then(res => res.json())
+      .then(data => {
+        if (!data || !data.ok || !Array.isArray(data.requests)) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="6" style="padding: 24px; text-align: center; color: var(--on-variant); font-size: 12px;">
+                Failed to load billing requests.
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        const requests = data.requests;
+        if (requests.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="6" style="padding: 24px; text-align: center; color: var(--on-variant); font-size: 12px;">
+                No payment requests recorded yet.
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        tbody.innerHTML = requests.map(r => {
+          const planBadge = r.plan === 'monthly'
+            ? '<span style="background: rgba(205,252,82,0.15); color: var(--primary); padding: 2px 6px; border-radius: 6px; font-weight: 700; font-size: 10px;">⭐ Monthly BDT 50</span>'
+            : '<span style="background: rgba(0,229,255,0.12); color: var(--tertiary); padding: 2px 6px; border-radius: 6px; font-weight: 700; font-size: 10px;">👑 6 Months BDT 250</span>';
+
+          const methodColor = r.method === 'bkash' ? '#ec4899' : (r.method === 'nagad' ? '#f97316' : '#a855f7');
+          const detailsHtml = `
+            <span style="background: rgba(255,255,255,0.04); border: 1px solid var(--outline-variant); padding: 2px 6px; border-radius: 6px; font-size: 10px; font-weight: 700; color: ${methodColor}; text-transform: uppercase;">
+              ${r.method}
+            </span>
+            <span style="font-family: var(--mono); font-size: 11px; margin-left: 6px; color: #ededf0;">${r.phone || 'N/A'}</span>
+          `;
+
+          let statusBadge = '';
+          if (r.status === 'pending') {
+            statusBadge = '<span style="background: rgba(251,191,36,0.15); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 10.5px;">⏳ Pending</span>';
+          } else if (r.status === 'approved') {
+            statusBadge = '<span style="background: rgba(34,197,94,0.15); color: #22c55e; border: 1px solid rgba(34,197,94,0.3); padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 10.5px;">✓ Approved</span>';
+          } else {
+            statusBadge = '<span style="background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); padding: 2px 8px; border-radius: 6px; font-weight: 700; font-size: 10.5px;">✕ Rejected</span>';
+          }
+
+          let actionButtons = '-';
+          if (r.status === 'pending') {
+            actionButtons = `
+              <div style="display: flex; gap: 8px; justify-content: center;">
+                <button type="button" class="btn btn-primary small" onclick="window.verifyPaymentRequest('${r.id}', 'approve')" style="height: 26px; font-size: 10px; padding: 0 10px; font-weight: 700; background: #22c55e; border-color: #22c55e; color: #fff;">Approve</button>
+                <button type="button" class="btn btn-dark small" onclick="window.verifyPaymentRequest('${r.id}', 'reject')" style="height: 26px; font-size: 10px; padding: 0 10px; font-weight: 700; border-color: #ef4444; color: #ef4444;">Reject</button>
+              </div>
+            `;
+          }
+
+          const dateStr = new Date(r.createdAt || Date.now()).toLocaleString('en-US', {
+            month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit'
+          });
+
+          return `
+            <tr style="border-bottom: 1px solid var(--outline-variant);">
+              <td style="padding: 12px 14px;">
+                <div style="font-weight: 700; color: #ededf0;">${r.displayName || 'User'}</div>
+                <div style="font-size: 10.5px; color: var(--on-variant); font-family: var(--mono); margin-top: 1px;">${r.email}</div>
+              </td>
+              <td style="padding: 12px 14px;">${planBadge}</td>
+              <td style="padding: 12px 14px;">${detailsHtml}</td>
+              <td style="padding: 12px 14px; color: var(--on-variant); font-size: 11px;">${dateStr}</td>
+              <td style="padding: 12px 14px;">${statusBadge}</td>
+              <td style="padding: 12px 14px; text-align: center;">${actionButtons}</td>
+            </tr>
+          `;
+        }).join('');
+      })
+      .catch(err => {
+        console.error('[Payments Fetch Error]:', err);
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" style="padding: 24px; text-align: center; color: var(--on-variant); font-size: 12px;">
+              Error loading requests: ${err.message}
+            </td>
+          </tr>
+        `;
+      });
+  };
+
+  window.verifyPaymentRequest = function(requestId, action) {
+    if (!confirm(`Are you sure you want to ${action} this request?`)) return;
+
+    fetch('/api/subscriptions/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ requestId, action })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data && data.ok) {
+        showCustomAlert(`Subscription request has been successfully ${action}d!`, 'Success');
+        window.refreshAdminPayments();
+        // Refresh User logs too, to sync and fetch updated subscription fields
+        if (typeof renderAdminUserLogs === 'function') {
+          renderAdminUserLogs();
+        }
+      } else {
+        showCustomAlert(data.error || 'Failed to verify payment', 'Error');
+      }
+    })
+    .catch(err => {
+      showCustomAlert(err.message || 'Verification failed due to connectivity issues.', 'Error');
+    });
+  };
+
+  // Wire Refresh button
+  const btnRefreshAdminPayments = document.getElementById('btnRefreshAdminPayments');
+  if (btnRefreshAdminPayments) {
+    btnRefreshAdminPayments.addEventListener('click', window.refreshAdminPayments);
   }
 
   // Update onAuthStateChanged handler
@@ -7527,6 +7656,190 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
   } else {
     revealElements.forEach(el => el.classList.add('revealed'));
   }
+
+  // --- Subscription Purchase Checkout Modal Logic ---
+  let currentCheckoutPlan = 'monthly';
+  let currentPaymentMethod = 'bkash';
+
+  window.selectCheckoutPlan = function(plan) {
+    currentCheckoutPlan = plan;
+    document.querySelectorAll('.checkout-plan-card').forEach(card => {
+       card.style.border = '1px solid var(--outline-variant)';
+       card.style.background = 'rgba(255,255,255,0.02)';
+       card.classList.remove('active');
+    });
+    const activeCard = document.getElementById(plan === 'monthly' ? 'planOptionMonthly' : 'planOptionSixMonths');
+    if (activeCard) {
+      activeCard.style.border = plan === 'monthly' ? '2px solid var(--primary)' : '2px solid var(--tertiary)';
+      activeCard.style.background = plan === 'monthly' ? 'rgba(205,252,82,0.05)' : 'rgba(0, 229, 255, 0.05)';
+      activeCard.classList.add('active');
+    }
+    updateCheckoutInstructions();
+  };
+
+  window.selectPaymentMethod = function(method) {
+    currentPaymentMethod = method;
+    document.querySelectorAll('.payment-method-btn').forEach(btn => btn.classList.remove('active'));
+    const activeBtn = document.getElementById('btnPay' + method.charAt(0).toUpperCase() + method.slice(1));
+    if (activeBtn) activeBtn.classList.add('active');
+    updateCheckoutInstructions();
+  };
+
+  function updateCheckoutInstructions() {
+    const textEl = document.getElementById('paymentInstructionsText');
+    const waWrapper = document.getElementById('whatsappBtnWrapper');
+    const phoneSection = document.getElementById('checkoutPhoneSection');
+    
+    if (!textEl) return;
+    
+    const priceText = currentCheckoutPlan === 'monthly' ? '৳৫০' : '৳২৫০';
+    
+    if (currentPaymentMethod === 'bkash') {
+      if (waWrapper) waWrapper.classList.add('hidden');
+      if (phoneSection) phoneSection.style.display = 'flex';
+      textEl.innerHTML = `
+        ১. আপনার বিকাশ অ্যাপ ওপেন করুন অথবা *২৪৭# ডায়াল করুন।<br>
+        ২. আমাদের বিকাশ মার্চেন্ট নাম্বারে <b>Make Payment</b> করুন: <b style="color:var(--primary); font-size:13.5px; font-family:var(--mono);">01700-000000</b><br>
+        ৩. পেমেন্টের টাকার পরিমাণ দিন: <b>${priceText}</b><br>
+        ৪. পেমেন্ট সম্পন্ন করার পর নিচের বক্সে আপনার বিকাশ একাউন্টের নাম্বারটি লিখে <b>Submit Payment Status</b> বাটনে ক্লিক করুন।
+      `;
+    } else if (currentPaymentMethod === 'nagad') {
+      if (waWrapper) waWrapper.classList.add('hidden');
+      if (phoneSection) phoneSection.style.display = 'flex';
+      textEl.innerHTML = `
+        ১. আপনার নগদ অ্যাপ ওপেন করুন অথবা *১৬৭# ডায়াল করুন।<br>
+        ২. আমাদের নগদ পার্সোনাল নাম্বারে <b>Send Money</b> করুন: <b style="color:var(--tertiary); font-size:13.5px; font-family:var(--mono);">01800-000000</b><br>
+        ৩. সেন্ড মানি টাকার পরিমাণ দিন: <b>${priceText}</b><br>
+        ৪. টাকা পাঠানো সম্পন্ন করার পর নিচের বক্সে আপনার নগদ একাউন্টের নাম্বারটি লিখে <b>Submit Payment Status</b> বাটনে ক্লিক করুন।
+      `;
+    } else if (currentPaymentMethod === 'rocket') {
+      if (waWrapper) waWrapper.classList.add('hidden');
+      if (phoneSection) phoneSection.style.display = 'flex';
+      textEl.innerHTML = `
+        ১. আপনার রকেট অ্যাপ ওপেন করুন অথবা *৩২২# ডায়াল করুন।<br>
+        ২. আমাদের রকেট পার্সোনাল নাম্বারে <b>Send Money</b> করুন: <b style="color:#a855f7; font-size:13.5px; font-family:var(--mono);">01900-000000-0</b><br>
+        ৩. সেন্ড মানি টাকার পরিমাণ দিন: <b>${priceText}</b><br>
+        ৪. রকেট ট্রানজেকশন শেষ করার পর নিচের বক্সে আপনার রকেট একাউন্টের নাম্বারটি লিখে <b>Submit Payment Status</b> বাটনে ক্লিক করুন।
+      `;
+    } else if (currentPaymentMethod === 'whatsapp') {
+      if (waWrapper) waWrapper.classList.remove('hidden');
+      if (phoneSection) phoneSection.style.display = 'none';
+      textEl.innerHTML = `
+        অন্যান্য মেথডে (PayPal, Skrill, Binance Pay, বা কার্ড) পেমেন্ট করতে অথবা যেকোনো প্রয়োজনে নিচের লিঙ্কে ক্লিক করে সরাসরি হোয়াটসঅ্যাপে অ্যাডমিনের সাথে যোগাযোগ করুন। পেমেন্ট কনফার্মেশনের পর আপনার অ্যাকাউন্ট সরাসরি রিচার্জ বা একটিভেটেড করে দেওয়া হবে।
+      `;
+    }
+  }
+
+  window.openCheckoutModal = function() {
+    const modal = document.getElementById('checkoutModal');
+    if (modal) {
+      if (!firebaseAuth || !firebaseAuth.currentUser) {
+        showCustomAlert('Please sign in to upgrade', '⚠️ Auth Error');
+        return;
+      }
+      modal.classList.remove('hidden');
+      window.selectCheckoutPlan('monthly');
+      window.selectPaymentMethod('bkash');
+      const phoneInput = document.getElementById('checkoutPhoneInput');
+      if (phoneInput) phoneInput.value = '';
+    }
+  };
+
+  window.closeCheckoutModal = function() {
+    const modal = document.getElementById('checkoutModal');
+    if (modal) modal.classList.add('hidden');
+  };
+
+  const btnCloseCheckoutModal = document.getElementById('btnCloseCheckoutModal');
+  const btnCancelCheckout = document.getElementById('btnCancelCheckout');
+  const btnSubmitCheckout = document.getElementById('btnSubmitCheckout');
+  const userSubBadge = document.getElementById('userSubscriptionBadge');
+
+  if (userSubBadge) {
+    userSubBadge.style.cursor = 'pointer';
+    userSubBadge.title = 'Upgrade Plan';
+    userSubBadge.addEventListener('click', window.openCheckoutModal);
+  }
+
+  if (btnCloseCheckoutModal) btnCloseCheckoutModal.addEventListener('click', window.closeCheckoutModal);
+  if (btnCancelCheckout) btnCancelCheckout.addEventListener('click', window.closeCheckoutModal);
+
+  if (btnSubmitCheckout) {
+    btnSubmitCheckout.addEventListener('click', () => {
+      const phoneInput = document.getElementById('checkoutPhoneInput');
+      const senderPhone = phoneInput ? phoneInput.value.trim() : '';
+
+      if (currentPaymentMethod !== 'whatsapp' && !senderPhone) {
+        showCustomAlert('Please enter your sender mobile number.', '⚠️ Validation Error');
+        return;
+      }
+
+      const user = firebaseAuth.currentUser;
+      const payload = {
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName || user.email.split('@')[0],
+        plan: currentCheckoutPlan,
+        method: currentPaymentMethod,
+        phone: senderPhone
+      };
+
+      btnSubmitCheckout.disabled = true;
+      btnSubmitCheckout.textContent = 'Submitting...';
+
+      fetch('/api/subscriptions/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      .then(res => res.json())
+      .then(data => {
+        btnSubmitCheckout.disabled = false;
+        btnSubmitCheckout.textContent = '✓ Submit Payment Status';
+        if (data && data.ok) {
+          window.closeCheckoutModal();
+          showCustomAlert('Your payment verification request has been successfully submitted! Admin will verify and activate your plan shortly. (A Telegram alert was sent to the owner).', '🎉 Request Submitted');
+        } else {
+          showCustomAlert(data.error || 'Failed to submit payment request', '❌ Submission Failed');
+        }
+      })
+      .catch(err => {
+        btnSubmitCheckout.disabled = false;
+        btnSubmitCheckout.textContent = '✓ Submit Payment Status';
+        showCustomAlert(err.message || 'Network error occurred', '❌ Submission Failed');
+      });
+    });
+  }
+
+  // Intercept Landing Page Pricing Upgrade button triggers to pop checkout modal
+  const upgradeBtn = document.querySelector('.pricing-plan-card.popular .btn-plan-select');
+  if (upgradeBtn) {
+    upgradeBtn.addEventListener('click', (e) => {
+      if (firebaseAuth && firebaseAuth.currentUser) {
+        e.preventDefault();
+        e.stopPropagation();
+        window.openCheckoutModal();
+      }
+    });
+  }
+  const pricingSelectBtns = document.querySelectorAll('.pricing-plan-card .btn-plan-select');
+  pricingSelectBtns.forEach((btn, idx) => {
+    btn.addEventListener('click', (e) => {
+      if (firebaseAuth && firebaseAuth.currentUser) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (idx === 0) {
+          showCustomAlert('You are already on the Starter (Free) plan.', '🌱 Free Plan');
+        } else if (idx === 1) { // Pro Plan
+          window.selectCheckoutPlan('monthly');
+          window.openCheckoutModal();
+        } else if (idx === 2) { // Team -> 6 Months Pro
+          window.selectCheckoutPlan('six_months');
+          window.openCheckoutModal();
+        }
+      }
+    });
+  });
 
   window.addEventListener('popstate', handleRouting);
   // Run on initial load

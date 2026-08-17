@@ -246,11 +246,25 @@ function loadMongoUsersLocal() {
   return [];
 }
 
-function saveMongoUsersLocal(users) {
+const MONGODB_REQUESTS_FILE = path.join(__dirname, 'mongodb_requests.json');
+
+function loadMongoRequestsLocal() {
   try {
-    fs.writeFileSync(MONGODB_FILE, JSON.stringify(users, null, 2), 'utf8');
+    if (fs.existsSync(MONGODB_REQUESTS_FILE)) {
+      const data = fs.readFileSync(MONGODB_REQUESTS_FILE, 'utf8');
+      return JSON.parse(data);
+    }
   } catch (e) {
-    console.error('[MongoDB Local Storage Write Error]:', e);
+    console.error('[MongoDB Local Requests Read Error]:', e);
+  }
+  return [];
+}
+
+function saveMongoRequestsLocal(requests) {
+  try {
+    fs.writeFileSync(MONGODB_REQUESTS_FILE, JSON.stringify(requests, null, 2), 'utf8');
+  } catch (e) {
+    console.error('[MongoDB Local Requests Write Error]:', e);
   }
 }
 
@@ -504,6 +518,209 @@ const server = http.createServer((req, res) => {
         }
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ ok: true, message: 'Credits updated' }));
+      } catch (err) {
+        res.statusCode = 500;
+        res.end(JSON.stringify({ ok: false, error: err.message }));
+      }
+    });
+    return;
+  }
+
+  // Helper for Telegram notifications
+  function sendTelegramAlert(payload) {
+    return new Promise((resolve) => {
+      const token = process.env.TELEGRAM_BOT_TOKEN;
+      const chatId = process.env.TELEGRAM_CHAT_ID;
+      if (!token || !chatId) {
+        resolve(false);
+        return;
+      }
+      const https = require('https');
+      const message = `🔔 *New Subscription Request* 🔔\n\n` +
+        `👤 *User:* ${payload.displayName}\n` +
+        `📧 *Email:* ${payload.email}\n` +
+        `🆔 *UID:* \`${payload.uid}\`\n\n` +
+        `💎 *Plan Requested:* \`${payload.plan}\`\n` +
+        `💳 *Method:* ${payload.method.toUpperCase()}\n` +
+        `📞 *Sender Phone:* \`${payload.phone || 'WhatsApp contact'}\`\n\n` +
+        `⏳ *Status:* Pending Verification.`;
+
+      const postData = JSON.stringify({
+        chat_id: chatId,
+        text: message,
+        parse_mode: 'Markdown'
+      });
+
+      const options = {
+        hostname: 'api.telegram.org',
+        port: 443,
+        path: `/bot${token}/sendMessage`,
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(postData)
+        },
+        timeout: 5000
+      };
+
+      const req = https.request(options, (res) => {
+        let body = '';
+        res.on('data', chunk => body += chunk);
+        res.on('end', () => { resolve(true); });
+      });
+      req.on('error', (e) => { resolve(false); });
+      req.write(postData);
+      req.end();
+    });
+  }
+
+  // API Route: Request Subscription (POST)
+  if (urlPath === '/api/subscriptions/request' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', async () => {
+      try {
+        const data = JSON.parse(body || '{}');
+        if (!data.uid || !data.email || !data.plan || !data.method) {
+          res.statusCode = 400;
+          res.end(JSON.stringify({ ok: false, error: 'Missing required request parameters' }));
+          return;
+        }
+
+        const newRequest = {
+          id: 'req_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+          uid: data.uid,
+          email: data.email.toLowerCase(),
+          displayName: data.displayName || data.email.split('@')[0],
+          plan: data.plan,
+          method: data.method,
+          phone: data.phone || '',
+          status: 'pending',
+          createdAt: new Date().toISOString()
+        };
+
+        if (useRealMongo && dbInstance) {
+          await dbInstance.collection('subscription_requests').insertOne(newRequest);
+        } else {
+          const list = loadMongoRequestsLocal();
+          list.push(newRequest);
+          saveMongoRequestsLocal(list);
+        }
+
+        await sendTelegramAlert(newRequest);
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, message: 'Request submitted successfully', request: newRequest }));
+      } catch (err) {
+        res.statusCode = 500;
+        res.end(JSON.stringify({ ok: false, error: err.message }));
+      }
+    });
+    return;
+  }
+
+  // API Route: List Subscriptions (GET)
+  if (urlPath === '/api/subscriptions/list' && req.method === 'GET') {
+    (async () => {
+      try {
+        let requests = [];
+        if (useRealMongo && dbInstance) {
+          requests = await dbInstance.collection('subscription_requests').find({}).sort({ createdAt: -1 }).toArray();
+        } else {
+          requests = loadMongoRequestsLocal();
+          requests.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, requests }));
+      } catch (err) {
+        res.statusCode = 500;
+        res.end(JSON.stringify({ ok: false, error: err.message }));
+      }
+    })();
+    return;
+  }
+
+  // API Route: Verify Subscription (POST)
+  if (urlPath === '/api/subscriptions/verify' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', async () => {
+      try {
+        const { requestId, action } = JSON.parse(body || '{}');
+        if (!requestId || !action) {
+          res.statusCode = 400;
+          res.end(JSON.stringify({ ok: false, error: 'Missing required parameters' }));
+          return;
+        }
+
+        let requestObj = null;
+        if (useRealMongo && dbInstance) {
+          requestObj = await dbInstance.collection('subscription_requests').findOne({ id: requestId });
+        } else {
+          const reqList = loadMongoRequestsLocal();
+          requestObj = reqList.find(r => r.id === requestId);
+        }
+
+        if (!requestObj) {
+          res.statusCode = 404;
+          res.end(JSON.stringify({ ok: false, error: 'Request not found' }));
+          return;
+        }
+
+        if (requestObj.status !== 'pending') {
+          res.statusCode = 400;
+          res.end(JSON.stringify({ ok: false, error: 'Request already processed' }));
+          return;
+        }
+
+        const isApprove = action === 'approve';
+        const finalStatus = isApprove ? 'approved' : 'rejected';
+
+        // Update Request
+        if (useRealMongo && dbInstance) {
+          await dbInstance.collection('subscription_requests').updateOne({ id: requestId }, { $set: { status: finalStatus } });
+        } else {
+          const reqList = loadMongoRequestsLocal();
+          const idx = reqList.findIndex(r => r.id === requestId);
+          if (idx >= 0) {
+            reqList[idx].status = finalStatus;
+            saveMongoRequestsLocal(reqList);
+          }
+        }
+
+        // Update User if Approved
+        if (isApprove) {
+          const days = requestObj.plan === 'monthly' ? 30 : 180;
+          const expiryDate = new Date();
+          expiryDate.setDate(expiryDate.getDate() + days);
+          const expiryStr = expiryDate.toISOString();
+
+          if (useRealMongo && dbInstance) {
+            const query = {
+              $or: [
+                { uid: requestObj.uid },
+                { email: { $regex: new RegExp('^' + requestObj.email.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&') + '$', 'i') } }
+              ]
+            };
+            await dbInstance.collection('users').updateOne(query, {
+              $set: {
+                subscription: requestObj.plan,
+                subscriptionExpiry: expiryStr
+              }
+            });
+          } else {
+            const users = loadMongoUsersLocal();
+            const idx = users.findIndex(u => u.uid === requestObj.uid || (u.email && u.email.toLowerCase() === requestObj.email.toLowerCase()));
+            if (idx >= 0) {
+              users[idx].subscription = requestObj.plan;
+              users[idx].subscriptionExpiry = expiryStr;
+              saveMongoUsersLocal(users);
+            }
+          }
+        }
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, message: `Request successfully ${finalStatus}` }));
       } catch (err) {
         res.statusCode = 500;
         res.end(JSON.stringify({ ok: false, error: err.message }));
