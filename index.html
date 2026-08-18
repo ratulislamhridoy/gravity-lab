@@ -107,6 +107,25 @@
           </div>
         </div>
         <div class="topbar-right" style="display: flex; gap: 8px; align-items: center;">
+          <!-- Community Dropdown -->
+          <div class="community-dropdown">
+            <button class="btn btn-dark small dropdown-trigger" id="communityDropdownBtn" type="button">
+              <span>🌐 Community</span>
+              <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 12px; height: 12px; margin-left: 6px; transition: transform 0.2s;"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+            <div class="dropdown-menu" id="communityDropdownMenu">
+              <a href="https://chat.whatsapp.com/GkpEmoBhR5z9Tw26lBvxz9?mode=gi_t" target="_blank" class="dropdown-item">
+                <span class="dropdown-item-icon">💬</span> WhatsApp
+              </a>
+              <a href="https://www.youtube.com/@GravityIT-r7j" target="_blank" class="dropdown-item">
+                <span class="dropdown-item-icon">📺</span> YouTube
+              </a>
+              <a href="#" class="dropdown-item" onclick="event.preventDefault();" style="cursor: default; opacity: 0.75;">
+                <span class="dropdown-item-icon">👥</span> Facebook
+              </a>
+            </div>
+          </div>
+
           <button class="btn btn-dark small" id="themeToggleBtn">🌙 Dark</button>
           
           <div id="authNavWrapper" style="position: relative; display: flex; align-items: center; gap: 8px;">
@@ -1816,5 +1835,25 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
   <script src="potrace.js?v=5.0.0"></script>
   <script src="app.js?v=8.6.0"></script>
+  <script>
+    // Custom Community Dropdown Logic
+    document.addEventListener('DOMContentLoaded', () => {
+      const dropdownBtn = document.getElementById('communityDropdownBtn');
+      const dropdownContainer = document.querySelector('.community-dropdown');
+      
+      if (dropdownBtn && dropdownContainer) {
+        dropdownBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          dropdownContainer.classList.toggle('open');
+        });
+        
+        document.addEventListener('click', (e) => {
+          if (!dropdownContainer.contains(e.target)) {
+            dropdownContainer.classList.remove('open');
+          }
+        });
+      }
+    });
+  </script>
 </body>
 </html>

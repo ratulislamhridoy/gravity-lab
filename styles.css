@@ -1357,3 +1357,87 @@ body.not-authenticated .landing-page {
   }
 }
 
+/* ==========================================================================
+   Community Dropdown Styles (Gling/GravityLab Glassmorphic Theme)
+   ========================================================================== */
+.community-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.community-dropdown .dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 1000;
+  min-width: 160px;
+  background: var(--surface-lowest);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--outline-variant);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  padding: 6px;
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+  animation: dropdownFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+:root.dark-mode .community-dropdown .dropdown-menu {
+  background: rgba(18, 18, 22, 0.95);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.community-dropdown .dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--on-variant);
+  border-radius: 8px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+}
+
+.community-dropdown .dropdown-item:hover {
+  background: rgba(92, 98, 236, 0.12);
+  color: var(--on-surface);
+  transform: translateX(3px);
+}
+
+:root.dark-mode .community-dropdown .dropdown-item:hover {
+  background: rgba(92, 98, 236, 0.18);
+  color: var(--primary);
+}
+
+.community-dropdown .dropdown-item-icon {
+  font-size: 14px;
+}
+
+/* Open State */
+.community-dropdown.open .dropdown-menu {
+  display: flex;
+}
+
+.community-dropdown.open .chevron {
+  transform: rotate(180deg);
+  stroke: var(--tertiary);
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
