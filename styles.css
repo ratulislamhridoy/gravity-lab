@@ -1369,84 +1369,43 @@ body.not-authenticated .landing-page {
   font-size: 14.5px;
   font-weight: 700;
   cursor: pointer;
-  border: 1px solid var(--outline);
+  border: 1px solid rgba(92, 98, 236, 0.25);
   background: var(--surface-lowest);
-  color: var(--on-surface);
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   width: 100%;
   text-align: left;
-}
-.sidebar-action-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.04);
-  background: var(--surface-high);
 }
 .sidebar-action-btn .ic {
   width: 20px;
   height: 20px;
   flex-shrink: 0;
   stroke-width: 2.2;
-}
-
-/* Subtle, elegant branding accents on hover */
-.sidebar-action-btn.btn-admin {
-  color: #ff6b6b;
-  border-color: rgba(255, 107, 107, 0.25);
-}
-.sidebar-action-btn.btn-admin .ic {
-  color: #ff6b6b;
-}
-.sidebar-action-btn.btn-admin:hover {
-  background: rgba(255, 107, 107, 0.06);
-  border-color: rgba(255, 107, 107, 0.55);
-}
-
-.sidebar-action-btn.btn-api {
-  color: var(--tertiary);
-  border-color: rgba(92, 98, 236, 0.25);
-}
-.sidebar-action-btn.btn-api .ic {
   color: var(--tertiary);
 }
-.sidebar-action-btn.btn-api:hover {
+.sidebar-action-btn span {
+  color: var(--on-surface);
+}
+.sidebar-action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.04);
   background: rgba(92, 98, 236, 0.06);
   border-color: rgba(92, 98, 236, 0.55);
 }
 
-.sidebar-action-btn.btn-feedback {
-  color: #d97706; /* Cleaner amber (higher contrast than yellow) */
-  border-color: rgba(251, 191, 36, 0.25);
-}
-.sidebar-action-btn.btn-feedback .ic {
-  color: #d97706;
-}
-.sidebar-action-btn.btn-feedback:hover {
-  background: rgba(251, 191, 36, 0.06);
-  border-color: rgba(251, 191, 36, 0.55);
-}
-
 :root.dark-mode .sidebar-action-btn {
   background: rgba(255, 255, 255, 0.015);
-  border-color: rgba(255, 255, 255, 0.07);
+  border-color: rgba(123, 129, 255, 0.2);
+}
+:root.dark-mode .sidebar-action-btn .ic {
+  color: #7b81ff; /* Accent soft-purple in dark mode */
+}
+:root.dark-mode .sidebar-action-btn span {
+  color: #ffffff;
 }
 :root.dark-mode .sidebar-action-btn:hover {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-  background: rgba(255, 255, 255, 0.045);
-}
-:root.dark-mode .sidebar-action-btn.btn-admin {
-  color: #ff6b6b;
-}
-:root.dark-mode .sidebar-action-btn.btn-api {
-  color: #7b81ff; /* Accent soft-purple in dark mode */
-}
-:root.dark-mode .sidebar-action-btn.btn-api .ic {
-  color: #7b81ff;
-}
-:root.dark-mode .sidebar-action-btn.btn-feedback {
-  color: #fbbf24;
-}
-:root.dark-mode .sidebar-action-btn.btn-feedback .ic {
-  color: #fbbf24;
+  background: rgba(123, 129, 255, 0.085);
+  border-color: rgba(123, 129, 255, 0.55);
 }
 
 /* ==========================================================================
