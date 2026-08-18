@@ -7955,8 +7955,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
 
   if (userSubBadge) {
     userSubBadge.style.cursor = 'pointer';
-    userSubBadge.title = 'Upgrade Plan';
-    userSubBadge.addEventListener('click', () => window.openCheckoutModal('monthly'));
+    userSubBadge.title = 'View Subscription Details';
   }
 
   if (btnCloseCheckoutModal) btnCloseCheckoutModal.addEventListener('click', window.closeCheckoutModal);

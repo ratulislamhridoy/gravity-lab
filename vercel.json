@@ -3,11 +3,14 @@
   "name": "gravity-lab-studio",
   "rewrites": [
     { "source": "/dashboard", "destination": "/index.html" },
+    { "source": "/pricing", "destination": "/index.html" },
+    { "source": "/checkout/(.*)", "destination": "/index.html" },
     { "source": "/promptgen", "destination": "/index.html" },
     { "source": "/flowgen", "destination": "/index.html" },
     { "source": "/slicer", "destination": "/index.html" },
     { "source": "/vectorizer", "destination": "/index.html" },
     { "source": "/Vectorizer", "destination": "/index.html" },
-    { "source": "/bannergen", "destination": "/index.html" }
+    { "source": "/bannergen", "destination": "/index.html" },
+    { "source": "/((?!api/|.*\\..*).*)", "destination": "/index.html" }
   ]
 }
