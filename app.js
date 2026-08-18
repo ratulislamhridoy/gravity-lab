@@ -5883,6 +5883,189 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     }
   };
 
+  window.openSubStatusModal = function() {
+    const modal = document.getElementById('subscriptionStatusModal');
+    if (!modal) return;
+
+    const user = firebaseAuth ? firebaseAuth.currentUser : null;
+    if (!user) {
+      if (window.showCustomToast) window.showCustomToast('Please sign in to view subscription status.', 'warning');
+      return;
+    }
+
+    const logs = getUserLogs();
+    const u = logs.find(item => item.uid === user.uid || (item.email && user.email && item.email.toLowerCase() === user.email.toLowerCase()));
+
+    if (!u) {
+      if (window.showCustomToast) window.showCustomToast('Unable to fetch subscription details.', 'warning');
+      return;
+    }
+
+    const sub = u.subscription || 'free';
+    const expiry = u.subscriptionExpiry;
+
+    // Check if Pro subscription is active & not expired
+    let isPro = false;
+    if (sub === 'monthly' || sub === 'six_months') {
+      if (!expiry) {
+        isPro = true;
+      } else {
+        const expDate = new Date(expiry);
+        if (expDate > new Date()) {
+          isPro = true;
+        }
+      }
+    }
+
+    // Populate data
+    const tierBadge = document.getElementById('subModalTierBadge');
+    const titleText = modal.querySelector('h3');
+    const iconWrapper = modal.querySelector('div[style*="font-size: 32px"]');
+    const creditsCount = document.getElementById('subModalCreditsCount');
+    const creditsSub = document.getElementById('subModalCreditsSub');
+    const progressBar = document.getElementById('subModalProgressBar');
+    const planName = document.getElementById('subModalPlanName');
+    const statusText = document.getElementById('subModalStatusText');
+
+    if (isPro) {
+      // Premium user
+      if (tierBadge) {
+        tierBadge.textContent = 'Account Tier: Premium';
+        tierBadge.style.color = '#fbbf24';
+        tierBadge.style.background = 'rgba(251, 191, 36, 0.15)';
+        tierBadge.style.borderColor = 'rgba(251, 191, 36, 0.25)';
+      }
+      if (titleText) titleText.textContent = 'Your Premium Status';
+      if (iconWrapper) {
+        iconWrapper.innerHTML = '⭐';
+        iconWrapper.style.color = '#fbbf24';
+        iconWrapper.style.background = 'rgba(251, 191, 36, 0.08)';
+        iconWrapper.style.borderColor = 'rgba(251, 191, 36, 0.25)';
+        iconWrapper.style.boxShadow = '0 0 25px rgba(251, 191, 36, 0.1)';
+      }
+      if (creditsCount) creditsCount.textContent = 'Unlimited';
+      if (creditsSub) {
+        creditsSub.textContent = 'Unlimited Active';
+        creditsSub.style.color = '#cdfc52';
+      }
+      if (progressBar) {
+        progressBar.style.width = '100%';
+        progressBar.style.background = 'linear-gradient(90deg, #cdfc52 0%, #10b981 100%)';
+      }
+      if (planName) planName.textContent = sub === 'monthly' ? 'Monthly Pro' : '6-Months Pro';
+      
+      if (expiry) {
+        const expDate = new Date(expiry);
+        const diffTime = Math.abs(expDate - new Date());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        if (statusText) {
+          statusText.textContent = `${diffDays} Day${diffDays > 1 ? 's' : ''} Left`;
+          statusText.style.color = '#10b981';
+        }
+      } else {
+        if (statusText) {
+          statusText.textContent = 'Active (No Expiry)';
+          statusText.style.color = '#10b981';
+        }
+      }
+    } else {
+      // Free user
+      if (tierBadge) {
+        tierBadge.textContent = 'Account Tier: Free';
+        tierBadge.style.color = '#cdfc52';
+        tierBadge.style.background = 'rgba(205, 252, 82, 0.15)';
+        tierBadge.style.borderColor = 'rgba(205, 252, 82, 0.25)';
+      }
+      if (titleText) titleText.textContent = 'Your Plan Status';
+      if (iconWrapper) {
+        iconWrapper.innerHTML = '🌱';
+        iconWrapper.style.color = '#cdfc52';
+        iconWrapper.style.background = 'rgba(205, 252, 82, 0.08)';
+        iconWrapper.style.borderColor = 'rgba(205, 252, 82, 0.25)';
+        iconWrapper.style.boxShadow = '0 0 25px rgba(205, 252, 82, 0.1)';
+      }
+
+      const cd = u.creditsDaily || { remaining: 30 };
+      const remaining = typeof cd.remaining === 'number' ? cd.remaining : 30;
+      if (creditsCount) creditsCount.textContent = `${remaining} / 30`;
+      if (creditsSub) {
+        creditsSub.textContent = 'Credits Remaining';
+        creditsSub.style.color = 'var(--on-variant)';
+      }
+
+      if (progressBar) {
+        const percentage = Math.max(0, Math.min(100, (remaining / 30) * 100));
+        progressBar.style.width = `${percentage}%`;
+        progressBar.style.background = remaining < 5 ? '#ef4444' : 'linear-gradient(90deg, #cdfc52 0%, #10b981 100%)';
+      }
+      if (planName) planName.textContent = 'Free Tier';
+      if (statusText) {
+        statusText.textContent = 'Life Time';
+        statusText.style.color = 'var(--on-variant)';
+      }
+    }
+
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+  };
+
+  window.closeSubStatusModal = function() {
+    const modal = document.getElementById('subscriptionStatusModal');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.style.display = 'none';
+    }
+  };
+
+  window.syncSubscriptionStatus = async function(e) {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    const syncLink = e.currentTarget || e.target;
+    if (syncLink) {
+      syncLink.style.pointerEvents = 'none';
+      syncLink.innerHTML = '⚡ Synchronizing...';
+    }
+    
+    if (window.showCustomToast) {
+      window.showCustomToast('Syncing user subscription data with database...', 'info');
+    }
+
+    if (firebaseAuth && firebaseAuth.currentUser) {
+      try {
+        if (firebaseDb) {
+          const user = firebaseAuth.currentUser;
+          const docRef = firebaseDb.collection('users').doc(user.uid);
+          const docSnap = await docRef.get();
+          if (docSnap.exists) {
+            const freshData = docSnap.data();
+            const localLogs = getUserLogs();
+            const idx = localLogs.findIndex(item => item.uid === user.uid);
+            if (idx !== -1) {
+              localLogs[idx] = { ...localLogs[idx], ...freshData };
+              localStorage.setItem('gravity_users_logs', JSON.stringify(localLogs));
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Sync error:', err);
+      }
+    }
+
+    setTimeout(() => {
+      window.updateUserSubscriptionUI();
+      window.openSubStatusModal();
+      if (syncLink) {
+        syncLink.style.pointerEvents = 'auto';
+        syncLink.innerHTML = '🔄 Sync Account Status';
+      }
+      if (window.showCustomToast) {
+        window.showCustomToast('Account status synchronized successfully!', 'success');
+      }
+    }, 1200);
+  };
+
   async function syncCreditsToDatabase(uid, remaining, lastResetDate) {
     try {
       fetch('/api/users/update-credits', {
