@@ -1467,22 +1467,24 @@ body.not-authenticated .landing-page {
 /* ==========================================================================
    Community Dropdown Styles (Gling/GravityLab Glassmorphic Theme)
    ========================================================================== */
-.community-dropdown {
+.community-dropdown,
+.user-profile-dropdown {
   position: relative;
   display: inline-block;
 }
 
-.community-dropdown .dropdown-menu {
+.community-dropdown .dropdown-menu,
+.user-profile-dropdown .dropdown-menu {
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
   z-index: 1000;
-  min-width: 160px;
+  min-width: 170px;
   background: var(--surface-lowest);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--outline-variant);
-  border-radius: 12px;
+  border-radius: 14px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
   padding: 6px;
   display: none;
@@ -1491,48 +1493,55 @@ body.not-authenticated .landing-page {
   animation: dropdownFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-:root.dark-mode .community-dropdown .dropdown-menu {
+:root.dark-mode .community-dropdown .dropdown-menu,
+:root.dark-mode .user-profile-dropdown .dropdown-menu {
   background: rgba(18, 18, 22, 0.95);
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
   border-color: rgba(255, 255, 255, 0.08);
 }
 
-.community-dropdown .dropdown-item {
+.community-dropdown .dropdown-item,
+.user-profile-dropdown .dropdown-item {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 12px;
+  padding: 9px 12px;
   font-size: 13px;
   font-weight: 600;
   color: var(--on-variant);
-  border-radius: 8px;
+  border-radius: 9px;
   cursor: pointer;
   text-decoration: none;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   white-space: nowrap;
 }
 
-.community-dropdown .dropdown-item:hover {
+.community-dropdown .dropdown-item:hover,
+.user-profile-dropdown .dropdown-item:hover {
   background: rgba(92, 98, 236, 0.12);
   color: var(--on-surface);
   transform: translateX(3px);
 }
 
-:root.dark-mode .community-dropdown .dropdown-item:hover {
+:root.dark-mode .community-dropdown .dropdown-item:hover,
+:root.dark-mode .user-profile-dropdown .dropdown-item:hover {
   background: rgba(92, 98, 236, 0.18);
   color: var(--primary);
 }
 
-.community-dropdown .dropdown-item-icon {
+.community-dropdown .dropdown-item-icon,
+.user-profile-dropdown .dropdown-item-icon {
   font-size: 14px;
 }
 
 /* Open State */
-.community-dropdown.open .dropdown-menu {
+.community-dropdown.open .dropdown-menu,
+.user-profile-dropdown.open .dropdown-menu {
   display: flex;
 }
 
-.community-dropdown.open .chevron {
+.community-dropdown.open .chevron,
+.user-profile-dropdown.open .chevron {
   transform: rotate(180deg);
   stroke: var(--tertiary);
 }
