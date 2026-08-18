@@ -1,15 +1,15 @@
 :root {
-  /* Gling-Style Light Theme Palette */
-  --bg: #faf8f5;                   /* Warm Off-White/Cream Background */
+  /* Dynamic Crisp Light Theme Palette */
+  --bg: #f8f9fc;                   /* Softer, cleaner off-white */
   --surface-lowest: #ffffff;      /* Pure White Card Surfaces */
-  --surface-low: #f5f3ef;         /* Sidebar / Container Cream Background */
+  --surface-low: #f1f3f7;         /* Clean Sidebar / Container Background */
   --surface: #ffffff;             /* Surface Grid Cards */
-  --surface-high: #ece9e4;        /* Light Grey/Cream Hovers */
-  --surface-highest: #dfdcd6;     /* Active States Grey */
-  --on-surface: #1a1a1a;          /* Charcoal Text */
-  --on-variant: #5c5f66;          /* Muted Body Text */
-  --outline: #e6e4df;             /* Card Boundary Borders */
-  --outline-variant: #dfdcd6;     /* Input Outline Borders */
+  --surface-high: #e9ecef;        /* Softer Grey Hovers */
+  --surface-highest: #dee2e6;     /* Active States Grey */
+  --on-surface: #101113;          /* Charcoal Text */
+  --on-variant: #5f6674;          /* Muted Body Text with better contrast */
+  --outline: #e2e5ec;             /* Card Boundary Borders */
+  --outline-variant: #d3d7e5;     /* Input Outline Borders */
   --primary: #cdfc52;             /* Gling Lime Green Accent (CTA) */
   --on-primary: #0b0f19;          /* Deep Black/Charcoal Text on Primary Lime Accent */
   --secondary: #ff6b6b;           /* Accent Coral Pink (Badges) */
@@ -17,13 +17,13 @@
   --tertiary: #5c62ec;            /* Vibrant Indigo Accent (Headers) */
   --error: #ef4444;
 
-  --sidebar-w: 260px;
-  --glow: 0 10px 30px rgba(205, 252, 82, 0.2);
+  --sidebar-w: 275px;             /* Slightly wider sidebar for scaled-up elements */
+  --glow: 0 10px 30px rgba(92, 98, 236, 0.08); /* More subtle, premium indigo glow */
   --font: "Outfit", "Inter", "Segoe UI", system-ui, sans-serif;
   --mono: "Fira Code", ui-monospace, monospace;
-  --topbar-bg: rgba(250, 248, 245, 0.85); /* Light Topbar Transparent Fill */
+  --topbar-bg: rgba(248, 249, 252, 0.85); /* Matches new light bg */
   --prompter-bg: rgba(255, 255, 255, 0.95);
-  --prompter-text: #1a1a1a;
+  --prompter-text: #101113;
   --prompter-placeholder: rgba(0, 0, 0, 0.45);
 }
 
@@ -43,8 +43,8 @@ html, body { height: 100vh; max-height: 100vh; margin: 0; padding: 0; overflow: 
 body {
   font-family: var(--font);
   color: var(--on-surface);
-  /* Organic fluid background gradient inspired by Gling.io */
-  background: radial-gradient(circle at 10% 20%, rgba(243, 222, 237, 0.5) 0%, rgba(223, 245, 201, 0.5) 40%, var(--bg) 90%);
+  /* Organic subtle background gradient */
+  background: radial-gradient(circle at 10% 20%, rgba(92, 98, 236, 0.03) 0%, rgba(205, 252, 82, 0.02) 40%, var(--bg) 90%);
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
 }
@@ -95,20 +95,20 @@ button, a { font-family: inherit; }
   flex-direction: column;
   justify-content: center;
 }
-.home-brand .name { font-size: 16px; font-weight: 800; color: var(--on-surface); letter-spacing: -.02em; line-height: 1.2; }
-.home-brand .sub { font-size: 9.5px; color: var(--tertiary); font-weight: 700; text-transform: uppercase; margin-top: 2px; letter-spacing: .08em; line-height: 1.1; }
+.home-brand .name { font-size: 17.5px; font-weight: 800; color: var(--on-surface); letter-spacing: -.02em; line-height: 1.2; }
+.home-brand .sub { font-size: 10px; color: var(--tertiary); font-weight: 700; text-transform: uppercase; margin-top: 2px; letter-spacing: .08em; line-height: 1.1; }
 
-.home-nav { flex: 1; padding: 14px 12px; display: flex; flex-direction: column; gap: 4px; }
+.home-nav { flex: 1; padding: 14px 12px; display: flex; flex-direction: column; gap: 6px; }
 .nav-item {
-  display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 10px;
-  color: var(--on-variant); font-size: 13.5px; font-weight: 600; cursor: pointer;
+  display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 12px;
+  color: var(--on-variant); font-size: 15px; font-weight: 600; cursor: pointer;
   transition: transform .2s cubic-bezier(0.16, 1, 0.3, 1), background .2s, color .2s; border: none; background: none; text-align: left; width: 100%;
 }
-.nav-item:hover { background: var(--surface-high); color: var(--on-surface); transform: translateX(4px); }
+.nav-item:hover { background: var(--surface-high); color: var(--on-surface); transform: translateX(5px); }
 .nav-item.active { background: var(--surface-lowest); color: var(--on-surface); font-weight: 700; border: 1px solid var(--outline); box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
 .nav-item.active .ic { color: var(--tertiary); }
-.nav-item .ic { width: 18px; height: 18px; flex-shrink: 0; }
-.nav-divider { height: 1px; background: var(--outline-variant); margin: 10px 6px; }
+.nav-item .ic { width: 20px; height: 20px; flex-shrink: 0; }
+.nav-divider { height: 1px; background: var(--outline-variant); margin: 12px 6px; }
 
 .home-status { margin: 12px; padding: 14px; border-radius: 14px; background: var(--surface-lowest); border: 1px solid var(--outline-variant); }
 .home-status .row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
@@ -170,8 +170,8 @@ button, a { font-family: inherit; }
   transition: padding-left .22s ease-in-out;
 }
 .home-topbar .title-wrap { display: flex; align-items: center; gap: 14px; }
-.home-topbar .title { font-size: 16px; font-weight: 700; color: var(--on-surface); }
-.home-badge { padding: 5px 12px; border-radius: 999px; background: rgba(255, 107, 107, 0.08); border: 1px solid rgba(255, 107, 107, 0.2); color: var(--secondary); font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.home-topbar .title { font-size: 18.5px; font-weight: 800; color: var(--on-surface); }
+.home-badge { padding: 5px 12px; border-radius: 999px; background: rgba(255, 107, 107, 0.08); border: 1px solid rgba(255, 107, 107, 0.2); color: var(--secondary); font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 
 /* === Views === */
 .home-content { padding: 40px 32px; width: 100%; max-width: 1200px; margin: 0 auto; }
@@ -1355,6 +1355,98 @@ body.not-authenticated .landing-page {
   .landing-nav {
     display: none; /* Hide desktop nav on mobile */
   }
+}
+
+/* ==========================================================================
+   Premium Sidebar Action Buttons (Modern Soft Styled)
+   ========================================================================== */
+.sidebar-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 14.5px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid var(--outline);
+  background: var(--surface-lowest);
+  color: var(--on-surface);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  width: 100%;
+  text-align: left;
+}
+.sidebar-action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.04);
+  background: var(--surface-high);
+}
+.sidebar-action-btn .ic {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  stroke-width: 2.2;
+}
+
+/* Subtle, elegant branding accents on hover */
+.sidebar-action-btn.btn-admin {
+  color: #ff6b6b;
+  border-color: rgba(255, 107, 107, 0.25);
+}
+.sidebar-action-btn.btn-admin .ic {
+  color: #ff6b6b;
+}
+.sidebar-action-btn.btn-admin:hover {
+  background: rgba(255, 107, 107, 0.06);
+  border-color: rgba(255, 107, 107, 0.55);
+}
+
+.sidebar-action-btn.btn-api {
+  color: var(--tertiary);
+  border-color: rgba(92, 98, 236, 0.25);
+}
+.sidebar-action-btn.btn-api .ic {
+  color: var(--tertiary);
+}
+.sidebar-action-btn.btn-api:hover {
+  background: rgba(92, 98, 236, 0.06);
+  border-color: rgba(92, 98, 236, 0.55);
+}
+
+.sidebar-action-btn.btn-feedback {
+  color: #d97706; /* Cleaner amber (higher contrast than yellow) */
+  border-color: rgba(251, 191, 36, 0.25);
+}
+.sidebar-action-btn.btn-feedback .ic {
+  color: #d97706;
+}
+.sidebar-action-btn.btn-feedback:hover {
+  background: rgba(251, 191, 36, 0.06);
+  border-color: rgba(251, 191, 36, 0.55);
+}
+
+:root.dark-mode .sidebar-action-btn {
+  background: rgba(255, 255, 255, 0.015);
+  border-color: rgba(255, 255, 255, 0.07);
+}
+:root.dark-mode .sidebar-action-btn:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  background: rgba(255, 255, 255, 0.045);
+}
+:root.dark-mode .sidebar-action-btn.btn-admin {
+  color: #ff6b6b;
+}
+:root.dark-mode .sidebar-action-btn.btn-api {
+  color: #7b81ff; /* Accent soft-purple in dark mode */
+}
+:root.dark-mode .sidebar-action-btn.btn-api .ic {
+  color: #7b81ff;
+}
+:root.dark-mode .sidebar-action-btn.btn-feedback {
+  color: #fbbf24;
+}
+:root.dark-mode .sidebar-action-btn.btn-feedback .ic {
+  color: #fbbf24;
 }
 
 /* ==========================================================================
