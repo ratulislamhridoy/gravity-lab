@@ -2011,10 +2011,10 @@
 
   <!-- Subscription Status Modal -->
   <div class="modal-backdrop hidden" id="subscriptionStatusModal" style="z-index: 999999;">
-    <div class="modal-box" style="max-width: 440px; width: 90%; border-radius: 24px; padding: 28px; background: rgba(18, 18, 22, 0.94); backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 30px 70px rgba(0, 0, 0, 0.85); display: flex; flex-direction: column; gap: 20px; position: relative;">
+    <div class="sub-status-modal-box">
       
       <!-- Close Button -->
-      <button type="button" class="btn btn-dark small" id="btnCloseSubModal" onclick="window.closeSubStatusModal()" style="position: absolute; top: 20px; right: 20px; width: 30px; height: 30px; padding: 0; border-radius: 50%; font-size: 14px; justify-content: center; display: flex; align-items: center; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; color: var(--on-variant); background: rgba(255,255,255,0.03);">✕</button>
+      <button type="button" class="sub-status-modal-close-btn" id="btnCloseSubModal" onclick="window.closeSubStatusModal()">✕</button>
 
       <!-- Header Icon -->
       <div style="width: 60px; height: 60px; border-radius: 18px; background: rgba(251, 191, 36, 0.08); border: 1px solid rgba(251, 191, 36, 0.25); color: #fbbf24; margin: 10px auto 0; display: flex; align-items: center; justify-content: center; font-size: 32px; box-shadow: 0 0 25px rgba(251, 191, 36, 0.1);">
@@ -2026,17 +2026,17 @@
         <span id="subModalTierBadge" style="font-size: 10px; font-weight: 800; color: #fbbf24; background: rgba(251, 191, 36, 0.15); border: 1px solid rgba(251, 191, 36, 0.25); padding: 4px 12px; border-radius: 12px; text-transform: uppercase; letter-spacing: 0.08em; display: inline-block; margin-bottom: 10px;">
           Account Tier: Premium
         </span>
-        <h3 style="margin: 0 0 4px; font-size: 24px; font-weight: 800; color: #ffffff; letter-spacing: -0.01em;">Your Premium Status</h3>
+        <h3 class="sub-status-modal-title">Your Premium Status</h3>
         <a href="#" onclick="window.syncSubscriptionStatus(event)" style="font-size: 11px; color: var(--on-variant); text-decoration: none; display: inline-flex; align-items: center; gap: 4px; opacity: 0.75; transition: opacity 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.75;">
           🔄 Sync Account Status
         </a>
       </div>
 
       <!-- Middle Credits Card -->
-      <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 12px; position: relative; overflow: hidden;">
-        <div style="font-size: 10.5px; font-weight: 800; color: var(--on-variant); text-transform: uppercase; letter-spacing: 0.05em;">Available Credits</div>
+      <div class="sub-status-credits-card">
+        <div class="sub-status-credits-label">Available Credits</div>
         <div style="display: flex; align-items: baseline; justify-content: space-between;">
-          <span id="subModalCreditsCount" style="font-size: 36px; font-weight: 800; color: #ffffff; letter-spacing: -0.01em;">Unlimited</span>
+          <span id="subModalCreditsCount" class="sub-status-credits-count">Unlimited</span>
           <span id="subModalCreditsSub" style="font-size: 13px; font-weight: 700; color: #cdfc52;">Unlimited Active</span>
         </div>
         <!-- Progress Bar Container -->
@@ -2047,18 +2047,18 @@
 
       <!-- Info Columns Grid -->
       <div style="display: flex; gap: 12px;">
-        <div style="flex: 1; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 14px; padding: 14px 16px;">
-          <span style="font-size: 9.5px; font-weight: 800; color: var(--on-variant); text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px;">Current Plan</span>
-          <span id="subModalPlanName" style="font-size: 15px; font-weight: 700; color: #ffffff;">1-Month Plan</span>
+        <div class="sub-status-info-col">
+          <span class="sub-status-info-label">Current Plan</span>
+          <span id="subModalPlanName" class="sub-status-info-value">1-Month Plan</span>
         </div>
-        <div style="flex: 1; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 14px; padding: 14px 16px;">
-          <span style="font-size: 9.5px; font-weight: 800; color: var(--on-variant); text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px;">Status</span>
-          <span id="subModalStatusText" style="font-size: 15px; font-weight: 700; color: #10b981;">25 Days Left</span>
+        <div class="sub-status-info-col">
+          <span class="sub-status-info-label">Status</span>
+          <span id="subModalStatusText" class="sub-status-info-value" style="color: #10b981;">25 Days Left</span>
         </div>
       </div>
 
       <!-- Footer Button -->
-      <button type="button" class="btn btn-primary" onclick="window.closeSubStatusModal()" style="width: 100%; height: 46px; justify-content: center; font-weight: 800; font-size: 14px; border-radius: 16px; background: #ffffff; color: #121216; border: none; cursor: pointer; transition: all 0.25s; box-shadow: 0 4px 20px rgba(255,255,255,0.15);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 24px rgba(255,255,255,0.25)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 4px 20px rgba(255,255,255,0.15)';">
+      <button type="button" class="sub-status-modal-btn" onclick="window.closeSubStatusModal()">
         OKAY, GOT IT
       </button>
 

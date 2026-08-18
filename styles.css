@@ -1773,3 +1773,151 @@ body.not-authenticated .landing-page {
 .google-signin-btn:active {
   transform: translateY(0);
 }
+
+/* === Subscription Status Modal Styling === */
+.sub-status-modal-box {
+  max-width: 440px; 
+  width: 90%; 
+  border-radius: 24px; 
+  padding: 28px; 
+  background: var(--surface); 
+  border: 1px solid var(--outline-variant); 
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.15); 
+  display: flex; 
+  flex-direction: column; 
+  gap: 20px; 
+  position: relative;
+  transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
+}
+
+:root.dark-mode .sub-status-modal-box {
+  background: rgba(18, 18, 22, 0.94);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.85);
+}
+
+.sub-status-modal-title {
+  margin: 0 0 4px; 
+  font-size: 24px; 
+  font-weight: 800; 
+  color: var(--on-surface); 
+  letter-spacing: -0.01em;
+}
+
+.sub-status-modal-close-btn {
+  position: absolute; 
+  top: 20px; 
+  right: 20px; 
+  width: 30px; 
+  height: 30px; 
+  padding: 0; 
+  border-radius: 50%; 
+  font-size: 14px; 
+  justify-content: center; 
+  display: flex; 
+  align-items: center; 
+  cursor: pointer; 
+  color: var(--on-variant); 
+  background: var(--surface-high);
+  border: 1px solid var(--outline-variant);
+  transition: all 0.2s;
+}
+.sub-status-modal-close-btn:hover {
+  background: var(--surface-highest);
+  color: var(--on-surface);
+}
+
+.sub-status-credits-card {
+  background: var(--surface-low); 
+  border: 1px solid var(--outline-variant); 
+  border-radius: 16px; 
+  padding: 20px; 
+  display: flex; 
+  flex-direction: column; 
+  gap: 12px; 
+  position: relative; 
+  overflow: hidden;
+}
+
+:root.dark-mode .sub-status-credits-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.sub-status-credits-label {
+  font-size: 10.5px; 
+  font-weight: 800; 
+  color: var(--on-variant); 
+  text-transform: uppercase; 
+  letter-spacing: 0.05em;
+}
+
+.sub-status-credits-count {
+  font-size: 36px; 
+  font-weight: 800; 
+  color: var(--on-surface); 
+  letter-spacing: -0.01em;
+}
+
+.sub-status-info-col {
+  flex: 1; 
+  background: var(--surface-lowest); 
+  border: 1px solid var(--outline); 
+  border-radius: 14px; 
+  padding: 14px 16px;
+}
+
+:root.dark-mode .sub-status-info-col {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.sub-status-info-label {
+  font-size: 9.5px; 
+  font-weight: 800; 
+  color: var(--on-variant); 
+  text-transform: uppercase; 
+  letter-spacing: 0.05em; 
+  display: block; 
+  margin-bottom: 4px;
+}
+
+.sub-status-info-value {
+  font-size: 15px; 
+  font-weight: 800; 
+  color: var(--on-surface);
+}
+
+.sub-status-modal-btn {
+  width: 100%; 
+  height: 46px; 
+  justify-content: center; 
+  font-weight: 800; 
+  font-size: 14px; 
+  border-radius: 16px; 
+  background: var(--accent); 
+  color: var(--bg); 
+  border: none; 
+  cursor: pointer; 
+  transition: all 0.25s; 
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+}
+
+.sub-status-modal-btn:hover {
+  transform: translateY(-2px); 
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+:root.dark-mode .sub-status-modal-btn {
+  background: #ffffff; 
+  color: #121216; 
+  box-shadow: 0 4px 20px rgba(255, 255, 255, 0.15);
+}
+
+:root.dark-mode .sub-status-modal-btn:hover {
+  box-shadow: 0 8px 24px rgba(255, 255, 255, 0.25);
+}
