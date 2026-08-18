@@ -1524,3 +1524,13 @@ body.not-authenticated .landing-page {
   }
 }
 
+/* === Pricing Fullscreen Mode === */
+.pricing-page-active .home-sidebar,
+.pricing-page-active .sidebar-toggle,
+.pricing-page-active .home-topbar {
+  display: none !important;
+}
+.pricing-page-active .home-main {
+  margin-left: 0 !important;
+}
+

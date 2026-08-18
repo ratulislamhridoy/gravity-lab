@@ -214,8 +214,12 @@
       </div>
 
       <!-- Pricing View -->
-      <div class="home-content home-view hidden" id="pricingView">
-        <div class="pricing-container" style="max-width: 1080px; margin: 0 auto; padding: 40px 20px; display: flex; flex-direction: column; align-items: center; gap: 40px;">
+      <div class="home-content home-view hidden" id="pricingView" style="position: relative;">
+        <!-- Back Button -->
+        <button id="btnPricingBack" class="btn btn-dark small" style="position: absolute; top: 24px; left: 24px; display: flex; align-items: center; gap: 6px; font-weight: 700; border-radius: 12px; z-index: 10; margin: 0; padding: 6px 14px; font-size: 13px; cursor: pointer;">
+          <span>&larr;</span> Back to Generator
+        </button>
+        <div class="pricing-container" style="max-width: 1080px; margin: 0 auto; padding: 60px 20px; display: flex; flex-direction: column; align-items: center; gap: 40px;">
           
           <div class="pricing-header" style="text-align: center; max-width: 600px; display: flex; flex-direction: column; gap: 12px;">
             <h1 style="font-size: 34px; font-weight: 800; color: #ffffff; margin: 0; background: linear-gradient(135deg, #ffffff 0%, #a1a1aa 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">Choose Your Power Plan</h1>
@@ -1997,6 +2001,8 @@
           });
           // Show pricing view
           pricingView.classList.remove('hidden');
+          // Activate fullscreen body layout
+          document.body.classList.add('pricing-page-active');
           // Update topbar title
           if (pageTitle) pageTitle.textContent = "💳 Pricing Plans";
           if (pageTitleBadge) pageTitleBadge.classList.add('hidden');
@@ -2005,10 +2011,26 @@
         });
       }
 
+      // Back Button click handler
+      const pricingBackBtn = document.getElementById('btnPricingBack');
+      if (pricingBackBtn) {
+        pricingBackBtn.addEventListener('click', () => {
+          if (pricingView) pricingView.classList.add('hidden');
+          document.body.classList.remove('pricing-page-active');
+          // Fallback view restore
+          const dash = document.querySelector('#dashboardView');
+          if (dash) dash.classList.remove('hidden');
+          // Update active sidebar nav
+          const dashNav = document.querySelector('.nav-item[data-nav="dashboard"]');
+          if (dashNav) dashNav.classList.add('active');
+        });
+      }
+
       // Track clicks on sidebar navigation or dashboard elements to hide pricing view
       document.querySelectorAll('.nav-item, #backToDashBtn').forEach(item => {
         item.addEventListener('click', () => {
           if (pricingView) pricingView.classList.add('hidden');
+          document.body.classList.remove('pricing-page-active');
           if (pageTitle) pageTitle.textContent = "🎨 Icon Sheet Studio";
           if (pageTitleBadge) pageTitleBadge.classList.remove('hidden');
         });
