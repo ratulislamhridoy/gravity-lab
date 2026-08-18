@@ -1502,3 +1502,25 @@ body.not-authenticated .landing-page {
   }
 }
 
+/* ==========================================================================
+   Pricing View Styling
+   ========================================================================== */
+#pricingView {
+  animation: dropdownFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.pricing-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+}
+.pricing-card.popular:hover {
+  transform: translateY(-4px);
+  border-color: var(--tertiary) !important;
+  box-shadow: 0 12px 40px rgba(92, 98, 236, 0.25) !important;
+}
+@media (max-width: 768px) {
+  .pricing-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
