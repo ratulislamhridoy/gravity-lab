@@ -1,7 +1,16 @@
-/**
- * Gravity AI Studio - App Controller
- * Custom Dark Glass Notification & Toast System
- */
+// Loader Fade-Out and Removal Logic (helps prevent flicker on refresh)
+window.removeAppInitLoader = function() {
+  const loader = document.getElementById('initLoader');
+  if (loader) {
+    loader.style.opacity = '0';
+    loader.style.visibility = 'hidden';
+    setTimeout(() => {
+      if (loader.parentNode) {
+        loader.parentNode.removeChild(loader);
+      }
+    }, 350);
+  }
+};
 
 // Custom Modern Alert Modal Function
 window.showCustomAlert = function(message, title = 'Notice', type = 'warning') {
@@ -587,8 +596,8 @@ document.addEventListener('DOMContentLoaded', () => {
   function navigateTo(path) {
     if (window.location.pathname !== path) {
       history.pushState(null, '', path);
-      handleRouting();
     }
+    handleRouting();
   }
 
   function triggerToolLaunch(toolId) {
@@ -5641,11 +5650,21 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
           if (userProfileMenu) userProfileMenu.classList.add('hidden');
           openAuthModal();
         }
+
+        // Remove app loader overlay once auth state resolves
+        if (typeof window.removeAppInitLoader === 'function') {
+          window.removeAppInitLoader();
+        }
       });
     } catch (err) {
       console.warn('[Firebase Auth]: Running in demo mode', err);
       toggleAuthGate(true);
       openAuthModal();
+
+      // Force loader removal in demo/fallback mode
+      if (typeof window.removeAppInitLoader === 'function') {
+        window.removeAppInitLoader();
+      }
     }
   }
 
@@ -5680,6 +5699,12 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       }
     });
   }
+
+  window.triggerGoogleSignIn = function() {
+    if (btnGoogleSignIn) {
+      btnGoogleSignIn.click();
+    }
+  };
 
   if (authEmailForm) {
     authEmailForm.addEventListener('submit', async (e) => {
@@ -6356,7 +6381,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
               <div style="display: flex; align-items: center; gap: 10px;">
                 <img src="${photoURL}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1.5px solid var(--outline);" onerror="this.src='https://lh3.googleusercontent.com/a/default-user'">
                 <div>
-                  <div style="font-weight: 700; color: #ededf0; display: flex; align-items: center; gap: 6px;">
+                  <div style="font-weight: 700; color: var(--on-surface); display: flex; align-items: center; gap: 6px;">
                     ${displayName}
                     ${providerBadge}
                   </div>
@@ -6365,28 +6390,28 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
               </div>
             </td>
             <td style="padding: 12px 14px;">
-              <div style="font-size: 11px; color: #ededf0; font-weight: 600;">Last: ${lastActiveStr}</div>
+              <div style="font-size: 11px; color: var(--on-surface); font-weight: 600;">Last: ${lastActiveStr}</div>
               <div style="font-size: 10px; color: var(--on-variant); margin-top: 2px;">First: ${firstDateStr}</div>
             </td>
             <td style="padding: 12px 14px;">${apiBadge}</td>
             <td style="padding: 12px 14px;">
               <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px 12px; font-size: 10.5px;">
-                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); padding: 4px 8px; border-radius: 6px; color: #ededf0;">
-                  🎨 Icon Sheets: <strong style="color: #cdfc52;">${iconSheets.tot}</strong> <span style="color: var(--on-variant); font-size: 9.5px;">(Today: ${iconSheets.tod})</span>
+                <div style="background: var(--surface-low); border: 1px solid var(--outline-variant); padding: 4px 8px; border-radius: 6px; color: var(--on-surface);">
+                  🎨 Icon Sheets: <strong style="color: var(--tertiary);">${iconSheets.tot}</strong> <span style="color: var(--on-variant); font-size: 9.5px;">(Today: ${iconSheets.tod})</span>
                 </div>
-                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); padding: 4px 8px; border-radius: 6px; color: #ededf0;">
+                <div style="background: var(--surface-low); border: 1px solid var(--outline-variant); padding: 4px 8px; border-radius: 6px; color: var(--on-surface);">
                   💬 Prompts: <strong style="color: #fbbf24;">${prompts.tot}</strong> <span style="color: var(--on-variant); font-size: 9.5px;">(Today: ${prompts.tod})</span>
                 </div>
-                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); padding: 4px 8px; border-radius: 6px; color: #ededf0;">
+                <div style="background: var(--surface-low); border: 1px solid var(--outline-variant); padding: 4px 8px; border-radius: 6px; color: var(--on-surface);">
                   🖼️ Flow Images: <strong style="color: #818cf8;">${flowImages.tot}</strong> <span style="color: var(--on-variant); font-size: 9.5px;">(Today: ${flowImages.tod})</span>
                 </div>
-                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); padding: 4px 8px; border-radius: 6px; color: #ededf0;">
+                <div style="background: var(--surface-low); border: 1px solid var(--outline-variant); padding: 4px 8px; border-radius: 6px; color: var(--on-surface);">
                   📊 Presentations: <strong style="color: #38bdf8;">${presentations.tot}</strong> <span style="color: var(--on-variant); font-size: 9.5px;">(Today: ${presentations.tod})</span>
                 </div>
               </div>
             </td>
             <td style="padding: 12px 14px;">
-              <select class="admin-sub-select" data-uid="${u.uid}" data-email="${email}" style="background: rgba(0,0,0,0.4); border: 1px solid var(--outline-variant); color: #ededf0; font-size: 11px; border-radius: 6px; padding: 4.5px 8px; width: 140px; font-weight: 700; cursor: pointer; outline: none; transition: border-color .2s;">
+              <select class="admin-sub-select" data-uid="${u.uid}" data-email="${email}" style="background: var(--surface); border: 1px solid var(--outline-variant); color: var(--on-surface); font-size: 11px; border-radius: 6px; padding: 4.5px 8px; width: 140px; font-weight: 700; cursor: pointer; outline: none; transition: border-color .2s;">
                 <option value="free" ${sub === 'free' ? 'selected' : ''}>🌱 Free (30cr/day)</option>
                 <option value="monthly" ${sub === 'monthly' ? 'selected' : ''}>⭐ Monthly (৳100)</option>
                 <option value="six_months" ${sub === 'six_months' ? 'selected' : ''}>👑 6-Months (৳500)</option>
@@ -6684,10 +6709,10 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
 
           const methodColor = r.method === 'bkash' ? '#ec4899' : (r.method === 'nagad' ? '#f97316' : '#a855f7');
           const detailsHtml = `
-            <span style="background: rgba(255,255,255,0.04); border: 1px solid var(--outline-variant); padding: 2px 6px; border-radius: 6px; font-size: 10px; font-weight: 700; color: ${methodColor}; text-transform: uppercase;">
+            <span style="background: var(--surface-low); border: 1px solid var(--outline-variant); padding: 2px 6px; border-radius: 6px; font-size: 10px; font-weight: 700; color: ${methodColor}; text-transform: uppercase;">
               ${r.method}
             </span>
-            <span style="font-family: var(--mono); font-size: 11px; margin-left: 6px; color: #ededf0;">${r.phone || 'N/A'}</span>
+            <span style="font-family: var(--mono); font-size: 11px; margin-left: 6px; color: var(--on-surface);">${r.phone || 'N/A'}</span>
           `;
 
           let statusBadge = '';
@@ -6716,7 +6741,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
           return `
             <tr style="border-bottom: 1px solid var(--outline-variant);">
               <td style="padding: 12px 14px;">
-                <div style="font-weight: 700; color: #ededf0;">${r.displayName || 'User'}</div>
+                <div style="font-weight: 700; color: var(--on-surface);">${r.displayName || 'User'}</div>
                 <div style="font-size: 10.5px; color: var(--on-variant); font-family: var(--mono); margin-top: 1px;">${r.email}</div>
               </td>
               <td style="padding: 12px 14px;">${planBadge}</td>
@@ -6859,7 +6884,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
   }
 
   window.showAdminSubView = function(targetSectionId) {
-    const sections = ['adminSectionOverview', 'adminSectionUserLogs', 'adminSectionControls', 'adminSectionFeedback', 'adminSectionNotice'];
+    const sections = ['adminSectionOverview', 'adminSectionUserLogs', 'adminSectionControls', 'adminSectionFeedback', 'adminSectionNotice', 'adminSectionPayments'];
     
     sections.forEach(id => {
       const el = document.getElementById(id);
@@ -6895,6 +6920,12 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       const btn = document.getElementById('adminNavNotice');
       if (btn) btn.classList.add('active');
       window.loadAdminNoticeConfig(); // Load notice config on section view!
+    } else if (targetSectionId === 'adminSectionPayments') {
+      const btn = document.getElementById('adminNavPayments');
+      if (btn) btn.classList.add('active');
+      if (typeof window.refreshAdminPayments === 'function') {
+        window.refreshAdminPayments(); // Refresh payments on tab selection!
+      }
     }
   };
 
@@ -6917,6 +6948,10 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     if (navGroupAdmin) {
       navGroupAdmin.classList.remove('hidden');
       navGroupAdmin.style.display = 'flex';
+    }
+
+    if (appBody) {
+      appBody.classList.add('in-admin-view');
     }
 
     if (pageTitle) pageTitle.textContent = '👑 GravityLab Admin Workspace';
@@ -6946,6 +6981,15 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     const pageTitle = document.getElementById('pageTitle');
     const pageTitleBadge = document.getElementById('pageTitleBadge');
     const adminPanelView = document.getElementById('adminPanelView');
+
+    if (appBody) {
+      appBody.classList.remove('in-admin-view');
+    }
+
+    // Reset inline display styles on all home views so they show up normally under routing
+    document.querySelectorAll('.home-view').forEach(view => {
+      view.style.display = '';
+    });
 
     if (adminPanelView) {
       adminPanelView.classList.add('hidden');
@@ -7196,7 +7240,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
 
         html += `
           <tr style="border-bottom: 1px solid var(--outline-variant);">
-            <td style="padding: 12px 14px; font-weight: 700; color: #ededf0;">${email}</td>
+            <td style="padding: 12px 14px; font-weight: 700; color: var(--on-surface);">${email}</td>
             <td style="padding: 12px 14px; color: #fbbf24; font-size: 14px;">${starsHtml} (${rating})</td>
             <td style="padding: 12px 14px; color: var(--on-surface); white-space: pre-wrap; word-break: break-word;">${text}</td>
             <td style="padding: 12px 14px; color: var(--on-variant);">${dateStr}</td>
@@ -7605,8 +7649,18 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
   }
 
   // Central Routing System
+  window.navigateTo = navigateTo;
+
+  // Central Routing System
   function handleRouting() {
     let path = window.location.pathname;
+    const pricingView = document.getElementById('pricingView');
+    const checkoutView = document.getElementById('checkoutView');
+
+    // Reset fullpage body modifiers
+    document.body.classList.remove('pricing-page-active');
+    document.body.classList.remove('checkout-page-active');
+
     if (!path || path === '/' || path === '/dashboard') {
       if (dashboardView) dashboardView.classList.remove('hidden');
       if (studioView) studioView.classList.add('hidden');
@@ -7614,10 +7668,38 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       if (tool3View) tool3View.classList.add('hidden');
       const t4 = document.getElementById('tool4View');
       if (t4) t4.classList.add('hidden');
+      if (pricingView) pricingView.classList.add('hidden');
+      if (checkoutView) checkoutView.classList.add('hidden');
       if (backToDashBtn) backToDashBtn.style.display = 'none';
       if (pageTitle) pageTitle.textContent = 'Studio Dashboard';
       if (appBody) appBody.classList.remove('in-tool-view');
       setSidebarActive('dashboard');
+    } else if (path === '/pricing') {
+      const views = ['#dashboardView', '#adminPanelView', '#studioView', '#iconSheetSlicerSection', '#checkoutView'];
+      views.forEach(sel => {
+        const el = document.querySelector(sel);
+        if (el) el.classList.add('hidden');
+      });
+      if (pricingView) pricingView.classList.remove('hidden');
+      document.body.classList.add('pricing-page-active');
+      if (pageTitle) pageTitle.textContent = "💳 Pricing Plans";
+      const titleBadge = document.getElementById('pageTitleBadge');
+      if (titleBadge) titleBadge.classList.add('hidden');
+      document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+    } else if (path.startsWith('/checkout')) {
+      const views = ['#dashboardView', '#adminPanelView', '#studioView', '#iconSheetSlicerSection', '#pricingView'];
+      views.forEach(sel => {
+        const el = document.querySelector(sel);
+        if (el) el.classList.add('hidden');
+      });
+      if (checkoutView) checkoutView.classList.remove('hidden');
+      document.body.classList.add('checkout-page-active');
+
+      let checkoutPlan = 'six_months';
+      if (path.includes('monthly')) {
+        checkoutPlan = 'monthly';
+      }
+      window.initializeFullCheckout(checkoutPlan);
     } else if (path === '/promptgen') {
       hasOpenedTool = true;
       launchTool1();
@@ -7657,159 +7739,39 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     revealElements.forEach(el => el.classList.add('revealed'));
   }
 
-  // --- Subscription Purchase Checkout Modal Logic ---
+  // --- Subscription Purchase Checkout Modal Logic (Overridden to full page checkout) ---
   let currentCheckoutPlan = 'monthly';
   let currentPaymentMethod = 'bkash';
 
   window.selectCheckoutPlan = function(plan) {
-    currentCheckoutPlan = plan;
-    document.querySelectorAll('.checkout-plan-card').forEach(card => {
-       card.style.border = '1px solid var(--outline-variant)';
-       card.style.background = 'rgba(255,255,255,0.02)';
-       card.classList.remove('active');
-    });
-    const activeCard = document.getElementById(plan === 'monthly' ? 'planOptionMonthly' : 'planOptionSixMonths');
-    if (activeCard) {
-      activeCard.style.border = plan === 'monthly' ? '2px solid var(--primary)' : '2px solid var(--tertiary)';
-      activeCard.style.background = plan === 'monthly' ? 'rgba(205,252,82,0.05)' : 'rgba(0, 229, 255, 0.05)';
-      activeCard.classList.add('active');
-    }
-    updateCheckoutInstructions();
+    // modal fallback
   };
 
   window.selectPaymentMethod = function(method) {
-    currentPaymentMethod = method;
-    document.querySelectorAll('.payment-method-btn').forEach(btn => btn.classList.remove('active'));
-    const activeBtn = document.getElementById('btnPay' + method.charAt(0).toUpperCase() + method.slice(1));
-    if (activeBtn) activeBtn.classList.add('active');
-    updateCheckoutInstructions();
+    // modal fallback
   };
 
-  function updateCheckoutInstructions() {
-    const textEl = document.getElementById('paymentInstructionsText');
-    const waWrapper = document.getElementById('whatsappBtnWrapper');
-    const phoneSection = document.getElementById('checkoutPhoneSection');
-    
-    if (!textEl) return;
-    
-    const priceText = currentCheckoutPlan === 'monthly' ? '৳৫০' : '৳২৫০';
-    
-    if (currentPaymentMethod === 'bkash') {
-      if (waWrapper) waWrapper.classList.add('hidden');
-      if (phoneSection) phoneSection.style.display = 'flex';
-      textEl.innerHTML = `
-        ১. আপনার বিকাশ অ্যাপ ওপেন করুন অথবা *২৪৭# ডায়াল করুন।<br>
-        ২. আমাদের বিকাশ মার্চেন্ট নাম্বারে <b>Make Payment</b> করুন: <b style="color:var(--primary); font-size:13.5px; font-family:var(--mono);">01700-000000</b><br>
-        ৩. পেমেন্টের টাকার পরিমাণ দিন: <b>${priceText}</b><br>
-        ৪. পেমেন্ট সম্পন্ন করার পর নিচের বক্সে আপনার বিকাশ একাউন্টের নাম্বারটি লিখে <b>Submit Payment Status</b> বাটনে ক্লিক করুন।
-      `;
-    } else if (currentPaymentMethod === 'nagad') {
-      if (waWrapper) waWrapper.classList.add('hidden');
-      if (phoneSection) phoneSection.style.display = 'flex';
-      textEl.innerHTML = `
-        ১. আপনার নগদ অ্যাপ ওপেন করুন অথবা *১৬৭# ডায়াল করুন।<br>
-        ২. আমাদের নগদ পার্সোনাল নাম্বারে <b>Send Money</b> করুন: <b style="color:var(--tertiary); font-size:13.5px; font-family:var(--mono);">01800-000000</b><br>
-        ৩. সেন্ড মানি টাকার পরিমাণ দিন: <b>${priceText}</b><br>
-        ৪. টাকা পাঠানো সম্পন্ন করার পর নিচের বক্সে আপনার নগদ একাউন্টের নাম্বারটি লিখে <b>Submit Payment Status</b> বাটনে ক্লিক করুন।
-      `;
-    } else if (currentPaymentMethod === 'rocket') {
-      if (waWrapper) waWrapper.classList.add('hidden');
-      if (phoneSection) phoneSection.style.display = 'flex';
-      textEl.innerHTML = `
-        ১. আপনার রকেট অ্যাপ ওপেন করুন অথবা *৩২২# ডায়াল করুন।<br>
-        ২. আমাদের রকেট পার্সোনাল নাম্বারে <b>Send Money</b> করুন: <b style="color:#a855f7; font-size:13.5px; font-family:var(--mono);">01900-000000-0</b><br>
-        ৩. সেন্ড মানি টাকার পরিমাণ দিন: <b>${priceText}</b><br>
-        ৪. রকেট ট্রানজেকশন শেষ করার পর নিচের বক্সে আপনার রকেট একাউন্টের নাম্বারটি লিখে <b>Submit Payment Status</b> বাটনে ক্লিক করুন।
-      `;
-    } else if (currentPaymentMethod === 'whatsapp') {
-      if (waWrapper) waWrapper.classList.remove('hidden');
-      if (phoneSection) phoneSection.style.display = 'none';
-      textEl.innerHTML = `
-        অন্যান্য মেথডে (PayPal, Skrill, Binance Pay, বা কার্ড) পেমেন্ট করতে অথবা যেকোনো প্রয়োজনে নিচের লিঙ্কে ক্লিক করে সরাসরি হোয়াটসঅ্যাপে অ্যাডমিনের সাথে যোগাযোগ করুন। পেমেন্ট কনফার্মেশনের পর আপনার অ্যাকাউন্ট সরাসরি রিচার্জ বা একটিভেটেড করে দেওয়া হবে।
-      `;
-    }
-  }
-
-  window.openCheckoutModal = function() {
-    const modal = document.getElementById('checkoutModal');
-    if (modal) {
-      if (!firebaseAuth || !firebaseAuth.currentUser) {
-        showCustomAlert('Please sign in to upgrade', '⚠️ Auth Error');
-        return;
-      }
-      modal.classList.remove('hidden');
-      window.selectCheckoutPlan('monthly');
-      window.selectPaymentMethod('bkash');
-      const phoneInput = document.getElementById('checkoutPhoneInput');
-      if (phoneInput) phoneInput.value = '';
-    }
+  window.openCheckoutModal = function(plan) {
+    const selectedPlan = plan || 'monthly';
+    window.navigateTo('/checkout/' + selectedPlan);
   };
 
   window.closeCheckoutModal = function() {
-    const modal = document.getElementById('checkoutModal');
-    if (modal) modal.classList.add('hidden');
+    window.navigateTo('/dashboard');
   };
 
   const btnCloseCheckoutModal = document.getElementById('btnCloseCheckoutModal');
   const btnCancelCheckout = document.getElementById('btnCancelCheckout');
-  const btnSubmitCheckout = document.getElementById('btnSubmitCheckout');
   const userSubBadge = document.getElementById('userSubscriptionBadge');
 
   if (userSubBadge) {
     userSubBadge.style.cursor = 'pointer';
     userSubBadge.title = 'Upgrade Plan';
-    userSubBadge.addEventListener('click', window.openCheckoutModal);
+    userSubBadge.addEventListener('click', () => window.openCheckoutModal('monthly'));
   }
 
   if (btnCloseCheckoutModal) btnCloseCheckoutModal.addEventListener('click', window.closeCheckoutModal);
   if (btnCancelCheckout) btnCancelCheckout.addEventListener('click', window.closeCheckoutModal);
-
-  if (btnSubmitCheckout) {
-    btnSubmitCheckout.addEventListener('click', () => {
-      const phoneInput = document.getElementById('checkoutPhoneInput');
-      const senderPhone = phoneInput ? phoneInput.value.trim() : '';
-
-      if (currentPaymentMethod !== 'whatsapp' && !senderPhone) {
-        showCustomAlert('Please enter your sender mobile number.', '⚠️ Validation Error');
-        return;
-      }
-
-      const user = firebaseAuth.currentUser;
-      const payload = {
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName || user.email.split('@')[0],
-        plan: currentCheckoutPlan,
-        method: currentPaymentMethod,
-        phone: senderPhone
-      };
-
-      btnSubmitCheckout.disabled = true;
-      btnSubmitCheckout.textContent = 'Submitting...';
-
-      fetch('/api/subscriptions/request', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      })
-      .then(res => res.json())
-      .then(data => {
-        btnSubmitCheckout.disabled = false;
-        btnSubmitCheckout.textContent = '✓ Submit Payment Status';
-        if (data && data.ok) {
-          window.closeCheckoutModal();
-          showCustomAlert('Your payment verification request has been successfully submitted! Admin will verify and activate your plan shortly. (A Telegram alert was sent to the owner).', '🎉 Request Submitted');
-        } else {
-          showCustomAlert(data.error || 'Failed to submit payment request', '❌ Submission Failed');
-        }
-      })
-      .catch(err => {
-        btnSubmitCheckout.disabled = false;
-        btnSubmitCheckout.textContent = '✓ Submit Payment Status';
-        showCustomAlert(err.message || 'Network error occurred', '❌ Submission Failed');
-      });
-    });
-  }
 
   // Intercept Landing Page Pricing Upgrade button triggers to pop checkout modal
   const upgradeBtn = document.querySelector('.pricing-plan-card.popular .btn-plan-select');
@@ -7818,7 +7780,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       if (firebaseAuth && firebaseAuth.currentUser) {
         e.preventDefault();
         e.stopPropagation();
-        window.openCheckoutModal();
+        window.openCheckoutModal('monthly');
       }
     });
   }
@@ -7831,15 +7793,206 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
         if (idx === 0) {
           showCustomAlert('You are already on the Starter (Free) plan.', '🌱 Free Plan');
         } else if (idx === 1) { // Pro Plan
-          window.selectCheckoutPlan('monthly');
-          window.openCheckoutModal();
+          window.openCheckoutModal('monthly');
         } else if (idx === 2) { // Team -> 6 Months Pro
-          window.selectCheckoutPlan('six_months');
-          window.openCheckoutModal();
+          window.openCheckoutModal('six_months');
         }
       }
     });
   });
+
+  // --- Full-Page Checkout Logic ---
+  let currentFullCheckoutPlan = 'six_months';
+  let currentFullCheckoutMethod = 'bkash';
+
+  window.initializeFullCheckout = function(plan) {
+    currentFullCheckoutPlan = plan;
+    const titleEl = document.getElementById('checkoutLeftPlanTitle');
+    const durationEl = document.getElementById('checkoutLeftPlanDuration');
+    const priceEl = document.getElementById('checkoutLeftPlanPrice');
+
+    if (plan === 'six_months') {
+      if (titleEl) titleEl.textContent = '6 MONTHS PRO';
+      if (durationEl) durationEl.textContent = '6 Months';
+      if (priceEl) priceEl.textContent = '৳500';
+    } else {
+      if (titleEl) titleEl.textContent = 'MONTHLY PRO';
+      if (durationEl) durationEl.textContent = '1 Month';
+      if (priceEl) priceEl.textContent = '৳100';
+    }
+
+    // Default select bKash
+    window.selectFullCheckoutMethod('bkash');
+  };
+
+  window.selectFullCheckoutMethod = function(method) {
+    currentFullCheckoutMethod = method;
+    
+    // Update active tab buttons styling
+    document.querySelectorAll('.checkout-method-btn').forEach(btn => {
+      btn.classList.remove('active');
+      if (btn.getAttribute('data-method') === method) {
+        btn.classList.add('active');
+      }
+    });
+
+    const badgeEl = document.getElementById('paymentActiveBadge');
+    const numberEl = document.getElementById('paymentActiveNumber');
+    const qrContainer = document.getElementById('paymentActiveQR');
+    const whatsappBtn = document.getElementById('paymentWhatsAppBtn');
+    const instructionsEl = document.getElementById('fullPaymentInstructionsText');
+
+    const phoneGroupEl = document.getElementById('checkoutSenderPhoneGroup');
+    const submitBtnEl = document.getElementById('btnFullSubmitCheckout');
+    const warningNoteEl = document.getElementById('checkoutWarningNote');
+
+    // Default to show verification blocks
+    if (phoneGroupEl) phoneGroupEl.style.display = 'flex';
+    if (submitBtnEl) submitBtnEl.style.display = 'flex';
+    if (warningNoteEl) warningNoteEl.style.display = 'block';
+
+    const priceText = currentFullCheckoutPlan === 'monthly' ? '৳১০০' : '৳৫০০';
+
+    if (whatsappBtn) {
+      if (method === 'others') {
+        whatsappBtn.style.display = 'inline-flex';
+        whatsappBtn.href = `https://wa.me/8801855116827?text=Hello,%20I%20want%20to%20pay%20via%20others%20for%20GravityLab.%20Plan:%20${currentFullCheckoutPlan}`;
+      } else {
+        whatsappBtn.style.display = 'none';
+      }
+    }
+
+    if (method === 'bkash') {
+      if (badgeEl) {
+        badgeEl.textContent = 'bKash Merchant';
+        badgeEl.className = 'payment-badge bkash';
+      }
+      if (numberEl) numberEl.textContent = '01330342337';
+      if (qrContainer) qrContainer.style.display = 'flex';
+      
+      if (instructionsEl) {
+        instructionsEl.innerHTML = `
+          ১. প্রথমে বিকাশ অ্যাপ থেকে <b>'পেমেন্ট' (Payment)</b> অপশনে যান।<br>
+          ২. মার্চেন্ট নাম্বার বক্সে আমাদের বিকাশ নাম্বারটি <b style="color:var(--primary); font-size:13.5px; font-family:var(--mono);">01330342337</b> লিখুন অথবা বিকাশ অ্যাপ থেকে কিউআর কোডটি স্ক্যান করুন।<br>
+          ৩. তারপর আপনার টাকার পরিমাণ <b>${priceText}</b> লিখুন।<br>
+          ৪. এরপর এগিয়ে যান বাটনে প্রেস করুন।<br>
+          ৫. আপনার পিন <b>(PIN)</b> নাম্বারটি দিয়ে পরবর্তীতে প্রেস করুন।<br>
+          ৬. সবশেষে <b>'পেমেন্ট করতে ট্যাপ করে ধরে রাখুন'</b> বাটনে প্রেস করে পেমেন্ট সম্পন্ন করুন।
+        `;
+      }
+    } else if (method === 'nagad') {
+      if (badgeEl) {
+        badgeEl.textContent = 'Nagad Personal';
+        badgeEl.className = 'payment-badge nagad';
+      }
+      if (numberEl) numberEl.textContent = '01855116827';
+      if (qrContainer) qrContainer.style.display = 'none';
+
+      if (instructionsEl) {
+        instructionsEl.innerHTML = `
+          ১. প্রথমে নগদ অ্যাপটি ওপেন করুন।<br>
+          ২. সেখান থেকে <b>'সেন্ড মানি' (Send Money)</b> অপশনে প্রেস করুন।<br>
+          ৩. আপনার ১১ ডিজিটের নগদ নাম্বারটি <b style="color:var(--tertiary); font-size:13.5px; font-family:var(--mono);">01855116827</b> লিখুন।<br>
+          ৪. আপনার পেমেন্ট এর পরিমাণ <b>${priceText}</b> লিখুন।<br>
+          ৫. আপনার পিন <b>(PIN)</b> নাম্বারটি দিয়ে পেমেন্টটি কনফার্ম করুন।
+        `;
+      }
+    } else if (method === 'others') {
+      if (badgeEl) {
+        badgeEl.textContent = 'Others / Contact Us';
+        badgeEl.className = 'payment-badge others';
+      }
+      if (numberEl) numberEl.textContent = '01855116827';
+      if (qrContainer) qrContainer.style.display = 'none';
+
+      // Hide verification elements since others flow is WhatsApp-only
+      if (phoneGroupEl) phoneGroupEl.style.display = 'none';
+      if (submitBtnEl) submitBtnEl.style.display = 'none';
+      if (warningNoteEl) warningNoteEl.style.display = 'none';
+
+      if (instructionsEl) {
+        instructionsEl.innerHTML = `
+          ১. স্ক্রিল (Skrill), রকেট (Rocket), উপায় (Upay) বা অন্য কোনো মাধ্যমে পেমেন্ট করতে চাইলে আমাদের সাথে হোয়াটসঅ্যাপে যোগাযোগ করুন।<br>
+          ২. সরাসরি চ্যাট করতে পাশে দেওয়া <b>💬 WhatsApp</b> বাটনে ক্লিক করুন।<br>
+          ৩. পেমেন্টের টাকার পরিমাণ দিন: <b>${priceText}</b>
+        `;
+      }
+    }
+  };
+
+  window.copyPaymentNumber = function() {
+    const numberEl = document.getElementById('paymentActiveNumber');
+    if (numberEl) {
+      const text = numberEl.textContent.trim();
+      navigator.clipboard.writeText(text)
+        .then(() => {
+          showCustomAlert('Payment number copied: ' + text, '📋 Copied');
+        })
+        .catch(err => {
+          showCustomAlert('Failed to copy: ' + err.message, '❌ Error');
+        });
+    }
+  };
+
+  const btnCheckoutBack = document.getElementById('btnCheckoutBack');
+  if (btnCheckoutBack) {
+    btnCheckoutBack.addEventListener('click', () => {
+      window.navigateTo('/pricing');
+    });
+  }
+
+  const btnFullSubmitCheckout = document.getElementById('btnFullSubmitCheckout');
+  if (btnFullSubmitCheckout) {
+    btnFullSubmitCheckout.addEventListener('click', () => {
+      const phoneInput = document.getElementById('fullCheckoutPhoneInput');
+      const senderPhone = phoneInput ? phoneInput.value.trim() : '';
+
+      if (!senderPhone) {
+        showCustomAlert('Please enter your sender mobile number.', '⚠️ Validation Error');
+        return;
+      }
+
+      if (!firebaseAuth || !firebaseAuth.currentUser) {
+        showCustomAlert('User credentials not loaded. Please sign in.', '⚠️ Auth Error');
+        return;
+      }
+
+      const user = firebaseAuth.currentUser;
+      const payload = {
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName || user.email.split('@')[0],
+        plan: currentFullCheckoutPlan,
+        method: currentFullCheckoutMethod,
+        phone: senderPhone
+      };
+
+      btnFullSubmitCheckout.disabled = true;
+      btnFullSubmitCheckout.textContent = 'Submitting...';
+
+      fetch('/api/subscriptions/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      .then(res => res.json())
+      .then(data => {
+        btnFullSubmitCheckout.disabled = false;
+        btnFullSubmitCheckout.textContent = '✓ Submit Payment';
+        if (data && data.ok) {
+          showCustomAlert('Your payment verification request has been successfully submitted! Admin will verify and activate your plan shortly.', '🎉 Request Submitted');
+          window.navigateTo('/dashboard');
+        } else {
+          showCustomAlert(data.error || 'Failed to submit payment request', '❌ Submission Failed');
+        }
+      })
+      .catch(err => {
+        btnFullSubmitCheckout.disabled = false;
+        btnFullSubmitCheckout.textContent = '✓ Submit Payment';
+        showCustomAlert(err.message || 'Network error occurred', '❌ Submission Failed');
+      });
+    });
+  }
 
   window.addEventListener('popstate', handleRouting);
   // Run on initial load

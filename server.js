@@ -1,6 +1,32 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+
+// Load environment variables from .env file if it exists
+try {
+  const envPath = path.join(__dirname, '.env');
+  if (fs.existsSync(envPath)) {
+    const envContent = fs.readFileSync(envPath, 'utf8');
+    envContent.split(/\r?\n/).forEach(line => {
+      const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
+      if (match) {
+        const key = match[1];
+        let val = match[2] || '';
+        if (val.length > 0 && val.charAt(0) === '"' && val.charAt(val.length - 1) === '"') {
+          val = val.substring(1, val.length - 1);
+        } else if (val.length > 0 && val.charAt(0) === "'" && val.charAt(val.length - 1) === "'") {
+          val = val.substring(1, val.length - 1);
+        }
+        if (!process.env[key]) {
+          process.env[key] = val;
+        }
+      }
+    });
+  }
+} catch (e) {
+  console.log('Error parsing .env file:', e.message);
+}
+
 const os = require('os');
 const net = require('net');
 const { spawn } = require('child_process');
@@ -203,7 +229,8 @@ const MIME_TYPES = {
   '.jpg': 'image/jpeg',
   '.gif': 'image/gif',
   '.ico': 'image/x-icon',
-  '.webp': 'image/webp'
+  '.webp': 'image/webp',
+  '.svg': 'image/svg+xml'
 };
 
 // --- MongoDB Storage Engine ---
@@ -341,7 +368,7 @@ const server = http.createServer((req, res) => {
           } else {
             userObj.subscription = 'free';
             userObj.subscriptionExpiry = null;
-            userObj.creditsDaily = { remaining: 30, lastResetDate: now.split('T')[0] };
+            userObj.creditsDaily = { remaining: 15, lastResetDate: now.split('T')[0] };
             await col.insertOne(userObj);
           }
           count = await col.countDocuments();
@@ -366,7 +393,7 @@ const server = http.createServer((req, res) => {
           } else {
             userObj.subscription = 'free';
             userObj.subscriptionExpiry = null;
-            userObj.creditsDaily = { remaining: 30, lastResetDate: now.split('T')[0] };
+            userObj.creditsDaily = { remaining: 15, lastResetDate: now.split('T')[0] };
             users.unshift(userObj);
           }
           saveMongoUsersLocal(users);
@@ -536,14 +563,16 @@ const server = http.createServer((req, res) => {
         return;
       }
       const https = require('https');
-      const message = `🔔 *New Subscription Request* 🔔\n\n` +
-        `👤 *User:* ${payload.displayName}\n` +
-        `📧 *Email:* ${payload.email}\n` +
-        `🆔 *UID:* \`${payload.uid}\`\n\n` +
-        `💎 *Plan Requested:* \`${payload.plan}\`\n` +
+      const amount = payload.plan === 'monthly' ? '৳১০০' : (payload.plan === 'six_months' ? '৳৫০০' : payload.plan);
+      const dhakaTime = new Date().toLocaleString('en-US', { timeZone: 'Asia/Dhaka', hour12: true });
+
+      const message = `🔔 *New Purchase Alert* 🔔\n\n` +
+        `📧 *User:* ${payload.email}\n` +
         `💳 *Method:* ${payload.method.toUpperCase()}\n` +
-        `📞 *Sender Phone:* \`${payload.phone || 'WhatsApp contact'}\`\n\n` +
-        `⏳ *Status:* Pending Verification.`;
+        `💰 *Amount:* ${amount}\n` +
+        `📞 *Sender:* \`${payload.phone || 'N/A'}\`\n` +
+        `🆔 *UID:* \`${payload.uid}\`\n` +
+        `📅 *Date & Time:* ${dhakaTime}`;
 
       const postData = JSON.stringify({
         chat_id: chatId,
@@ -751,7 +780,7 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  const FRONTEND_ROUTES = ['/promptgen', '/flowgen', '/slicer', '/vectorizer', '/Vectorizer', '/bannergen', '/dashboard'];
+  const FRONTEND_ROUTES = ['/promptgen', '/flowgen', '/slicer', '/vectorizer', '/Vectorizer', '/bannergen', '/dashboard', '/checkout', '/checkout/monthly', '/checkout/six_months', '/checkout/annual', '/pricing'];
 
   if (urlPath === '/') urlPath = '/index.html';
   

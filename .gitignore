@@ -1,0 +1,11 @@
+.env
+node_modules/
+Downloads/
+*.log
+find_errors.log
+server.log
+flow-profiles.json
+output/
+extracted_pixeva/
+mongodb_users.json
+test_*.js

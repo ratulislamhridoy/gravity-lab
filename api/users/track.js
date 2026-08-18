@@ -71,7 +71,7 @@ module.exports = async (req, res) => {
       } else {
         userObj.subscription = 'free';
         userObj.subscriptionExpiry = null;
-        userObj.creditsDaily = { remaining: 30, lastResetDate: now.split('T')[0] };
+        userObj.creditsDaily = { remaining: 15, lastResetDate: now.split('T')[0] };
         await col.insertOne(userObj);
       }
       count = await col.countDocuments();
@@ -96,7 +96,7 @@ module.exports = async (req, res) => {
       } else {
         userObj.subscription = 'free';
         userObj.subscriptionExpiry = null;
-        userObj.creditsDaily = { remaining: 30, lastResetDate: now.split('T')[0] };
+        userObj.creditsDaily = { remaining: 15, lastResetDate: now.split('T')[0] };
         users.unshift(userObj);
       }
       saveMongoUsersLocal(users);

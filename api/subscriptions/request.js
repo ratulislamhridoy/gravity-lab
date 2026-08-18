@@ -11,14 +11,16 @@ function sendTelegramAlert(payload) {
       return;
     }
 
-    const message = `🔔 *New Subscription Request* 🔔\n\n` +
-      `👤 *User:* ${payload.displayName}\n` +
-      `📧 *Email:* ${payload.email}\n` +
-      `🆔 *UID:* \`${payload.uid}\`\n\n` +
-      `💎 *Plan Requested:* \`${payload.plan}\`\n` +
+    const amount = payload.plan === 'monthly' ? '৳১০০' : (payload.plan === 'six_months' ? '৳৫০০' : payload.plan);
+    const dhakaTime = new Date().toLocaleString('en-US', { timeZone: 'Asia/Dhaka', hour12: true });
+
+    const message = `🔔 *New Purchase Alert* 🔔\n\n` +
+      `📧 *User:* ${payload.email}\n` +
       `💳 *Method:* ${payload.method.toUpperCase()}\n` +
-      `📞 *Sender Phone:* \`${payload.phone || 'WhatsApp contact'}\`\n\n` +
-      `⏳ *Status:* Pending Verification.`;
+      `💰 *Amount:* ${amount}\n` +
+      `📞 *Sender:* \`${payload.phone || 'N/A'}\`\n` +
+      `🆔 *UID:* \`${payload.uid}\`\n` +
+      `📅 *Date & Time:* ${dhakaTime}`;
 
     const postData = JSON.stringify({
       chat_id: chatId,

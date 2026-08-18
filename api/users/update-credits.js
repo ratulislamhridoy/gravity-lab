@@ -31,7 +31,7 @@ module.exports = async (req, res) => {
       await col.updateOne(query, {
         $set: {
           creditsDaily: {
-            remaining: remaining ?? 30,
+            remaining: remaining ?? 15,
             lastResetDate: lastResetDate || new Date().toISOString().split('T')[0]
           }
         }
@@ -42,7 +42,7 @@ module.exports = async (req, res) => {
       let index = users.findIndex(u => u.uid === uid);
       if (index >= 0) {
         users[index].creditsDaily = {
-          remaining: remaining ?? 30,
+          remaining: remaining ?? 15,
           lastResetDate: lastResetDate || new Date().toISOString().split('T')[0]
         };
         saveMongoUsersLocal(users);
