@@ -5580,9 +5580,15 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     if (notAuth) {
       document.body.classList.add('not-authenticated');
       document.documentElement.classList.add('not-authenticated');
+      if (authModal) {
+        authModal.classList.remove('hidden');
+      }
     } else {
       document.body.classList.remove('not-authenticated');
       document.documentElement.classList.remove('not-authenticated');
+      if (authModal) {
+        authModal.classList.add('hidden');
+      }
     }
   }
 
