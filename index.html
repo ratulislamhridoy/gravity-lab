@@ -99,9 +99,9 @@
       <header class="home-topbar">
         <div class="title-wrap" style="display: flex; align-items: center; gap: 10px;">
           <div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span class="title" id="pageTitle" style="font-size: 16px; font-weight: 800; color: var(--on-surface);">🎨 Icon Sheet Studio</span>
-              <span class="home-badge" id="pageTitleBadge" style="font-size: 9px; padding: 3px 8px; background: rgba(205, 252, 82, 0.12); color: var(--primary); border-color: rgba(205, 252, 82, 0.3);">v5.2 Bulk</span>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span class="title" id="pageTitle" style="font-size: 21px; font-weight: 800; color: var(--on-surface);">🎨 Icon Sheet Studio</span>
+              <span class="home-badge" id="pageTitleBadge" style="font-size: 11.5px; padding: 4px 10px; background: rgba(205, 252, 82, 0.12); color: var(--primary); border-color: rgba(205, 252, 82, 0.3);">v5.2 Bulk</span>
             </div>
           </div>
         </div>
@@ -129,19 +129,19 @@
           
           <div id="authNavWrapper" style="position: relative; display: flex; align-items: center; gap: 8px;">
             <!-- Subscription Badge -->
-            <div id="userSubscriptionBadge" class="hidden" style="font-size: 10px; font-weight: 800; color: #cdfc52; background: rgba(205,252,82,0.15); border: 1px solid rgba(205,252,82,0.3); padding: 3px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;">
+            <div id="userSubscriptionBadge" class="hidden" style="font-size: 13px; font-weight: 800; color: #cdfc52; background: rgba(205,252,82,0.15); border: 1px solid rgba(205,252,82,0.3); padding: 5px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;">
               🌱 <span>Free</span> • <span>30/30 Credits</span>
             </div>
 
-            <button class="btn btn-primary small" id="btnOpenAuthModal" style="height: 32px; padding: 0 12px; font-size: 11px; font-weight: 800; border-radius: 20px; gap: 6px; display: flex; align-items: center;">
+            <button class="btn btn-primary small" id="btnOpenAuthModal" style="height: 40px; padding: 0 16px; font-size: 14px; font-weight: 800; border-radius: 20px; gap: 6px; display: flex; align-items: center;">
               <span>👤</span> Sign In
             </button>
 
             <!-- User Profile Menu (shown when logged in) -->
-            <div id="userProfileMenu" class="hidden" onclick="window.handleSignOut()" title="Click to Sign Out" style="display: flex; align-items: center; gap: 8px; cursor: pointer; background: var(--surface-low); border: 1px solid var(--outline-variant); padding: 3px 10px 3px 4px; border-radius: 20px;">
-              <img id="userAvatar" src="https://lh3.googleusercontent.com/a/default-user" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; border: 1px solid var(--tertiary);" />
-              <span id="userName" style="font-size: 11px; font-weight: 700; color: var(--on-surface); max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">User</span>
-              <button type="button" id="btnSignOut" title="Sign Out" onclick="window.handleSignOut()" style="background: none; border: none; color: var(--on-variant); cursor: pointer; font-size: 12px; padding: 2px 4px; display: flex; align-items: center;">🚪</button>
+            <div id="userProfileMenu" class="hidden" onclick="window.handleSignOut()" title="Click to Sign Out" style="display: flex; align-items: center; gap: 10px; cursor: pointer; background: var(--surface-low); border: 1px solid var(--outline-variant); padding: 5px 14px 5px 6px; border-radius: 24px;">
+              <img id="userAvatar" src="https://lh3.googleusercontent.com/a/default-user" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1.5px solid var(--tertiary);" />
+              <span id="userName" style="font-size: 14px; font-weight: 700; color: var(--on-surface); max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">User</span>
+              <button type="button" id="btnSignOut" title="Sign Out" onclick="window.handleSignOut()" style="background: none; border: none; color: var(--on-variant); cursor: pointer; font-size: 15px; padding: 2px 4px; display: flex; align-items: center;">🚪</button>
             </div>
           </div>
 
