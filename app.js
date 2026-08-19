@@ -1082,11 +1082,32 @@ document.addEventListener('DOMContentLoaded', () => {
       const files = e.target.files;
       if (!files || files.length === 0) return;
 
+      const duplicates = [];
+      const validFiles = [];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const isDuplicate = uploadedPromptImages.some(img => img.name === file.name);
+        if (isDuplicate) {
+          duplicates.push(file.name);
+        } else {
+          validFiles.push(file);
+        }
+      }
+
+      if (duplicates.length > 0) {
+        showGravityToast(`Duplicate skipped: ${duplicates.length === 1 ? `"${duplicates[0]}"` : `${duplicates.length} images`} already uploaded.`, 'warning');
+      }
+
+      if (validFiles.length === 0) {
+        promptImgInput.value = '';
+        return;
+      }
+
       let filesLoaded = 0;
-      const targetCount = files.length;
+      const targetCount = validFiles.length;
 
       for (let i = 0; i < targetCount; i++) {
-        const file = files[i];
+        const file = validFiles[i];
         const reader = new FileReader();
         reader.onload = (event) => {
           const img = new Image();
@@ -1191,6 +1212,14 @@ Do not include any markdown formatting outside the json codeblock. Output valid 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 90000); // 90s timeout limit
 
+    if (options.signal) {
+      if (options.signal.aborted) {
+        controller.abort();
+      } else {
+        options.signal.addEventListener('abort', () => controller.abort());
+      }
+    }
+
     let response;
     try {
       response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
@@ -1245,8 +1274,121 @@ Do not include any markdown formatting outside the json codeblock. Output valid 
     }));
   }
 
+  function createSkeletonPromptItem(hasTitle = false) {
+    const el = document.createElement('div');
+    el.className = 'skeleton-card';
+    if (hasTitle) {
+      el.innerHTML = `
+        <div class="bulk-prompt-header" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px;">
+          <div class="skeleton-pulse skeleton-title" style="margin-top: 4px;"></div>
+          <div class="skeleton-btn-group" style="display: flex; gap: 6px; flex-shrink: 0;">
+            <div class="skeleton-pulse skeleton-btn"></div>
+            <div class="skeleton-pulse skeleton-btn"></div>
+            <div class="skeleton-pulse skeleton-btn"></div>
+          </div>
+        </div>
+        <div class="skeleton-text-block">
+          <div class="skeleton-pulse skeleton-line"></div>
+          <div class="skeleton-pulse skeleton-line"></div>
+          <div class="skeleton-pulse skeleton-line short"></div>
+        </div>
+      `;
+    } else {
+      el.innerHTML = `
+        <div class="bulk-prompt-header" style="display: flex; justify-content: flex-end; margin-bottom: 6px;">
+          <div class="skeleton-btn-group" style="display: flex; gap: 6px; flex-shrink: 0;">
+            <div class="skeleton-pulse skeleton-btn"></div>
+            <div class="skeleton-pulse skeleton-btn"></div>
+            <div class="skeleton-pulse skeleton-btn"></div>
+          </div>
+        </div>
+        <div class="skeleton-text-block">
+          <div class="skeleton-pulse skeleton-line"></div>
+          <div class="skeleton-pulse skeleton-line"></div>
+          <div class="skeleton-pulse skeleton-line short"></div>
+        </div>
+      `;
+    }
+    return el;
+  }
+
+  let cancelPromptGeneration = false;
+  let currentAbortController = null;
+
+  function updateProgressWidgetState(done, pending, errors, total) {
+    const elDone = document.getElementById('progressValDone');
+    const elPending = document.getElementById('progressValPending');
+    const elError = document.getElementById('progressValError');
+    const elTotal = document.getElementById('progressValTotal');
+    const elPercent = document.getElementById('progressBarPercent');
+    const elBar = document.getElementById('progressBarFill');
+
+    if (elDone) elDone.textContent = done;
+    if (elPending) elPending.textContent = pending;
+    if (elError) elError.textContent = errors;
+    if (elTotal) elTotal.textContent = total;
+
+    const totalProcessed = done + errors;
+    const percent = total > 0 ? Math.round((totalProcessed / total) * 100) : 0;
+    if (elPercent) elPercent.textContent = `${percent}%`;
+    if (elBar) elBar.style.width = `${percent}%`;
+  }
+
+  function resetGenerateBtn() {
+    generatePromptBtn.classList.remove('generating', 'stopping');
+    generatePromptBtn.disabled = false;
+    generatePromptBtn.innerHTML = '⚡ Generate';
+  }
+
+  function showGravityToast(message, type = 'warning') {
+    let container = document.querySelector('.gravity-toast-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.className = 'gravity-toast-container';
+      document.body.appendChild(container);
+    }
+
+    const toast = document.createElement('div');
+    toast.className = `gravity-toast ${type}`;
+
+    let icon = '⚠️';
+    if (type === 'error') icon = '❌';
+    else if (type === 'success') icon = '✅';
+
+    toast.innerHTML = `
+      <span class="gravity-toast-icon">${icon}</span>
+      <span class="gravity-toast-text">${message}</span>
+    `;
+
+    container.appendChild(toast);
+
+    // Trigger transition-in after mount
+    setTimeout(() => toast.classList.add('show'), 10);
+
+    // Remove toast after 4s
+    setTimeout(() => {
+      toast.classList.remove('show');
+      toast.addEventListener('transitionend', () => toast.remove());
+    }, 4000);
+  }
+
   // Generate Prompt using Gemini API
   generatePromptBtn.addEventListener('click', async () => {
+    // If the button has class 'generating', clicking it means STOP
+    if (generatePromptBtn.classList.contains('generating')) {
+      cancelPromptGeneration = true;
+      if (currentAbortController) {
+        currentAbortController.abort();
+      }
+      generatePromptBtn.classList.remove('generating');
+      generatePromptBtn.classList.add('stopping');
+      generatePromptBtn.disabled = true;
+      generatePromptBtn.textContent = 'Stopping...';
+      const progressLabel = document.getElementById('progressBarLabel');
+      if (progressLabel) progressLabel.textContent = 'Stopping generation...';
+      return;
+    }
+
     const apiKeys = getApiKeys();
     if (apiKeys.length === 0) {
       updateApiKeyStatus();
@@ -1271,6 +1413,13 @@ Do not include any markdown formatting outside the json codeblock. Output valid 
     const allowed = await window.checkAndConsumeCredit('prompts', 1, false);
     if (!allowed) return;
 
+    // Change button to generating (Stop) state
+    generatePromptBtn.textContent = '🛑 Stop Generation';
+    generatePromptBtn.classList.add('generating');
+    generatePromptBtn.disabled = false;
+
+    currentAbortController = new AbortController();
+
     const promptsPerNicheCount = parseInt(document.getElementById('promptsPerNiche').value) || 1;
     const rows = parseInt(rowsInput.value) || 3;
     const cols = parseInt(colsInput.value) || 6;
@@ -1279,51 +1428,151 @@ Do not include any markdown formatting outside the json codeblock. Output valid 
     const spacingLabel = spacingVal.textContent;
     const model = modelSelect.value;
 
-    promptResultBox.innerHTML = '';
-    if (bulkActions) bulkActions.style.display = 'none';
-    generatePromptBtn.disabled = true;
+    // Check if we are resuming from a stopped state
+    let existingPrompts = [];
+    try {
+      existingPrompts = JSON.parse(promptResultBox.dataset.generatedPrompts || '[]');
+    } catch (_) {}
 
-    // Render loading indicator inside result box
-    promptResultBox.innerHTML = `
-      <em style="color: var(--on-variant); font-size: 13.5px;">⚡ Bulk generating prompts for ${niches.length} niches (${promptsPerNicheCount} variation(s) each) using ${apiKeys.length} active API key(s)... Please wait...</em>
-      <div id="bulkProgress" style="margin-top: 12px; font-weight: 700; color: var(--tertiary); font-family: var(--mono); font-size: 13px;">Initiating...</div>
+    // Validate compatibility
+    if (existingPrompts.length > 0) {
+      let isCompatible = false;
+      if (uploadedPromptImages.length > 0) {
+        isCompatible = existingPrompts.every(p => p.imageIndex !== undefined && p.imageIndex < uploadedPromptImages.length);
+      } else {
+        isCompatible = existingPrompts.every(p => niches.includes(p.niche) && p.variation <= promptsPerNicheCount);
+      }
+      if (!isCompatible) {
+        existingPrompts = [];
+      }
+    }
+
+    const promptResults = [...existingPrompts];
+
+    if (existingPrompts.length === 0) {
+      promptResultBox.innerHTML = '';
+    } else {
+      // Remove any progress widget from last run if it's there
+      const oldProgress = promptResultBox.querySelector('.bulk-progress-widget');
+      if (oldProgress) oldProgress.remove();
+    }
+
+    if (bulkActions) bulkActions.style.display = 'none';
+
+    cancelPromptGeneration = false;
+
+    // Create progress panel
+    const progressWidget = document.createElement('div');
+    progressWidget.className = 'bulk-progress-widget';
+    progressWidget.innerHTML = `
+      <div class="bulk-progress-header">
+        <div class="bulk-progress-title">⚡ Bulk Generation Progress</div>
+      </div>
+      <div class="progress-details-grid">
+        <div class="progress-stat-card stat-total">
+          <span class="progress-stat-label">Total</span>
+          <span class="progress-stat-val" id="progressValTotal">0</span>
+        </div>
+        <div class="progress-stat-card stat-done">
+          <span class="progress-stat-label">Done</span>
+          <span class="progress-stat-val" id="progressValDone">0</span>
+        </div>
+        <div class="progress-stat-card stat-pending">
+          <span class="progress-stat-label">Pending</span>
+          <span class="progress-stat-val" id="progressValPending">0</span>
+        </div>
+        <div class="progress-stat-card stat-error">
+          <span class="progress-stat-label">Errors</span>
+          <span class="progress-stat-val" id="progressValError">0</span>
+        </div>
+      </div>
+      <div class="progress-meter">
+        <div class="progress-meter-info">
+          <span id="progressBarLabel">Generating...</span>
+          <span id="progressBarPercent">0%</span>
+        </div>
+        <div class="progress-bar-track">
+          <div class="progress-bar-fill" id="progressBarFill" style="width: 0%;"></div>
+        </div>
+      </div>
     `;
 
-    const progressDiv = document.getElementById('bulkProgress');
+    promptResultBox.prepend(progressWidget);
 
-    // Optimization: If uploadedPromptImages > 0, batch up to 10 images into 1 API payload
+    // Optimization: If uploadedPromptImages > 0, batch up to 3 images into 1 API payload
     if (uploadedPromptImages.length > 0) {
-      const chunkSize = 10;
+      // Find missing images
+      const missingImages = [];
+      uploadedPromptImages.forEach((img, idx) => {
+        const isDone = existingPrompts.some(p => p.imageIndex === idx);
+        if (!isDone) {
+          missingImages.push({ img, originalIndex: idx });
+        }
+      });
+
+      if (missingImages.length === 0 && existingPrompts.length > 0) {
+        alert('All images in this batch have already been generated!');
+        resetGenerateBtn();
+        return;
+      }
+
+      const chunkSize = 3;
       const imageBatches = [];
-      for (let b = 0; b < uploadedPromptImages.length; b += chunkSize) {
-        imageBatches.push(uploadedPromptImages.slice(b, b + chunkSize));
+      for (let b = 0; b < missingImages.length; b += chunkSize) {
+        imageBatches.push(missingImages.slice(b, b + chunkSize));
       }
 
       const totalBatchCount = imageBatches.length;
-      progressDiv.innerHTML = `⚡ Batch Processing ${uploadedPromptImages.length} image(s) in ${totalBatchCount} API call(s) (10 images/call)...`;
+      const totalCount = uploadedPromptImages.length;
+      let doneCount = existingPrompts.length;
+      let errorCount = 0;
+      let pendingCount = missingImages.length;
 
-      const promptResults = [];
-      const listContainer = document.createElement('div');
-      listContainer.className = 'bulk-prompt-list';
+      updateProgressWidgetState(doneCount, pendingCount, errorCount, totalCount);
 
-      const nicheCard = document.createElement('div');
-      nicheCard.className = 'bulk-niche-card';
-      nicheCard.innerHTML = `<div class="bulk-niche-title">🖼️ Reference Image Batch Prompts (${uploadedPromptImages.length} Images in ${totalBatchCount} Call(s))</div>`;
-      nicheCard.appendChild(listContainer);
+      const progressLabel = document.getElementById('progressBarLabel');
+      if (progressLabel) progressLabel.textContent = `Batch Processing image(s): ${missingImages.length} remaining in ${totalBatchCount} API call(s)...`;
 
-      promptResultBox.innerHTML = '';
-      promptResultBox.appendChild(nicheCard);
-      promptResultBox.appendChild(progressDiv);
+      let nicheCard = promptResultBox.querySelector('.bulk-niche-card');
+      let listContainer;
+      if (nicheCard) {
+        listContainer = nicheCard.querySelector('.bulk-prompt-list');
+      } else {
+        listContainer = document.createElement('div');
+        listContainer.className = 'bulk-prompt-list';
+        nicheCard = document.createElement('div');
+        nicheCard.className = 'bulk-niche-card';
+        nicheCard.innerHTML = `<div class="bulk-niche-title">🖼️ Reference Image Batch Prompts (${uploadedPromptImages.length} Images)</div>`;
+        nicheCard.appendChild(listContainer);
+        promptResultBox.appendChild(nicheCard);
+      }
+
+      // Create loading skeletons upfront for the missing images
+      const skeletonElements = {};
+      missingImages.forEach(item => {
+        const skeleton = createSkeletonPromptItem(true);
+        listContainer.appendChild(skeleton);
+        skeletonElements[item.originalIndex] = skeleton;
+      });
 
       for (let bIdx = 0; bIdx < imageBatches.length; bIdx++) {
+        if (cancelPromptGeneration) break;
+
         const currentBatch = imageBatches[bIdx];
         const apiKey = apiKeys[bIdx % apiKeys.length];
-        progressDiv.innerHTML = `⚡ Processing Batch #${bIdx + 1}/${totalBatchCount} (${currentBatch.length} images)...`;
+
+        if (progressLabel) progressLabel.textContent = `Processing Batch #${bIdx + 1}/${totalBatchCount} (${currentBatch.length} images)...`;
 
         try {
-          const batchResults = await processImageBatch(currentBatch, apiKey, {
-            rows, cols, total, lineWeight, spacingLabel, model
+          const imagesOnly = currentBatch.map(item => item.img);
+          const batchResults = await processImageBatch(imagesOnly, apiKey, {
+            rows, cols, total, lineWeight, spacingLabel, model,
+            signal: currentAbortController ? currentAbortController.signal : null
           });
+
+          if (cancelPromptGeneration) {
+            break;
+          }
 
           // Track the number of prompts generated in this batch
           if (typeof window.trackUserMetric === 'function' && batchResults.length > 0) {
@@ -1331,16 +1580,16 @@ Do not include any markdown formatting outside the json codeblock. Output valid 
           }
 
           batchResults.forEach((res, itemIdx) => {
-            const globalImgIndex = bIdx * chunkSize + itemIdx;
+            const originalIdx = currentBatch[itemIdx].originalIndex;
             const promptText = res.prompt;
-            let rawTitle = (res.title || `Reference Image #${globalImgIndex + 1}`).trim();
+            let rawTitle = (res.title || `Reference Image #${originalIdx + 1}`).trim();
             const promptTitle = rawTitle.replace(/\s*(vector\s*)?icon\s*sheet/gi, '').replace(/\s*vector/gi, '').trim() || rawTitle;
             const keywords = res.keywords || [];
 
-            promptResults.push({ niche: promptTitle, variation: 1, promptText });
+            promptResults.push({ niche: promptTitle, variation: 1, promptText, imageIndex: originalIdx });
 
             const promptItem = document.createElement('div');
-            promptItem.className = 'bulk-prompt-item';
+            promptItem.className = 'bulk-prompt-item fade-in-up-prompt'; // Add anim
             promptItem.innerHTML = `
               <div class="bulk-prompt-header" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px;">
                 <span style="font-weight: 700; color: var(--tertiary); font-size: 13px; line-height: 1.3; word-break: break-word; flex: 1;">🖼️ ${promptTitle}</span>
@@ -1370,71 +1619,148 @@ Do not include any markdown formatting outside the json codeblock. Output valid 
               promptResultBox.dataset.generatedPrompts = JSON.stringify(promptResults);
             });
 
-            listContainer.appendChild(promptItem);
+            // Replace skeleton in DOM
+            const targetSkeleton = skeletonElements[originalIdx];
+            if (targetSkeleton) {
+              targetSkeleton.replaceWith(promptItem);
+            } else {
+              listContainer.appendChild(promptItem);
+            }
+
+            doneCount++;
+            pendingCount--;
           });
+
+          updateProgressWidgetState(doneCount, pendingCount, errorCount, totalCount);
         } catch (err) {
           console.error(`Batch #${bIdx + 1} Error:`, err);
-          alert(`Batch #${bIdx + 1} Error: ${err.message}`);
+          const batchSize = currentBatch.length;
+          errorCount += batchSize;
+          pendingCount -= batchSize;
+          updateProgressWidgetState(doneCount, pendingCount, errorCount, totalCount);
         }
+      }
+
+      // Clean up any remaining skeletons that failed to resolve
+      Object.keys(skeletonElements).forEach(originalIdx => {
+        const skeleton = skeletonElements[originalIdx];
+        if (skeleton && skeleton.parentNode) {
+          skeleton.remove();
+        }
+      });
+
+      const labelEl = document.getElementById('progressBarLabel');
+      if (labelEl) {
+        labelEl.textContent = cancelPromptGeneration ? 'Generation Stopped.' : 'Generation Completed.';
       }
 
       if (promptResults.length > 0) {
         await window.checkAndConsumeCredit('prompts', 1, true);
       }
 
-      progressDiv.remove();
-      generatePromptBtn.disabled = false;
+      resetGenerateBtn();
       if (bulkActions) bulkActions.style.display = 'flex';
       promptResultBox.dataset.generatedPrompts = JSON.stringify(promptResults);
       return;
     }
-    const promptResults = []; // To store all prompts for global export
-    const promises = [];
-    let completedCount = 0;
-    const totalRequests = niches.length * promptsPerNicheCount;
-
-    // Create all niche cards and list containers upfront
-    const listContainers = [];
+    // Construct generation queue
+    const generationQueue = [];
     for (let i = 0; i < niches.length; i++) {
       const niche = niches[i];
-      const nicheCard = document.createElement('div');
-      nicheCard.className = 'bulk-niche-card';
-      nicheCard.innerHTML = `
-        <div class="bulk-niche-title">📂 Niche: ${niche}</div>
-        <div class="bulk-prompt-list" id="niche-list-${i}"></div>
-      `;
-
-      if (i === 0) {
-        promptResultBox.innerHTML = '';
-        promptResultBox.appendChild(progressDiv);
+      for (let j = 0; j < promptsPerNicheCount; j++) {
+        const isDone = existingPrompts.some(p => p.niche === niche && p.variation === (j + 1));
+        if (!isDone) {
+          generationQueue.push({ nicheIndex: i, niche, variationIndex: j });
+        }
       }
-      promptResultBox.insertBefore(nicheCard, progressDiv);
-      listContainers[i] = nicheCard.querySelector('.bulk-prompt-list');
     }
 
-    // Launch parallel requests for all niches and variations
+    if (generationQueue.length === 0 && existingPrompts.length > 0) {
+      alert('All prompts in this list have already been generated!');
+      resetGenerateBtn();
+      return;
+    }
+
+    const promises = [];
+    const totalCount = niches.length * promptsPerNicheCount;
+    let doneCount = existingPrompts.length;
+    let errorCount = 0;
+    let pendingCount = generationQueue.length;
+
+    updateProgressWidgetState(doneCount, pendingCount, errorCount, totalCount);
+
+    // Create all niche cards, list containers, and skeletons upfront
+    const listContainers = [];
+    const skeletons = []; // 2D array mapping [nicheIndex][variationIndex]
+
+    let nichesContainer = promptResultBox.querySelector('.bulk-niches-container');
+    if (!nichesContainer) {
+      nichesContainer = document.createElement('div');
+      nichesContainer.className = 'bulk-niches-container';
+      promptResultBox.appendChild(nichesContainer);
+    }
+
     for (let i = 0; i < niches.length; i++) {
+      skeletons[i] = [];
       const niche = niches[i];
-      const listContainer = listContainers[i];
+      
+      let nicheCard = nichesContainer.querySelector(`#niche-card-${i}`);
+      if (!nicheCard) {
+        nicheCard = document.createElement('div');
+        nicheCard.id = `niche-card-${i}`;
+        nicheCard.className = 'bulk-niche-card';
+        nicheCard.innerHTML = `
+          <div class="bulk-niche-title">📂 Niche: ${niche}</div>
+          <div class="bulk-prompt-list" id="niche-list-${i}"></div>
+        `;
+        nichesContainer.appendChild(nicheCard);
+      }
+
+      const listContainer = nicheCard.querySelector('.bulk-prompt-list');
+      listContainers[i] = listContainer;
 
       for (let j = 0; j < promptsPerNicheCount; j++) {
-        const promise = (async () => {
-          try {
-            let keyIndex = (i * promptsPerNicheCount + j) % apiKeys.length;
-            const seedInt = Math.floor(Math.random() * 1000000);
-            let topicsSubject = `- Icon set topics/subjects: ${niche}.`;
-            if (niche.startsWith("Reference Image") && uploadedPromptImages.length > 0) {
-              topicsSubject = `- Icon set topics/subjects: Visually analyze the main subjects/niche of the reference images and generate a list of related icons/terms for the grid cells.`;
-            }
+        const isDone = existingPrompts.some(p => p.niche === niche && p.variation === (j + 1));
+        if (isDone) {
+          skeletons[i][j] = null;
+        } else {
+          const skeleton = createSkeletonPromptItem(false);
+          listContainer.appendChild(skeleton);
+          skeletons[i][j] = skeleton;
+        }
+      }
+    }
 
-            const textLabelSelect = document.getElementById('textLabelSelect');
-            const textLabelOpt = textLabelSelect ? textLabelSelect.value : 'none';
-            let textLabelInstruction = '- Strictly isolated icons ONLY with NO text, NO labels, NO typography, NO words, NO letters underneath the icon cells. In your output prompt, you MUST explicitly append the negative phrase: "no text, no labels, no typography, no words, no letters, no captions, no headers".';
-            if (textLabelOpt === 'with-text') {
-              textLabelInstruction = '- Clear text label under each icon cell in clean typography. In your output prompt, you must specify: "each icon cell has a clean text label underneath".';
-            }
+    // Launch parallel requests for the missing niches and variations
+    for (const item of generationQueue) {
+      const { nicheIndex, niche, variationIndex } = item;
+      const listContainer = listContainers[nicheIndex];
+      const i = nicheIndex;
+      const j = variationIndex;
 
-            let systemInstruction = `You are a master AI art prompt engineer for Midjourney v6 and DALL-E 3. 
+      const promise = (async () => {
+        let attempt = 0;
+        let success = false;
+        let generatedText = '';
+
+        try {
+          if (cancelPromptGeneration) throw new Error('Cancelled');
+
+          let keyIndex = (i * promptsPerNicheCount + j) % apiKeys.length;
+          const seedInt = Math.floor(Math.random() * 1000000);
+          let topicsSubject = `- Icon set topics/subjects: ${niche}.`;
+          if (niche.startsWith("Reference Image") && uploadedPromptImages.length > 0) {
+            topicsSubject = `- Icon set topics/subjects: Visually analyze the main subjects/niche of the reference images and generate a list of related icons/terms for the grid cells.`;
+          }
+
+          const textLabelSelect = document.getElementById('textLabelSelect');
+          const textLabelOpt = textLabelSelect ? textLabelSelect.value : 'none';
+          let textLabelInstruction = '- Strictly isolated icons ONLY with NO text, NO labels, NO typography, NO words, NO letters underneath the icon cells. In your output prompt, you MUST explicitly append the negative phrase: "no text, no labels, no typography, no words, no letters, no captions, no headers".';
+          if (textLabelOpt === 'with-text') {
+            textLabelInstruction = '- Clear text label under each icon cell in clean typography. In your output prompt, you must specify: "each icon cell has a clean text label underneath".';
+          }
+
+          let systemInstruction = `You are a master AI art prompt engineer for Midjourney v6 and DALL-E 3. 
 Your task is to generate a single, rich, fluent, highly detailed, production-grade icon sheet master prompt for creating a vector icon grid.
 DO NOT use mechanical numbered lists (no "1. 2. 3."). Instead, write an elegant, expressive, natural prose prompt.
 
@@ -1452,151 +1778,180 @@ Requirements:
 
 Output ONLY the final production AI prompt string ready to copy-paste. Do not include any chat formatting or quotes.`;
 
-            let attempt = 0;
-            let success = false;
-            let generatedText = '';
-            const maxAttempts = Math.max(3, apiKeys.length * 2);
+          const maxAttempts = Math.max(3, apiKeys.length * 2);
 
-            while (attempt < maxAttempts && !success) {
-              const currentKey = apiKeys[keyIndex];
-              try {
-                const contents = [];
-                let localizedPrompt = systemInstruction;
+          while (attempt < maxAttempts && !success) {
+            if (cancelPromptGeneration) throw new Error('Cancelled');
+            const currentKey = apiKeys[keyIndex];
+            try {
+              const contents = [];
+              let localizedPrompt = systemInstruction;
 
-                if (uploadedPromptImages.length > 0) {
-                  const targetImages = (isImageNiches && uploadedPromptImages.length > 1) ? [uploadedPromptImages[i]] : uploadedPromptImages;
-                  localizedPrompt += `\n\nCRITICAL VISUAL SPECIFICATION: You must visually analyze the attached ${targetImages.length} reference style image(s). 
+              if (uploadedPromptImages.length > 0) {
+                const targetImages = (isImageNiches && uploadedPromptImages.length > 1) ? [uploadedPromptImages[i]] : uploadedPromptImages;
+                localizedPrompt += `\n\nCRITICAL VISUAL SPECIFICATION: You must visually analyze the attached ${targetImages.length} reference style image(s). 
 Identify their outline/fill styles, icon densities, level of details, stroke widths, shape conventions, and general layout aesthetics. 
 Synthesize these visual properties and stylistic DNA into your generated prompt string so that a new AI image generation from it produces icons with a matching style.`;
 
-                  const parts = [{ text: localizedPrompt }];
-                  targetImages.forEach(img => {
-                    parts.push({
-                      inlineData: {
-                        mimeType: img.mimeType,
-                        data: img.data
-                      }
-                    });
+                const parts = [{ text: localizedPrompt }];
+                targetImages.forEach(img => {
+                  parts.push({
+                    inlineData: {
+                      mimeType: img.mimeType,
+                      data: img.data
+                    }
                   });
-                  contents.push({ parts });
-                } else {
-                  contents.push({
-                    parts: [
-                      { text: localizedPrompt }
-                    ]
-                  });
-                }
-
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${currentKey}`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ contents })
                 });
+                contents.push({ parts });
+              } else {
+                contents.push({
+                  parts: [
+                    { text: localizedPrompt }
+                  ]
+                });
+              }
 
-                const data = await response.json();
-                if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0].text) {
-                  generatedText = data.candidates[0].content.parts[0].text.replace(/[\r\n\t]+/g, ' ').replace(/\s+/g, ' ').trim();
-                  success = true;
-                  if (typeof window.trackUserMetric === 'function') {
-                    window.trackUserMetric('prompts');
-                  }
-                } else if (data.error) {
-                  console.warn(`Key #${keyIndex + 1} Error (${data.error.code || ''}): ${data.error.message}`);
-                  generatedText = `Error from Gemini API (Key #${keyIndex + 1}): ${data.error.message}`;
-                  keyIndex = (keyIndex + 1) % apiKeys.length;
-                  attempt++;
-                  await new Promise(r => setTimeout(r, 500));
-                } else {
-                  generatedText = `Unknown API Error.`;
-                  keyIndex = (keyIndex + 1) % apiKeys.length;
-                  attempt++;
-                  await new Promise(r => setTimeout(r, 500));
+              const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${currentKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents }),
+                signal: currentAbortController ? currentAbortController.signal : undefined
+              });
+
+              if (cancelPromptGeneration) throw new Error('Cancelled');
+
+              const data = await response.json();
+              if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0].text) {
+                generatedText = data.candidates[0].content.parts[0].text.replace(/[\r\n\t]+/g, ' ').replace(/\s+/g, ' ').trim();
+                success = true;
+                if (typeof window.trackUserMetric === 'function') {
+                  window.trackUserMetric('prompts');
                 }
-              } catch (err) {
-                console.warn(`Network Error on Key #${keyIndex + 1}: ${err.message}`);
-                generatedText = `Network Error: ${err.message}`;
+              } else if (data.error) {
+                console.warn(`Key #${keyIndex + 1} Error (${data.error.code || ''}): ${data.error.message}`);
+                generatedText = `Error from Gemini API (Key #${keyIndex + 1}): ${data.error.message}`;
+                keyIndex = (keyIndex + 1) % apiKeys.length;
+                attempt++;
+                await new Promise(r => setTimeout(r, 500));
+              } else {
+                generatedText = `Unknown API Error.`;
                 keyIndex = (keyIndex + 1) % apiKeys.length;
                 attempt++;
                 await new Promise(r => setTimeout(r, 500));
               }
-            }
-
-            // Save result object
-            promptResults.push({ niche, variation: j + 1, promptText: generatedText });
-
-            // Build individual variation item
-            const promptItem = document.createElement('div');
-            promptItem.className = 'bulk-prompt-item';
-            promptItem.innerHTML = `
-              <div class="bulk-prompt-header" style="display: flex; justify-content: flex-end;">
-                <div style="display: flex; gap: 6px;">
-                  <button class="btn btn-dark small send-flow-btn" style="padding: 2px 8px; font-size: 11px;">☁️ Flow</button>
-                  <button class="btn btn-dark small copy-bulk-btn" style="padding: 2px 8px; font-size: 11px;">📋 Copy</button>
-                  <button class="btn btn-dark small delete-prompt-btn" style="padding: 2px 8px; font-size: 11px; color: #ff4d4f; border-color: rgba(255, 77, 79, 0.3);" title="Delete this prompt">🗑️ Delete</button>
-                </div>
-              </div>
-              <pre class="bulk-prompt-text">${generatedText}</pre>
-            `;
-
-            promptItem.querySelector('.copy-bulk-btn').addEventListener('click', () => {
-              navigator.clipboard.writeText(generatedText);
-              alert('Prompt variation copied to clipboard!');
-            });
-
-            promptItem.querySelector('.send-flow-btn').addEventListener('click', () => {
-              launchTool3(generatedText);
-            });
-
-            promptItem.querySelector('.delete-prompt-btn').addEventListener('click', () => {
-              promptItem.remove();
-
-              const targetIndex = promptResults.findIndex(p => p.niche === niche && p.variation === (j + 1) && p.promptText === generatedText);
-              if (targetIndex !== -1) {
-                promptResults.splice(targetIndex, 1);
-              }
-
-              promptResultBox.dataset.generatedPrompts = JSON.stringify(promptResults);
-
-              if (listContainer && listContainer.children.length === 0) {
-                const nicheCard = listContainer.closest('.bulk-niche-card');
-                if (nicheCard) nicheCard.remove();
-              }
-
-              if (promptResults.length === 0) {
-                if (bulkActions) bulkActions.style.display = 'none';
-                promptResultBox.innerHTML = `
-                  <div style="text-align: center; padding: 40px; color: rgba(255,255,255,0.4);">
-                    <p style="font-size: 16px;">All generated prompts deleted.</p>
-                  </div>
-                `;
-              }
-            });
-
-            if (listContainer) {
-              listContainer.appendChild(promptItem);
-            }
-          } catch (execErr) {
-            console.error('Prompt Generation Error:', execErr);
-          } finally {
-            completedCount++;
-            if (progressDiv) {
-              progressDiv.innerHTML = `⚡ Parallel Generating: Completed ${completedCount}/${totalRequests} prompts...`;
+            } catch (err) {
+              console.warn(`Network Error on Key #${keyIndex + 1}: ${err.message}`);
+              generatedText = `Network Error: ${err.message}`;
+              keyIndex = (keyIndex + 1) % apiKeys.length;
+              attempt++;
+              await new Promise(r => setTimeout(r, 500));
             }
           }
-        })();
 
-        promises.push(promise);
-      }
+          if (cancelPromptGeneration) throw new Error('Cancelled');
+
+          // Save result object
+          promptResults.push({ niche, variation: j + 1, promptText: generatedText });
+
+          // Build individual variation item
+          const promptItem = document.createElement('div');
+          promptItem.className = 'bulk-prompt-item fade-in-up-prompt'; // Add anim
+          promptItem.innerHTML = `
+            <div class="bulk-prompt-header" style="display: flex; justify-content: flex-end;">
+              <div style="display: flex; gap: 6px;">
+                <button class="btn btn-dark small send-flow-btn" style="padding: 2px 8px; font-size: 11px;">☁️ Flow</button>
+                <button class="btn btn-dark small copy-bulk-btn" style="padding: 2px 8px; font-size: 11px;">📋 Copy</button>
+                <button class="btn btn-dark small delete-prompt-btn" style="padding: 2px 8px; font-size: 11px; color: #ff4d4f; border-color: rgba(255, 77, 79, 0.3);" title="Delete this prompt">🗑️ Delete</button>
+              </div>
+            </div>
+            <pre class="bulk-prompt-text">${generatedText}</pre>
+          `;
+
+          promptItem.querySelector('.copy-bulk-btn').addEventListener('click', () => {
+            navigator.clipboard.writeText(generatedText);
+            alert('Prompt variation copied to clipboard!');
+          });
+
+          promptItem.querySelector('.send-flow-btn').addEventListener('click', () => {
+            launchTool3(generatedText);
+          });
+
+          promptItem.querySelector('.delete-prompt-btn').addEventListener('click', () => {
+            promptItem.remove();
+
+            const targetIndex = promptResults.findIndex(p => p.niche === niche && p.variation === (j + 1) && p.promptText === generatedText);
+            if (targetIndex !== -1) {
+              promptResults.splice(targetIndex, 1);
+            }
+
+            promptResultBox.dataset.generatedPrompts = JSON.stringify(promptResults);
+
+            if (listContainer && listContainer.children.length === 0) {
+              const nicheCard = listContainer.closest('.bulk-niche-card');
+              if (nicheCard) nicheCard.remove();
+            }
+
+            if (promptResults.length === 0) {
+              if (bulkActions) bulkActions.style.display = 'none';
+              promptResultBox.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: rgba(255,255,255,0.4);">
+                  <p style="font-size: 16px;">All generated prompts deleted.</p>
+                </div>
+              `;
+            }
+          });
+
+          const targetSkeleton = skeletons[i] ? skeletons[i][j] : null;
+          if (targetSkeleton) {
+            targetSkeleton.replaceWith(promptItem);
+          } else if (listContainer) {
+            listContainer.appendChild(promptItem);
+          }
+
+          doneCount++;
+          pendingCount--;
+          updateProgressWidgetState(doneCount, pendingCount, errorCount, totalCount);
+        } catch (execErr) {
+          const targetSkeleton = skeletons[i] ? skeletons[i][j] : null;
+          if (targetSkeleton && targetSkeleton.parentNode) {
+            targetSkeleton.remove();
+          }
+          if (execErr.message === 'Cancelled') {
+            pendingCount--;
+            updateProgressWidgetState(doneCount, pendingCount, errorCount, totalCount);
+          } else {
+            console.error('Prompt Generation Error:', execErr);
+            errorCount++;
+            pendingCount--;
+            updateProgressWidgetState(doneCount, pendingCount, errorCount, totalCount);
+          }
+        }
+      })();
+
+      promises.push(promise);
     }
 
     await Promise.all(promises);
+
+    // Clean up any remaining skeletons that failed to resolve
+    skeletons.forEach(nicheSkeletons => {
+      nicheSkeletons.forEach(skeleton => {
+        if (skeleton && skeleton.parentNode) {
+          skeleton.remove();
+        }
+      });
+    });
+
+    const labelEl = document.getElementById('progressBarLabel');
+    if (labelEl) {
+      labelEl.textContent = cancelPromptGeneration ? 'Generation Stopped.' : 'Generation Completed.';
+    }
 
     if (promptResults.length > 0) {
       await window.checkAndConsumeCredit('prompts', 1, true);
     }
 
-    if (progressDiv) progressDiv.remove();
-    generatePromptBtn.disabled = false;
+    resetGenerateBtn();
     if (bulkActions) bulkActions.style.display = 'flex';
     promptResultBox.dataset.generatedPrompts = JSON.stringify(promptResults);
   });
