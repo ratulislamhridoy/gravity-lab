@@ -1315,6 +1315,29 @@ Do not include any markdown formatting outside the json codeblock. Output valid 
   let cancelPromptGeneration = false;
   let currentAbortController = null;
 
+  let flowDoneCount = 0;
+  let flowErrorCount = 0;
+  let flowTotalCount = 0;
+
+  function updateFlowProgressState(done, pending, errors, total) {
+    const elDone = document.getElementById('flowProgressValDone');
+    const elPending = document.getElementById('flowProgressValPending');
+    const elError = document.getElementById('flowProgressValError');
+    const elTotal = document.getElementById('flowProgressValTotal');
+    const elPercent = document.getElementById('flowProgressBarPercent');
+    const elBar = document.getElementById('flowProgressBarFill');
+
+    if (elDone) elDone.textContent = done;
+    if (elPending) elPending.textContent = Math.max(0, pending);
+    if (elError) elError.textContent = errors;
+    if (elTotal) elTotal.textContent = total;
+
+    const totalProcessed = done + errors;
+    const percent = total > 0 ? Math.round((totalProcessed / total) * 100) : 0;
+    if (elPercent) elPercent.textContent = `${percent}%`;
+    if (elBar) elBar.style.width = `${percent}%`;
+  }
+
   function updateProgressWidgetState(done, pending, errors, total) {
     const elDone = document.getElementById('progressValDone');
     const elPending = document.getElementById('progressValPending');
@@ -2486,6 +2509,10 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
         flowRunProgress.textContent = `Progress: ${msg.completed}/${msg.total}`;
         const percent = Math.min(100, (msg.completed / msg.total) * 100);
         flowProgressBarInner.style.width = `${percent}%`;
+
+        flowTotalCount = msg.total;
+        const pending = flowTotalCount - flowDoneCount - flowErrorCount;
+        updateFlowProgressState(flowDoneCount, pending, flowErrorCount, flowTotalCount);
         break;
       }
 
@@ -2591,10 +2618,17 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
                 <div style="font-size: 11px; opacity: 0.85; margin-top: 4px; line-height: 1.3; word-break: break-word;">${msg.message || msg.error}</div>
               </div>
             </div>
-          `;
+            `;
+          }
+          if (msg.status === 'done') {
+            flowDoneCount++;
+          } else if (msg.status === 'error') {
+            flowErrorCount++;
+          }
+          const pending = flowTotalCount - flowDoneCount - flowErrorCount;
+          updateFlowProgressState(flowDoneCount, pending, flowErrorCount, flowTotalCount);
+          break;
         }
-        break;
-      }
 
       case 'generate-result': {
         btnFlowStart.disabled = false;
@@ -2604,6 +2638,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
         } else {
           console.log('[flow-client] Batch generation complete', msg);
         }
+        updateFlowProgressState(flowDoneCount, 0, flowErrorCount, flowTotalCount);
         break;
       }
 
@@ -2835,6 +2870,13 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
         flowResultGallery.appendChild(flowEmptyState);
         flowEmptyState.style.display = 'none';
 
+        flowDoneCount = 0;
+        flowErrorCount = 0;
+        flowTotalCount = clientSideTotal;
+        const flowProgressWidget = document.getElementById('flowProgressWidget');
+        if (flowProgressWidget) flowProgressWidget.style.display = 'block';
+        updateFlowProgressState(0, flowTotalCount, 0, flowTotalCount);
+
         flowProgressBar.style.display = 'block';
         flowProgressBarInner.style.width = '0%';
         flowRunProgress.style.display = 'inline-block';
@@ -2850,6 +2892,13 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       flowResultGallery.innerHTML = '';
       flowResultGallery.appendChild(flowEmptyState);
       flowEmptyState.style.display = 'none';
+
+      flowDoneCount = 0;
+      flowErrorCount = 0;
+      flowTotalCount = clientSideTotal;
+      const flowProgressWidget = document.getElementById('flowProgressWidget');
+      if (flowProgressWidget) flowProgressWidget.style.display = 'block';
+      updateFlowProgressState(0, flowTotalCount, 0, flowTotalCount);
 
       flowProgressBar.style.display = 'block';
       flowProgressBarInner.style.width = '0%';
