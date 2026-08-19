@@ -5970,14 +5970,25 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     const badge = document.getElementById('userSubscriptionBadge');
     const modal = document.getElementById('subscriptionStatusModal');
 
+    if (badge && !badge.dataset.hasModalListener) {
+      badge.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof window.openSubStatusModal === 'function') {
+          window.openSubStatusModal();
+        }
+      });
+      badge.dataset.hasModalListener = 'true';
+    }
+
     if (!firebaseAuth || !firebaseAuth.currentUser) {
       if (badge) badge.classList.add('hidden');
       return;
     }
 
     const user = firebaseAuth.currentUser;
-    const logs = getUserLogs();
-    const u = logs.find(item => item.uid === user.uid || (item.email && user.email && item.email.toLowerCase() === user.email.toLowerCase()));
+    const logs = getUserLogs() || [];
+    const u = logs.find(item => item && (item.uid === user.uid || (item.email && user.email && item.email.toLowerCase() === user.email.toLowerCase())));
 
     if (!u) {
       if (badge) badge.classList.add('hidden');
@@ -6488,7 +6499,8 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
 
   function getUserLogs() {
     try {
-      return JSON.parse(localStorage.getItem('gravity_user_activity_logs') || '[]');
+      const parsed = JSON.parse(localStorage.getItem('gravity_user_activity_logs') || '[]');
+      return Array.isArray(parsed) ? parsed : [];
     } catch (e) {
       return [];
     }
