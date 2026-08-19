@@ -1189,7 +1189,7 @@ Do not include any markdown formatting outside the json codeblock. Output valid 
     });
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 20000); // 20s timeout limit
+    const timeoutId = setTimeout(() => controller.abort(), 90000); // 90s timeout limit
 
     let response;
     try {
@@ -1203,7 +1203,7 @@ Do not include any markdown formatting outside the json codeblock. Output valid 
     } catch (err) {
       clearTimeout(timeoutId);
       if (err.name === 'AbortError') {
-        throw new Error('Gemini API request timed out after 20s. Please check network/API key.');
+        throw new Error('Gemini API request timed out after 90s. Please check network/API key.');
       }
       throw err;
     }
