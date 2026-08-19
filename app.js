@@ -8117,6 +8117,13 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
   if (userSubBadge) {
     userSubBadge.style.cursor = 'pointer';
     userSubBadge.title = 'View Subscription Details';
+    userSubBadge.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (typeof window.openSubStatusModal === 'function') {
+        window.openSubStatusModal();
+      }
+    });
   }
 
   if (btnCloseCheckoutModal) btnCloseCheckoutModal.addEventListener('click', window.closeCheckoutModal);
