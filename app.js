@@ -5969,7 +5969,8 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
   window.updateUserSubscriptionUI = function() {
     try {
       const badge = document.getElementById('userSubscriptionBadge');
-    const modal = document.getElementById('subscriptionStatusModal');
+      const modal = document.getElementById('subscriptionStatusModal');
+      const isDark = document.documentElement.classList.contains('dark-mode');
 
     if (badge && !badge.dataset.hasModalListener) {
       badge.addEventListener('click', (e) => {
@@ -6015,7 +6016,6 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     // 1. Update Topbar Badge
     if (badge) {
       badge.classList.remove('hidden');
-      const isDark = document.documentElement.classList.contains('dark-mode');
       if (isPro) {
         const planName = sub === 'monthly' ? 'Monthly Pro' : '6-Months Pro';
         badge.innerHTML = `⭐ <span>${planName}</span>`;
@@ -6243,7 +6243,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
             const idx = localLogs.findIndex(item => item.uid === user.uid);
             if (idx !== -1) {
               localLogs[idx] = { ...localLogs[idx], ...freshData };
-              localStorage.setItem('gravity_users_logs', JSON.stringify(localLogs));
+              localStorage.setItem('gravity_user_activity_logs', JSON.stringify(localLogs));
             }
           }
         }
