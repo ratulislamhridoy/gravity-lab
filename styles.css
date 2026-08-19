@@ -1726,6 +1726,32 @@ body.not-authenticated .landing-page {
   }
 }
 
+/* Pricing Page Light/Dark Theme Responsiveness */
+.pricing-header h1 {
+  background: linear-gradient(135deg, var(--on-surface) 0%, var(--on-variant) 100%) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+.pricing-card .price-val {
+  color: var(--on-surface) !important;
+}
+.pricing-card .feature-highlight {
+  color: var(--on-surface) !important;
+}
+.pricing-check-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: #16a34a; /* High Contrast Forest Green in Light Mode */
+}
+:root.dark-mode .pricing-check-icon {
+  color: #cdfc52; /* Lime Green in Dark Mode */
+}
+.pricing-card .icon-bg {
+  background: rgba(120, 120, 120, 0.08) !important;
+}
+
 /* === Pricing Fullscreen Mode === */
 .pricing-page-active .home-sidebar,
 .pricing-page-active .sidebar-toggle,
