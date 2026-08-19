@@ -641,7 +641,7 @@
               </button>
 
               
-              <button class="btn btn-primary" id="btnSetupExtensionModal" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700; padding: 10px; background: var(--accent); color: var(--bg) !important; border-radius: 12px; margin-bottom: 4px; box-shadow: 0 4px 12px rgba(8, 126, 164, 0.15);">
+              <button class="btn btn-dark" id="btnSetupExtensionModal" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700; padding: 10px; border-radius: 12px; margin-bottom: 4px; border: 1px solid var(--outline);">
                 🔧 Setup Extension
               </button>
 
@@ -1842,6 +1842,25 @@
     :root.dark-mode .checkout-highlight-text {
       color: var(--primary) !important;
     }
+    .tool-setup-modal {
+      background: var(--surface) !important;
+      border: 1px solid var(--outline) !important;
+      color: var(--on-surface) !important;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08) !important;
+    }
+    :root.dark-mode .tool-setup-modal {
+      background: rgba(18, 18, 22, 0.96) !important;
+      border-color: rgba(255, 255, 255, 0.12) !important;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7) !important;
+    }
+    .setup-step-card {
+      background: var(--surface-low) !important;
+      border: 1px solid var(--outline) !important;
+    }
+    :root.dark-mode .setup-step-card {
+      background: rgba(255, 255, 255, 0.02) !important;
+      border-color: rgba(255, 255, 255, 0.04) !important;
+    }
   </style>
 
   
@@ -2223,7 +2242,7 @@
   </div>
   <!-- Chrome Extension Setup Modal -->
   <div class="modal-backdrop hidden" id="extensionSetupModal" style="z-index: 999999;">
-    <div class="modal-box" style="max-width: 500px; width: 90%; border-radius: 24px; padding: 28px; background: rgba(18, 18, 22, 0.96); backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.12); box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7); display: flex; flex-direction: column; gap: 20px; color: #ededf0;">
+    <div class="modal-box tool-setup-modal" style="max-width: 500px; width: 90%; border-radius: 24px; padding: 28px; backdrop-filter: blur(24px); display: flex; flex-direction: column; gap: 20px;">
       <!-- Header -->
       <div style="display: flex; align-items: center; justify-content: space-between;">
         <div style="display: flex; align-items: center; gap: 10px; text-align: left;">
@@ -2231,7 +2250,7 @@
             🔌
           </div>
           <div>
-            <h3 style="margin: 0; font-size: 17px; font-weight: 800; color: #ededf0;">Chrome Extension Setup</h3>
+            <h3 style="margin: 0; font-size: 17px; font-weight: 800; color: var(--on-surface);">Chrome Extension Setup</h3>
             <span style="font-size: 11px; color: var(--on-variant);">Enable zero-config serverless generation</span>
           </div>
         </div>
@@ -2242,22 +2261,22 @@
       <div style="display: flex; flex-direction: column; gap: 16px; text-align: left; font-size: 12.5px; line-height: 1.5;">
         
         <!-- Step 1: Download -->
-        <div style="display: flex; gap: 12px; background: rgba(255,255,255,0.02); padding: 12px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.04);">
-          <div style="font-size: 14px; font-weight: 800; background: var(--accent); color: #fff; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; animation: pulse 2s infinite;">1</div>
+        <div class="setup-step-card" style="display: flex; gap: 12px; padding: 12px; border-radius: 14px;">
+          <div style="font-size: 14px; font-weight: 800; background: var(--tertiary); color: #fff; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; animation: pulse 2s infinite;">1</div>
           <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
-            <strong style="color: #ffffff;">Download ZIP File</strong>
+            <strong style="color: var(--on-surface);">Download ZIP File</strong>
             <span style="color: var(--on-variant); font-size: 11.5px;">Download the pre-configured extension zip file to your computer.</span>
-            <a href="/gravity-flow-extension.zip" download class="btn btn-primary small" style="margin-top: 4px; gap: 6px; padding: 6px 12px; font-size: 11px; height: 32px; font-weight: 700; width: fit-content; text-decoration: none; border-radius: 8px; justify-content: center; display: inline-flex; align-items: center; background: var(--accent); color: #fff;">
+            <a href="/gravity-flow-extension.zip" download class="btn btn-primary small" style="margin-top: 4px; gap: 6px; padding: 6px 12px; font-size: 11px; height: 32px; font-weight: 700; width: fit-content; text-decoration: none; border-radius: 8px; justify-content: center; display: inline-flex; align-items: center; border: none; cursor: pointer;">
               📥 Download Extension Zip
             </a>
           </div>
         </div>
 
         <!-- Step 2: Open Extensions Page & Turn Developer Mode On -->
-        <div style="display: flex; gap: 12px; background: rgba(255,255,255,0.02); padding: 12px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.04);">
-          <div style="font-size: 14px; font-weight: 800; background: var(--tertiary); color: #fff; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">2</div>
+        <div class="setup-step-card" style="display: flex; gap: 12px; padding: 12px; border-radius: 14px;">
+          <div style="font-size: 14px; font-weight: 800; background: var(--secondary); color: #fff; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">2</div>
           <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
-            <strong style="color: #ffffff;">Open Extensions Page & Developer Mode</strong>
+            <strong style="color: var(--on-surface);">Open Extensions Page & Developer Mode</strong>
             <span style="color: var(--on-variant); font-size: 11.5px;">Go to the extension management page in your browser and enable <b>Developer Mode</b> on the top right.</span>
             <div style="display: flex; gap: 6px; align-items: center; margin-top: 4px;">
               <button class="btn btn-dark small" id="btnCopyExtensionsUrl" style="padding: 0 12px; font-size: 11px; height: 32px; font-weight: 700; border-radius: 8px; gap: 6px; display: inline-flex; align-items: center;">
@@ -2269,22 +2288,22 @@
         </div>
 
         <!-- Step 3: Extract and Load -->
-        <div style="display: flex; gap: 12px; background: rgba(255,255,255,0.02); padding: 12px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.04);">
+        <div class="setup-step-card" style="display: flex; gap: 12px; padding: 12px; border-radius: 14px;">
           <div style="font-size: 14px; font-weight: 800; background: var(--primary); color: #1a1a24; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">3</div>
           <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
-            <strong style="color: #ffffff;">Extract & Load Unpacked</strong>
+            <strong style="color: var(--on-surface);">Extract & Load Unpacked</strong>
             <span style="color: var(--on-variant); font-size: 11.5px;">Unzip/Extract the downloaded file, click <b>"Load unpacked"</b> on the top-left of the Extensions tab, and choose your extracted folder.</span>
           </div>
         </div>
 
       </div>
       
-      <button class="btn btn-dark" id="btnConfirmExtensionLoaded" style="width: 100%; height: 40px; font-weight: 800; border-radius: 12px; margin-top: 6px; background: var(--surface-highest); color: var(--on-surface);">Done, Let's Connect!</button>
+      <button class="btn btn-primary" id="btnConfirmExtensionLoaded" style="width: 100%; height: 40px; font-weight: 800; border-radius: 12px; margin-top: 6px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;">Done, Let's Connect!</button>
     </div>
   </div>
   <!-- Connection Alert Modal -->
   <div class="modal-backdrop hidden" id="flowConnectionAlertModal" style="z-index: 999999;">
-    <div class="modal-box" style="max-width: 420px; width: 90%; border-radius: 24px; padding: 28px; background: rgba(18, 18, 22, 0.96); backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.12); box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7); display: flex; flex-direction: column; gap: 20px; text-align: center; color: #ededf0;">
+    <div class="modal-box tool-setup-modal" style="max-width: 420px; width: 90%; border-radius: 24px; padding: 28px; backdrop-filter: blur(24px); display: flex; flex-direction: column; gap: 20px; text-align: center;">
       <!-- Header -->
       <div style="display: flex; align-items: center; justify-content: space-between;">
         <div style="display: flex; align-items: center; gap: 10px; text-align: left;">
@@ -2292,7 +2311,7 @@
             ⚠️
           </div>
           <div>
-            <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #ededf0;">Connection Required</h3>
+            <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: var(--on-surface);">Connection Required</h3>
             <span style="font-size: 11px; color: var(--on-variant);">Please connect to Google Flow engine first</span>
           </div>
         </div>
@@ -2308,7 +2327,7 @@
         <button class="btn btn-dark" id="btnModalFlowOpen" style="height: 40px; font-weight: 700; border-radius: 12px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px;">
           🌐 Open Google Flow
         </button>
-        <button class="btn btn-primary" id="btnModalFlowConnect" style="height: 40px; font-weight: 800; border-radius: 12px; display: flex; align-items: center; justify-content: center; gap: 6px; background: var(--accent); color: #fff; font-size: 12px;">
+        <button class="btn btn-primary" id="btnModalFlowConnect" style="height: 40px; font-weight: 800; border-radius: 12px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; border: none; cursor: pointer;">
           🔌 Connect Extension
         </button>
       </div>
@@ -2322,7 +2341,7 @@
   <script src="/firebase-auth-compat.js"></script>
   <script src="/firebase-firestore-compat.js"></script>
   <script src="/potrace.js?v=5.0.0"></script>
-  <script src="/app.js?v=9.1.1"></script>
+  <script src="/app.js?v=9.1.2"></script>
   <script>
     // Custom Dropdowns Logic
     document.addEventListener('DOMContentLoaded', () => {
