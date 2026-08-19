@@ -5967,7 +5967,8 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
 
   // ===== Subscription & Daily Credits controller =====
   window.updateUserSubscriptionUI = function() {
-    const badge = document.getElementById('userSubscriptionBadge');
+    try {
+      const badge = document.getElementById('userSubscriptionBadge');
     const modal = document.getElementById('subscriptionStatusModal');
 
     if (badge && !badge.dataset.hasModalListener) {
@@ -6183,10 +6184,17 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
         }
       }
     }
+    } catch (err) {
+      console.error('[updateUserSubscriptionUI Error]:', err);
+    }
   };
 
   window.openSubStatusModal = function() {
-    window.updateUserSubscriptionUI();
+    try {
+      window.updateUserSubscriptionUI();
+    } catch (e) {
+      console.error('[openSubStatusModal failed to update UI]:', e);
+    }
     const modal = document.getElementById('subscriptionStatusModal');
     if (!modal) return;
 
