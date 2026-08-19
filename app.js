@@ -6063,22 +6063,35 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       if (isPro) {
         if (tierBadge) {
           tierBadge.textContent = 'Account Tier: Premium';
-          tierBadge.style.color = '#fbbf24';
-          tierBadge.style.background = 'rgba(251, 191, 36, 0.15)';
-          tierBadge.style.borderColor = 'rgba(251, 191, 36, 0.25)';
+          if (isDark) {
+            tierBadge.style.color = '#fbbf24';
+            tierBadge.style.background = 'rgba(251, 191, 36, 0.15)';
+            tierBadge.style.borderColor = 'rgba(251, 191, 36, 0.25)';
+          } else {
+            tierBadge.style.color = '#b45309'; // Premium Amber/Brown
+            tierBadge.style.background = 'rgba(217, 119, 6, 0.08)';
+            tierBadge.style.borderColor = 'rgba(217, 119, 6, 0.2)';
+          }
         }
         if (titleText) titleText.textContent = 'Your Premium Status';
         if (iconWrapper) {
           iconWrapper.innerHTML = '⭐';
-          iconWrapper.style.color = '#fbbf24';
-          iconWrapper.style.background = 'rgba(251, 191, 36, 0.08)';
-          iconWrapper.style.borderColor = 'rgba(251, 191, 36, 0.25)';
-          iconWrapper.style.boxShadow = '0 0 25px rgba(251, 191, 36, 0.1)';
+          if (isDark) {
+            iconWrapper.style.color = '#fbbf24';
+            iconWrapper.style.background = 'rgba(251, 191, 36, 0.08)';
+            iconWrapper.style.borderColor = 'rgba(251, 191, 36, 0.25)';
+            iconWrapper.style.boxShadow = '0 0 25px rgba(251, 191, 36, 0.1)';
+          } else {
+            iconWrapper.style.color = '#b45309';
+            iconWrapper.style.background = 'rgba(217, 119, 6, 0.04)';
+            iconWrapper.style.borderColor = 'rgba(217, 119, 6, 0.15)';
+            iconWrapper.style.boxShadow = '0 0 25px rgba(217, 119, 6, 0.05)';
+          }
         }
         if (creditsCount) creditsCount.textContent = 'Unlimited';
         if (creditsSub) {
           creditsSub.textContent = 'Unlimited Active';
-          creditsSub.style.color = '#cdfc52';
+          creditsSub.style.color = '#10b981';
         }
         if (progressBar) {
           progressBar.style.width = '100%';
@@ -6104,17 +6117,30 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
         // Free user
         if (tierBadge) {
           tierBadge.textContent = 'Account Tier: Free';
-          tierBadge.style.color = '#cdfc52';
-          tierBadge.style.background = 'rgba(205, 252, 82, 0.15)';
-          tierBadge.style.borderColor = 'rgba(205, 252, 82, 0.25)';
+          if (isDark) {
+            tierBadge.style.color = '#cdfc52';
+            tierBadge.style.background = 'rgba(205, 252, 82, 0.15)';
+            tierBadge.style.borderColor = 'rgba(205, 252, 82, 0.25)';
+          } else {
+            tierBadge.style.color = '#15803d'; // High Contrast Dark Green
+            tierBadge.style.background = 'rgba(22, 163, 74, 0.08)';
+            tierBadge.style.borderColor = 'rgba(22, 163, 74, 0.2)';
+          }
         }
         if (titleText) titleText.textContent = 'Your Plan Status';
         if (iconWrapper) {
           iconWrapper.innerHTML = '🌱';
-          iconWrapper.style.color = '#cdfc52';
-          iconWrapper.style.background = 'rgba(205, 252, 82, 0.08)';
-          iconWrapper.style.borderColor = 'rgba(205, 252, 82, 0.25)';
-          iconWrapper.style.boxShadow = '0 0 25px rgba(205, 252, 82, 0.1)';
+          if (isDark) {
+            iconWrapper.style.color = '#cdfc52';
+            iconWrapper.style.background = 'rgba(205, 252, 82, 0.08)';
+            iconWrapper.style.borderColor = 'rgba(205, 252, 82, 0.25)';
+            iconWrapper.style.boxShadow = '0 0 25px rgba(205, 252, 82, 0.1)';
+          } else {
+            iconWrapper.style.color = '#15803d';
+            iconWrapper.style.background = 'rgba(22, 163, 74, 0.04)';
+            iconWrapper.style.borderColor = 'rgba(22, 163, 74, 0.15)';
+            iconWrapper.style.boxShadow = '0 0 25px rgba(22, 163, 74, 0.05)';
+          }
         }
 
         const todayStr = getDhakaDateString();
