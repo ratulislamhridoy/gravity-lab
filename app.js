@@ -598,6 +598,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const isDark = document.documentElement.classList.contains('dark-mode');
       localStorage.setItem('gravity_theme', isDark ? 'dark' : 'light');
       themeToggleBtn.textContent = isDark ? '☀️ Light' : '🌙 Dark';
+      if (typeof window.updateUserSubscriptionUI === 'function') {
+        window.updateUserSubscriptionUI();
+      }
     });
   }
 
@@ -6000,12 +6003,19 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     // 1. Update Topbar Badge
     if (badge) {
       badge.classList.remove('hidden');
+      const isDark = document.documentElement.classList.contains('dark-mode');
       if (isPro) {
         const planName = sub === 'monthly' ? 'Monthly Pro' : '6-Months Pro';
         badge.innerHTML = `⭐ <span>${planName}</span>`;
-        badge.style.color = '#fbbf24'; // Premium Gold
-        badge.style.background = 'rgba(251,191,36,0.15)';
-        badge.style.borderColor = 'rgba(251,191,36,0.3)';
+        if (isDark) {
+          badge.style.color = '#fbbf24'; // Premium Gold
+          badge.style.background = 'rgba(251,191,36,0.15)';
+          badge.style.borderColor = 'rgba(251,191,36,0.3)';
+        } else {
+          badge.style.color = '#b45309'; // Premium Amber/Brown
+          badge.style.background = 'rgba(217,119,6,0.08)';
+          badge.style.borderColor = 'rgba(217,119,6,0.2)';
+        }
       } else {
         // Free User
         const todayStr = getDhakaDateString();
@@ -6027,9 +6037,15 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
           syncCreditsToDatabase(user.uid, cd.remaining, cd.lastResetDate);
         }
         badge.innerHTML = `🌱 <span>Free</span> • <span>${cd.remaining}/15 Credits</span>`;
-        badge.style.color = '#cdfc52'; // Premium Lime Green
-        badge.style.background = 'rgba(205,252,82,0.15)';
-        badge.style.borderColor = 'rgba(205,252,82,0.3)';
+        if (isDark) {
+          badge.style.color = '#cdfc52'; // Premium Lime Green
+          badge.style.background = 'rgba(205,252,82,0.15)';
+          badge.style.borderColor = 'rgba(205,252,82,0.3)';
+        } else {
+          badge.style.color = '#15803d'; // High Contrast Dark Green
+          badge.style.background = 'rgba(22,163,74,0.08)';
+          badge.style.borderColor = 'rgba(22,163,74,0.2)';
+        }
       }
     }
 
