@@ -3356,6 +3356,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
   // ==========================================
   let loadedSheetImg = null;
   let slicedTilesData = [];
+  let activeSliceRunId = 0;
   let generatedAssembledSvg = '';
   // Track how many tiles have received vector updates
   let vectorizeCompletedCount = 0;
@@ -4685,10 +4686,12 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
 
     return sortedBoxes;
   }
-
   // Slice & Show raw crop preview immediately for ALL loaded icon sheets (Bulk Support)
-  function processIconSheetSlicingOnly() {
+  async function processIconSheetSlicingOnly() {
     if (!loadedSheetImgs || loadedSheetImgs.length === 0) return;
+
+    activeSliceRunId++;
+    const currentRunId = activeSliceRunId;
 
     const cols = parseInt(sheetCols.value) || 5;
     const rows = parseInt(sheetRows.value) || 3;
@@ -4708,7 +4711,9 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
 
     let globalIndex = 0;
 
-    loadedSheetImgs.forEach((sheetObj) => {
+    for (const sheetObj of loadedSheetImgs) {
+      if (currentRunId !== activeSliceRunId) return;
+
       const img = sheetObj.img;
       const sheetName = sheetObj.name;
       const imgW = img.naturalWidth || img.width;
@@ -4770,6 +4775,8 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       }
 
       for (let i = 0; i < tileCount; i++) {
+        if (currentRunId !== activeSliceRunId) return;
+
         const srcIdx = indices[i];
         let sx, sw, sy, sh;
 
@@ -4830,17 +4837,19 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
           `;
           tool4TilesGrid.appendChild(cellEl);
         }
+
+        // Update UI Tile Count dynamically
+        const tileCountEl = document.getElementById('sheetTileCount');
+        if (tileCountEl) {
+          tileCountEl.textContent = slicedTilesData.length;
+        }
+        if (btnSliceVectorize) {
+          btnSliceVectorize.textContent = `⚡ Convert ${slicedTilesData.length} Icons to Vector`;
+        }
+
+        // Yield main thread to allow progressive browser paints
+        await new Promise(resolve => setTimeout(resolve, 15));
       }
-    });
-
-    // Update UI Tile Count label
-    const tileCountEl = document.getElementById('sheetTileCount');
-    if (tileCountEl) {
-      tileCountEl.textContent = slicedTilesData.length;
-    }
-
-    if (btnSliceVectorize) {
-      btnSliceVectorize.textContent = `⚡ Convert ${slicedTilesData.length} Icons to Vector`;
     }
   }
 
