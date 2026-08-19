@@ -8249,7 +8249,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       if (instructionsEl) {
         instructionsEl.innerHTML = `
           ১. প্রথমে বিকাশ অ্যাপ থেকে <b>'পেমেন্ট' (Payment)</b> অপশনে যান।<br>
-          ২. মার্চেন্ট নাম্বার বক্সে আমাদের বিকাশ নাম্বারটি <b style="color:var(--primary); font-size:13.5px; font-family:var(--mono);">01330342337</b> লিখুন অথবা বিকাশ অ্যাপ থেকে কিউআর কোডটি স্ক্যান করুন।<br>
+          ২. মার্চেন্ট নাম্বার বক্সে আমাদের বিকাশ নাম্বারটি <b class="checkout-highlight-text" style="font-size:13.5px; font-family:var(--mono);">01330342337</b> লিখুন অথবা বিকাশ অ্যাপ থেকে কিউআর কোডটি স্ক্যান করুন।<br>
           ৩. তারপর আপনার টাকার পরিমাণ <b>${priceText}</b> লিখুন।<br>
           ৪. এরপর এগিয়ে যান বাটনে প্রেস করুন।<br>
           ৫. আপনার পিন <b>(PIN)</b> নাম্বারটি দিয়ে পরবর্তীতে প্রেস করুন।<br>
@@ -8268,7 +8268,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
         instructionsEl.innerHTML = `
           ১. প্রথমে নগদ অ্যাপটি ওপেন করুন।<br>
           ২. সেখান থেকে <b>'সেন্ড মানি' (Send Money)</b> অপশনে প্রেস করুন।<br>
-          ৩. আপনার ১১ ডিজিটের নগদ নাম্বারটি <b style="color:var(--tertiary); font-size:13.5px; font-family:var(--mono);">01855116827</b> লিখুন।<br>
+          ৩. আপনার ১১ ডিজিটের নগদ নাম্বারটি <b class="checkout-highlight-text" style="font-size:13.5px; font-family:var(--mono);">01855116827</b> লিখুন।<br>
           ৪. আপনার পেমেন্ট এর পরিমাণ <b>${priceText}</b> লিখুন।<br>
           ৫. আপনার পিন <b>(PIN)</b> নাম্বারটি দিয়ে পেমেন্টটি কনফার্ম করুন।
         `;

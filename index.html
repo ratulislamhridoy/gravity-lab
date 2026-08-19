@@ -411,7 +411,7 @@
     <div class="checkout-layout">
       <!-- Left Column (Plan summary card) -->
       <div class="checkout-left">
-        <div style="font-size: 11px; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 40px;">Plan Selection</div>
+        <div class="checkout-accent-label" style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; margin-top: 40px;">Plan Selection</div>
         <h2 id="checkoutLeftPlanTitle" style="font-size: 32px; font-weight: 900; color: var(--on-surface); margin: 0; font-family: var(--font-display);">6 MONTHS PRO</h2>
         
         <div class="checkout-detail-card" style="border-radius: 20px; padding: 24px; display: flex; flex-direction: column; gap: 16px; margin-top: 8px;">
@@ -434,7 +434,7 @@
           <hr style="border: none; border-top: 1px solid var(--outline); margin: 4px 0;" />
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <span style="font-size: 13px; font-weight: 800; color: var(--on-surface); text-transform: uppercase; letter-spacing: 0.05em;">TOTAL PRICE</span>
-            <span id="checkoutLeftPlanPrice" style="font-size: 28px; font-weight: 900; color: var(--primary); font-family: var(--font-display);">৳500</span>
+            <span id="checkoutLeftPlanPrice" class="checkout-price-val" style="font-size: 28px; font-weight: 900; font-family: var(--font-display);">৳500</span>
           </div>
         </div>
       </div>
@@ -1824,6 +1824,24 @@
       border-color: rgba(236, 72, 153, 0.15);
       color: #f472b6; /* Pink in Dark Mode */
     }
+    .checkout-accent-label {
+      color: var(--tertiary) !important;
+    }
+    :root.dark-mode .checkout-accent-label {
+      color: var(--primary) !important;
+    }
+    .checkout-price-val {
+      color: var(--tertiary) !important;
+    }
+    :root.dark-mode .checkout-price-val {
+      color: var(--primary) !important;
+    }
+    .checkout-highlight-text {
+      color: var(--tertiary) !important;
+    }
+    :root.dark-mode .checkout-highlight-text {
+      color: var(--primary) !important;
+    }
   </style>
 
   
@@ -2304,7 +2322,7 @@
   <script src="/firebase-auth-compat.js"></script>
   <script src="/firebase-firestore-compat.js"></script>
   <script src="/potrace.js?v=5.0.0"></script>
-  <script src="/app.js?v=9.1.0"></script>
+  <script src="/app.js?v=9.1.1"></script>
   <script>
     // Custom Dropdowns Logic
     document.addEventListener('DOMContentLoaded', () => {
