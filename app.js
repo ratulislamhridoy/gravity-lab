@@ -297,6 +297,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const flowPromptsArea = document.getElementById('flowPromptsArea');
   const btnFlowStart = document.getElementById('btnFlowStart');
   const btnFlowStop = document.getElementById('btnFlowStop');
+  const btnFlowDownloadAll = document.getElementById('btnFlowDownloadAll');
   const flowRunProgress = document.getElementById('flowRunProgress');
   const flowProgressBar = document.getElementById('flowProgressBar');
   const flowProgressBarInner = document.getElementById('flowProgressBarInner');
@@ -1338,6 +1339,26 @@ Do not include any markdown formatting outside the json codeblock. Output valid 
     if (elBar) elBar.style.width = `${percent}%`;
   }
 
+  let currentFlowSessionImages = [];
+
+  function downloadAllFlowSessionImages() {
+    if (!currentFlowSessionImages || !currentFlowSessionImages.length) return;
+    currentFlowSessionImages.forEach((img, idx) => {
+      setTimeout(() => {
+        try {
+          const dlAnchor = document.createElement('a');
+          dlAnchor.href = img.dataUrl;
+          dlAnchor.download = img.fileName;
+          document.body.appendChild(dlAnchor);
+          dlAnchor.click();
+          document.body.removeChild(dlAnchor);
+        } catch (err) {
+          console.error('[flow-client] Staggered download error:', err);
+        }
+      }, idx * 250);
+    });
+  }
+
   function updateProgressWidgetState(done, pending, errors, total) {
     const elDone = document.getElementById('progressValDone');
     const elPending = document.getElementById('progressValPending');
@@ -2288,6 +2309,12 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       }
     }
 
+    const flowAutoSaveToggle = document.getElementById('flowAutoSaveToggle');
+    const autoSaveChecked = flowAutoSaveToggle ? flowAutoSaveToggle.checked : true;
+    if (autoSaveChecked) {
+      downloadAllFlowSessionImages();
+    }
+
     btnFlowStart.disabled = false;
     btnFlowStop.disabled = true;
   }
@@ -2561,20 +2588,10 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
 
           const fileName = msg.savedFile ? msg.savedFile.split(/[\\/]/).pop() : `google_flow_${Date.now()}.png`;
 
-          // Automatic browser file download if Auto-Save is checked
-          const flowAutoSaveToggle = document.getElementById('flowAutoSaveToggle');
-          const autoSaveChecked = flowAutoSaveToggle ? flowAutoSaveToggle.checked : true;
-          if (autoSaveChecked && msg.dataUrl) {
-            try {
-              const dlAnchor = document.createElement('a');
-              dlAnchor.href = msg.dataUrl;
-              dlAnchor.download = fileName;
-              document.body.appendChild(dlAnchor);
-              dlAnchor.click();
-              document.body.removeChild(dlAnchor);
-            } catch (dlErr) {
-              console.warn('Auto download error:', dlErr);
-            }
+          // Buffer image for end-of-batch or manual Download All
+          if (msg.dataUrl) {
+            currentFlowSessionImages.push({ dataUrl: msg.dataUrl, fileName: fileName });
+            if (btnFlowDownloadAll) btnFlowDownloadAll.style.display = 'inline-flex';
           }
 
           card.innerHTML = `
@@ -2639,6 +2656,12 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
           console.log('[flow-client] Batch generation complete', msg);
         }
         updateFlowProgressState(flowDoneCount, 0, flowErrorCount, flowTotalCount);
+
+        const flowAutoSaveToggle = document.getElementById('flowAutoSaveToggle');
+        const autoSaveChecked = flowAutoSaveToggle ? flowAutoSaveToggle.checked : true;
+        if (autoSaveChecked) {
+          downloadAllFlowSessionImages();
+        }
         break;
       }
 
@@ -2873,6 +2896,8 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
         flowDoneCount = 0;
         flowErrorCount = 0;
         flowTotalCount = clientSideTotal;
+        currentFlowSessionImages = [];
+        if (btnFlowDownloadAll) btnFlowDownloadAll.style.display = 'none';
         const flowProgressWidget = document.getElementById('flowProgressWidget');
         if (flowProgressWidget) flowProgressWidget.style.display = 'block';
         updateFlowProgressState(0, flowTotalCount, 0, flowTotalCount);
@@ -2896,6 +2921,8 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       flowDoneCount = 0;
       flowErrorCount = 0;
       flowTotalCount = clientSideTotal;
+      currentFlowSessionImages = [];
+      if (btnFlowDownloadAll) btnFlowDownloadAll.style.display = 'none';
       const flowProgressWidget = document.getElementById('flowProgressWidget');
       if (flowProgressWidget) flowProgressWidget.style.display = 'block';
       updateFlowProgressState(0, flowTotalCount, 0, flowTotalCount);
@@ -2956,6 +2983,12 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     }
     sendFlowAction('stop');
   });
+
+  if (btnFlowDownloadAll) {
+    btnFlowDownloadAll.addEventListener('click', () => {
+      downloadAllFlowSessionImages();
+    });
+  }
 
 
 
