@@ -762,6 +762,45 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
+      const deleteBtn = e.target.closest('.btn-delete-flow-card');
+      if (deleteBtn) {
+        const idxAttr = deleteBtn.getAttribute('data-index');
+        const idx = Number(idxAttr);
+
+        // Find the card element and remove it
+        const card = document.getElementById(`flow-card-${idx}`);
+        if (card) {
+          card.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+          card.style.opacity = '0';
+          card.style.transform = 'scale(0.95)';
+          setTimeout(() => {
+            card.remove();
+            
+            // Check if gallery is empty. If so, display empty state
+            const activeCards = flowResultGallery.querySelectorAll('.bulk-prompt-item');
+            if (activeCards.length === 0) {
+              if (flowEmptyState) flowEmptyState.style.display = 'block';
+              if (btnFlowDownloadAll) btnFlowDownloadAll.style.display = 'none';
+            }
+          }, 250);
+        }
+
+        // Remove from session buffer
+        currentFlowSessionImages = currentFlowSessionImages.filter(img => img.index !== idx);
+
+        // Update the progress dashboard stats
+        if (flowDoneCount > 0) flowDoneCount--;
+        if (flowTotalCount > 0) flowTotalCount--;
+        const pending = flowTotalCount - flowDoneCount - flowErrorCount;
+        updateFlowProgressState(flowDoneCount, pending, flowErrorCount, flowTotalCount);
+
+        // If no cards left in buffer, hide Download All
+        if (currentFlowSessionImages.length === 0 && btnFlowDownloadAll) {
+          btnFlowDownloadAll.style.display = 'none';
+        }
+        return;
+      }
+
       const imgPreview = e.target.closest('.flow-img-preview');
       if (imgPreview) {
         const imgUrl = imgPreview.getAttribute('data-img-url') || (imgPreview.querySelector('img') ? imgPreview.querySelector('img').src : null);
@@ -2590,7 +2629,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
 
           // Buffer image for end-of-batch or manual Download All
           if (msg.dataUrl) {
-            currentFlowSessionImages.push({ dataUrl: msg.dataUrl, fileName: fileName });
+            currentFlowSessionImages.push({ dataUrl: msg.dataUrl, fileName: fileName, index: msg.index });
             if (btnFlowDownloadAll) btnFlowDownloadAll.style.display = 'inline-flex';
           }
 
@@ -2615,6 +2654,9 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
               </a>
               <button class="btn btn-dark small btn-copy-prompt" data-prompt="${(msg.prompt || '').replace(/"/g, '&quot;')}" style="padding: 7px 10px; font-size: 11.5px; font-weight: 700;" title="Copy Prompt">
                 📋
+              </button>
+              <button class="btn btn-dark small btn-delete-flow-card" data-index="${msg.index}" style="padding: 7px 10px; font-size: 11.5px; font-weight: 700; color: var(--error); border-color: rgba(239, 68, 68, 0.3);" title="Delete Image">
+                🗑️
               </button>
             </div>
             ${msg.savedFile ? `
