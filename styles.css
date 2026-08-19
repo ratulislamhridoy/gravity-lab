@@ -1383,9 +1383,9 @@ body.not-authenticated .landing-page {
 
 /* === Scroll Reveal Animation System === */
 .reveal-on-scroll {
-  opacity: 0;
-  transform: translateY(35px);
-  transition: opacity 0.8s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 .reveal-on-scroll.revealed {
   opacity: 1;
@@ -1782,3 +1782,39 @@ body.not-authenticated .landing-page {
 .google-signin-btn:active {
   transform: translateY(0);
 }
+
+/* Sidebar Back to Dashboard Button */
+.btn-sidebar-back {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 14px;
+  background: var(--surface-lowest);
+  border: 1px solid var(--outline-variant);
+  border-radius: 12px;
+  color: var(--on-surface);
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  margin-bottom: 4px;
+}
+.btn-sidebar-back:hover {
+  background: var(--surface-high);
+  border-color: var(--tertiary);
+  color: var(--tertiary);
+  transform: translateX(-2px);
+  box-shadow: 0 4px 14px rgba(92, 98, 236, 0.12);
+}
+.btn-sidebar-back svg {
+  width: 15px;
+  height: 15px;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+.btn-sidebar-back:hover svg {
+  transform: translateX(-3px);
+}
+

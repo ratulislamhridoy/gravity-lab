@@ -8,6 +8,8 @@
   <link rel="stylesheet" href="/styles.css?v=3" />
 </head>
 <body class="not-authenticated">
+
+
   <!-- Initial Loader (prevents reload flicker) -->
   <div id="initLoader" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #0a0a0c; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 99999999; transition: opacity 0.3s ease, visibility 0.3s ease; gap: 16px;">
     <style>
@@ -16,6 +18,23 @@
     <div style="width: 42px; height: 42px; border: 3.5px solid rgba(255,255,255,0.03); border-top-color: var(--primary, #cdfc52); border-radius: 50%; animation: initSpinner 0.85s linear infinite;"></div>
     <div style="font-size: 11.5px; font-weight: 800; color: rgba(255,255,255,0.5); letter-spacing: 0.12em; font-family: var(--font-mono, monospace);">LOADING GRAVITYLAB</div>
   </div>
+  <script>
+    // Automatic fallback: Guarantee initLoader disappears within 1.2 seconds
+    setTimeout(function() {
+      if (typeof window.removeAppInitLoader === 'function') {
+        window.removeAppInitLoader();
+      } else {
+        var loader = document.getElementById('initLoader');
+        if (loader) {
+          loader.style.opacity = '0';
+          loader.style.visibility = 'hidden';
+          setTimeout(function() {
+            if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
+          }, 350);
+        }
+      }
+    }, 1200);
+  </script>
 
   <div class="home-body" id="appBody">
     <button class="sidebar-toggle" id="sidebarToggle" type="button" title="Toggle sidebar">
@@ -120,11 +139,7 @@
           </div>
         </div>
         <div class="topbar-right" style="display: flex; gap: 8px; align-items: center; margin-left: auto;">
-          <!-- Pricing Trigger -->
-          <button class="btn btn-dark small" id="topbarPricingBtn" type="button" style="display: flex; align-items: center; gap: 6px; margin-right: 4px;">
-            <span>💳 Pricing</span>
-          </button>
-          <!-- Community Dropdown -->
+          <!-- 1. Community Dropdown -->
           <div class="community-dropdown">
             <button class="btn btn-dark small dropdown-trigger" id="communityDropdownBtn" type="button">
               <span>🌐 Community</span>
@@ -143,14 +158,21 @@
             </div>
           </div>
 
-          <button class="btn btn-dark small" id="themeToggleBtn">🌙 Dark</button>
-          
-          <div id="authNavWrapper" style="position: relative; display: flex; align-items: center; gap: 8px;">
-            <!-- Subscription Badge -->
-            <div id="userSubscriptionBadge" class="hidden" onclick="window.openSubStatusModal()" title="View Subscription Details" style="font-size: 11.5px; font-weight: 800; color: #cdfc52; background: rgba(205,252,82,0.15); border: 1px solid rgba(205,252,82,0.3); padding: 4px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.transform='scale(1.03)'; this.style.boxShadow='0 0 10px rgba(205,252,82,0.15)';" onmouseout="this.style.transform='none'; this.style.boxShadow='none';">
-              🌱 <span>Free</span> • <span>30/30 Credits</span>
-            </div>
+          <!-- 2. Pricing Trigger -->
+          <button class="btn btn-dark small" id="topbarPricingBtn" type="button" style="display: flex; align-items: center; gap: 6px;">
+            <span>💳 Pricing</span>
+          </button>
 
+          <!-- 3. Subscription Badge -->
+          <div id="userSubscriptionBadge" class="hidden" onclick="window.openSubStatusModal()" title="View Subscription Details" style="font-size: 11.5px; font-weight: 800; color: #cdfc52; background: rgba(205,252,82,0.15); border: 1px solid rgba(205,252,82,0.3); padding: 4px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.transform='scale(1.03)'; this.style.boxShadow='0 0 10px rgba(205,252,82,0.15)';" onmouseout="this.style.transform='none'; this.style.boxShadow='none';">
+            🌱 <span>Free</span> • <span>15/15 Credits</span>
+          </div>
+
+          <!-- 4. Theme Toggle -->
+          <button class="btn btn-dark small" id="themeToggleBtn">🌙 Dark</button>
+
+          <!-- 5. Auth / Profile Menu -->
+          <div id="authNavWrapper" style="position: relative; display: flex; align-items: center; gap: 8px;">
             <button class="btn btn-primary small" id="btnOpenAuthModal" style="height: 36px; padding: 0 14px; font-size: 13px; font-weight: 800; border-radius: 20px; gap: 6px; display: flex; align-items: center;">
               <span>👤</span> Sign In
             </button>
@@ -175,7 +197,7 @@
             </div>
           </div>
 
-          <!-- Developer Credit Badge -->
+          <!-- 6. Developer Credit Badge -->
           <a href="https://www.youtube.com/@GravityIT-r7j" target="_blank" class="dev-badge-link">
             <div class="dev-badge">
               <img src="/developer-avatar.png" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover;" alt="Ratul Islam Ridoy">
@@ -283,7 +305,7 @@
                 <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px; font-size: 13.5px; color: var(--on-surface);">
                   <li style="display: flex; align-items: center; gap: 10px;">
                     <svg viewBox="0 0 24 24" fill="none" stroke="#cdfc52" stroke-width="2.5" style="width: 16px; height: 16px; flex-shrink: 0;"><path d="M20 6 9 17l-5-5"/></svg>
-                    <span>15 Daily Credits</span>
+                    <span>30 Daily Credits</span>
                   </li>
                   <li style="display: flex; align-items: center; gap: 10px;">
                     <svg viewBox="0 0 24 24" fill="none" stroke="#cdfc52" stroke-width="2.5" style="width: 16px; height: 16px; flex-shrink: 0;"><path d="M20 6 9 17l-5-5"/></svg>
@@ -480,7 +502,7 @@
         </div>
 
         <!-- WhatsApp Help line -->
-        <a href="https://wa.me/8801330342337?text=Hello,%20I%20want%20to%20upgrade%20my%20GravityLab%20account." target="_blank" class="btn btn-dark" style="height: 38px; border-radius: 12px; font-weight: 700; width: 100%; text-decoration: none; justify-content: center; display: inline-flex; align-items: center; gap: 8px; border: 1px solid rgba(255, 255, 255, 0.1); font-size: 12px; cursor: pointer;">
+        <a href="https://wa.me/8801855116827?text=Hello,%20I%20want%20to%20upgrade%20my%20GravityLab%20account." target="_blank" class="btn btn-dark" style="height: 38px; border-radius: 12px; font-weight: 700; width: 100%; text-decoration: none; justify-content: center; display: inline-flex; align-items: center; gap: 8px; border: 1px solid rgba(255, 255, 255, 0.1); font-size: 12px; cursor: pointer;">
           <svg viewBox="0 0 16 16" fill="currentColor" style="width: 14px; height: 14px; color: #25D366; flex-shrink: 0; display: inline-block; vertical-align: middle; margin-right: 6px;"><path d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232"/></svg>
           Contact on WhatsApp
         </a>
@@ -494,6 +516,11 @@
           <!-- Left Control Panel -->
           <div class="studio-controls" id="studioControls" style="width: 360px; max-width: 100%; box-sizing: border-box; display: flex; flex-direction: column; padding: 0;">
             <div class="studio-controls-scroll" style="flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px;">
+              <button class="btn-sidebar-back back-to-dash-btn" type="button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                <span>Back to Dashboard</span>
+              </button>
+
 
 
 
@@ -608,6 +635,11 @@
         <div class="studio-shell">
           <div class="studio-controls" id="tool3Controls" style="width: 360px; max-width: 100%; box-sizing: border-box; display: flex; flex-direction: column; padding: 0;">
             <div class="studio-controls-scroll" style="flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px;">
+              <button class="btn-sidebar-back back-to-dash-btn" type="button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                <span>Back to Dashboard</span>
+              </button>
+
               
               <button class="btn btn-primary" id="btnSetupExtensionModal" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700; padding: 10px; background: var(--accent); border-radius: 12px; margin-bottom: 4px; box-shadow: 0 4px 12px rgba(8, 126, 164, 0.15);">
                 🔧 Setup Extension
@@ -775,6 +807,11 @@
           <div class="studio-controls" style="width: 360px; background: var(--surface-low); border-right: 1px solid var(--outline-variant); display: flex; flex-direction: column; height: 100%; overflow: hidden; padding: 0;">
             
             <div class="studio-controls-scroll" style="flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px;">
+              <button class="btn-sidebar-back back-to-dash-btn" type="button">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                <span>Back to Dashboard</span>
+              </button>
+
               
               <!-- Container 1: Slicing & Vectorization Controls (Active during Tiles Grid view) -->
               <div id="studioSliceControls" style="display: flex; flex-direction: column; gap: 16px; min-height: 100%; justify-content: space-between;">
@@ -1572,7 +1609,10 @@
       </div>
       <h3 id="customAlertTitle" style="margin: 0 0 10px; font-size: 18px; font-weight: 800; color: #ededf0;">Attention</h3>
       <p id="customAlertMessage" style="margin: 0 0 24px; font-size: 14px; color: #a0a0ab; line-height: 1.55; font-weight: 500; white-space: pre-line;"></p>
-      <button class="btn btn-primary" id="customAlertOkBtn" style="width: 100%; justify-content: center; padding: 11px; font-size: 14px; font-weight: 700; border-radius: 12px; cursor: pointer;">Got It</button>
+      <div style="display: flex; gap: 12px; width: 100%; justify-content: center; margin-top: 12px;" id="customAlertBtnContainer">
+        <button class="btn btn-primary" id="customAlertOkBtn" style="flex: 1; justify-content: center; padding: 11px; font-size: 14px; font-weight: 700; border-radius: 12px; cursor: pointer;">Got It</button>
+        <button class="btn btn-dark hidden" id="customAlertCancelBtn" style="flex: 1; justify-content: center; padding: 11px; font-size: 14px; font-weight: 700; border-radius: 12px; cursor: pointer; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); color: #fff;">Cancel</button>
+      </div>
     </div>
   </div>
 
@@ -1824,7 +1864,7 @@
         <ul class="plan-features">
           <li class="plan-feature-row">
             <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-            <span>15 Daily Credits</span>
+            <span>30 Daily Credits</span>
           </li>
           <li class="plan-feature-row">
             <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
@@ -2196,11 +2236,11 @@
   <div id="toastContainer" style="position: fixed; bottom: 24px; right: 24px; z-index: 9999999; display: flex; flex-direction: column; gap: 10px; pointer-events: none;"></div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="/firebase-app-compat.js"></script>
+  <script src="/firebase-auth-compat.js"></script>
+  <script src="/firebase-firestore-compat.js"></script>
   <script src="/potrace.js?v=5.0.0"></script>
-  <script src="/app.js?v=8.6.0"></script>
+  <script src="/app.js?v=9.0.2"></script>
   <script>
     // Custom Dropdowns Logic
     document.addEventListener('DOMContentLoaded', () => {

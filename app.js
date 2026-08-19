@@ -5,12 +5,19 @@ window.removeAppInitLoader = function() {
     loader.style.opacity = '0';
     loader.style.visibility = 'hidden';
     setTimeout(() => {
-      if (loader.parentNode) {
+      if (loader && loader.parentNode) {
         loader.parentNode.removeChild(loader);
       }
     }, 350);
   }
 };
+
+// Automatic fallback to guarantee loader removal even if Firebase initialization stalls
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+  setTimeout(window.removeAppInitLoader, 800);
+} else {
+  window.addEventListener('DOMContentLoaded', () => setTimeout(window.removeAppInitLoader, 800));
+}
 
 // Custom Modern Alert Modal Function
 window.showCustomAlert = function(message, title = 'Notice', type = 'warning') {
@@ -71,6 +78,57 @@ window.showCustomAlert = function(message, title = 'Notice', type = 'warning') {
 
   okBtn.onclick = closeAlert;
   document.addEventListener('keydown', handleKey);
+};
+
+// Custom Modern Confirm Modal Function
+window.showCustomConfirm = function(message, title = 'Confirm', okLabel = 'Yes', cancelLabel = 'No', onOk = null, onCancel = null) {
+  const modal = document.getElementById('customAlertModal');
+  const iconBox = document.getElementById('customAlertIconBox');
+  const titleEl = document.getElementById('customAlertTitle');
+  const msgEl = document.getElementById('customAlertMessage');
+  const okBtn = document.getElementById('customAlertOkBtn');
+  const cancelBtn = document.getElementById('customAlertCancelBtn');
+  
+  if (!modal || !msgEl) {
+    console.log('[CONFIRM]:', message);
+    if (onOk) onOk();
+    return;
+  }
+
+  titleEl.textContent = title;
+  msgEl.textContent = message;
+  okBtn.textContent = okLabel;
+  
+  if (cancelBtn) {
+    cancelBtn.textContent = cancelLabel;
+    cancelBtn.classList.remove('hidden');
+  }
+
+  iconBox.innerHTML = '⚠️';
+  iconBox.style.background = 'rgba(251, 191, 36, 0.12)';
+  iconBox.style.borderColor = 'rgba(251, 191, 36, 0.3)';
+  iconBox.style.color = '#fbbf24';
+
+  modal.classList.remove('hidden');
+
+  const closeConfirm = () => {
+    modal.classList.add('hidden');
+    if (cancelBtn) cancelBtn.classList.add('hidden');
+    okBtn.onclick = null;
+    if (cancelBtn) cancelBtn.onclick = null;
+  };
+
+  okBtn.onclick = () => {
+    closeConfirm();
+    if (onOk) onOk();
+  };
+
+  if (cancelBtn) {
+    cancelBtn.onclick = () => {
+      closeConfirm();
+      if (onCancel) onCancel();
+    };
+  }
 };
 
 // Custom Floating Toast Notification Function
@@ -730,6 +788,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
 
+  document.querySelectorAll('.back-to-dash-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      navigateTo('/dashboard');
+    });
+  });
+
   if (backToDashBtn) {
     backToDashBtn.addEventListener('click', () => {
       navigateTo('/dashboard');
@@ -746,7 +810,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (tool2View) tool2View.classList.add('hidden');
     if (tool3View) tool3View.classList.add('hidden');
     if (document.getElementById('tool4View')) document.getElementById('tool4View').classList.add('hidden');
-    backToDashBtn.style.display = 'inline-block';
     pageTitle.textContent = 'Icon Sheet Prompt Generator';
     appBody.classList.add('in-tool-view');
   }
@@ -761,7 +824,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (tool2View) tool2View.classList.remove('hidden');
     if (tool3View) tool3View.classList.add('hidden');
     if (document.getElementById('tool4View')) document.getElementById('tool4View').classList.add('hidden');
-    backToDashBtn.style.display = 'inline-block';
     pageTitle.textContent = 'Icon Pack Banner Generator';
     appBody.classList.add('in-tool-view');
     if (typeof renderBannerCanvas === 'function') renderBannerCanvas();
@@ -795,7 +857,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (tool2View) tool2View.classList.add('hidden');
     if (document.getElementById('tool4View')) document.getElementById('tool4View').classList.add('hidden');
     if (tool3View) tool3View.classList.remove('hidden');
-    backToDashBtn.style.display = 'inline-block';
     pageTitle.textContent = 'Google Flow Generator';
     appBody.classList.add('in-tool-view');
     // Initialize connection to WebSocket when launching tool
@@ -813,7 +874,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (tool3View) tool3View.classList.add('hidden');
     const t4 = document.getElementById('tool4View');
     if (t4) t4.classList.remove('hidden');
-    backToDashBtn.style.display = 'inline-block';
     pageTitle.textContent = 'Icon Sheet Slicer & Vectorizer';
     appBody.classList.add('in-tool-view');
     setStudioView('tiles');
@@ -1184,9 +1244,6 @@ Do not include any markdown formatting outside the json codeblock. Output valid 
 
   // Generate Prompt using Gemini API
   generatePromptBtn.addEventListener('click', async () => {
-    const allowed = await window.checkAndConsumeCredit('prompts', 1);
-    if (!allowed) return;
-
     const apiKeys = getApiKeys();
     if (apiKeys.length === 0) {
       updateApiKeyStatus();
@@ -1207,6 +1264,9 @@ Do not include any markdown formatting outside the json codeblock. Output valid 
         return;
       }
     }
+
+    const allowed = await window.checkAndConsumeCredit('prompts', 1, false);
+    if (!allowed) return;
 
     const promptsPerNicheCount = parseInt(document.getElementById('promptsPerNiche').value) || 1;
     const rows = parseInt(rowsInput.value) || 3;
@@ -1313,6 +1373,10 @@ Do not include any markdown formatting outside the json codeblock. Output valid 
           console.error(`Batch #${bIdx + 1} Error:`, err);
           alert(`Batch #${bIdx + 1} Error: ${err.message}`);
         }
+      }
+
+      if (promptResults.length > 0) {
+        await window.checkAndConsumeCredit('prompts', 1, true);
       }
 
       progressDiv.remove();
@@ -1523,6 +1587,10 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     }
 
     await Promise.all(promises);
+
+    if (promptResults.length > 0) {
+      await window.checkAndConsumeCredit('prompts', 1, true);
+    }
 
     if (progressDiv) progressDiv.remove();
     generatePromptBtn.disabled = false;
@@ -1802,6 +1870,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
           }
 
           if (response && response.ok && response.media && response.media.length > 0) {
+            await window.checkAndConsumeCredit('flowImages', 1, true);
             const mediaItem = response.media[0];
             const dataUrl = `data:image/png;base64,${mediaItem.encodedImage}`;
             handleFlowServerMessage({
@@ -2362,7 +2431,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     const imgCount = Number(flowImagesPerPrompt.value) || 1;
     const countRequired = prompts.length * imgCount;
 
-    const allowed = await window.checkAndConsumeCredit('flowImages', countRequired);
+    const allowed = await window.checkAndConsumeCredit('flowImages', countRequired, false);
     if (!allowed) return;
 
     const checkAndStart = () => {
@@ -4417,7 +4486,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
         return;
       }
 
-      const allowed = await window.checkAndConsumeCredit('iconSheets', 1);
+      const allowed = await window.checkAndConsumeCredit('iconSheets', 1, false);
       if (!allowed) return;
 
       btnSliceVectorize.disabled = true;
@@ -4709,7 +4778,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
   }
 
   // Callback handler for WebSocket results
-  window.handleVectorizeTileResult = function(msg) {
+  window.handleVectorizeTileResult = async function(msg) {
     const tileIdx = msg.index;
     const tile = slicedTilesData.find(t => t.idx === tileIdx);
     if (!tile) return;
@@ -4786,6 +4855,9 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       // Re-enable primary action button
       btnSliceVectorize.disabled = false;
       btnSliceVectorize.textContent = `⚡ Convert ${totalTiles} Icons to Vector`;
+
+      // Consume credit upon successful vectorization completion
+      await window.checkAndConsumeCredit('iconSheets', 1, true);
 
       // Track user metric for iconSheets
       if (typeof window.trackUserMetric === 'function') {
@@ -5642,6 +5714,18 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
         firebaseDb = firebase.firestore();
       }
       
+      // Handle Redirect Sign-In results on page load
+      firebaseAuth.getRedirectResult().then((result) => {
+        if (result && result.user) {
+          if (window.showCustomToast) window.showCustomToast(`Welcome, ${result.user.displayName || 'User'}!`, 'success');
+        }
+      }).catch((err) => {
+        console.error('Redirect sign-in error:', err);
+        if (window.showCustomAlert && err.message) {
+          window.showCustomAlert(err.message, 'Sign-In Error', 'error');
+        }
+      });
+      
       firebaseAuth.onAuthStateChanged((user) => {
         if (user) {
           toggleAuthGate(false);
@@ -5650,11 +5734,23 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
           if (userName) userName.textContent = user.displayName || (user.email ? user.email.split('@')[0] : 'User');
           if (userAvatar) userAvatar.src = user.photoURL || 'https://lh3.googleusercontent.com/a/default-user';
           closeAuthModal();
+          trackUserActivity(user);
+          checkAdminAccess(user);
+          renderAdminUserLogs();
+          if (typeof window.updateUserSubscriptionUI === 'function') {
+            window.updateUserSubscriptionUI();
+          }
+          const currentPath = window.location.pathname;
+          if (!currentPath || currentPath === '/' || currentPath === '/index.html') {
+            navigateTo('/dashboard');
+          }
         } else {
           toggleAuthGate(true);
           if (btnOpenAuthModal) btnOpenAuthModal.classList.remove('hidden');
           if (userProfileMenu) userProfileMenu.classList.add('hidden');
           openAuthModal();
+          checkAdminAccess(null);
+          renderAdminUserLogs();
         }
 
         // Remove app loader overlay once auth state resolves
@@ -5674,42 +5770,77 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     }
   }
 
-  if (btnGoogleSignIn) {
-    btnGoogleSignIn.addEventListener('click', async () => {
-      if (firebaseAuth && window.firebase) {
+  window.enterStudioQuickAccess = function() {
+    toggleAuthGate(false);
+    if (btnOpenAuthModal) btnOpenAuthModal.classList.add('hidden');
+    if (userProfileMenu) userProfileMenu.classList.remove('hidden');
+    if (userName && userName.textContent === 'User') userName.textContent = 'Google User';
+    closeAuthModal();
+    if (typeof window.removeAppInitLoader === 'function') window.removeAppInitLoader();
+  };
+
+  const handleGoogleSignInClick = async () => {
+    const btn = document.getElementById('btnGoogleSignIn');
+    let origHtml = '';
+    if (btn) {
+      origHtml = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = `<span style="display: inline-block; animation: spin 1s linear infinite; margin-right: 6px;">⏳</span> Connecting...`;
+    }
+
+    const resetBtn = () => {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = origHtml;
+      }
+    };
+
+    if (firebaseAuth && window.firebase) {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+      try {
+        await firebaseAuth.signInWithPopup(provider);
+        resetBtn();
+      } catch (err) {
+        console.warn('[Google Popup Blocked/Failed]: Falling back to Redirect Auth...', err.message || err);
         try {
-          const provider = new firebase.auth.GoogleAuthProvider();
-          provider.setCustomParameters({ prompt: 'select_account' });
-          const result = await firebaseAuth.signInWithPopup(provider);
-          if (window.showCustomToast) window.showCustomToast(`Welcome, ${result.user.displayName || 'User'}!`, 'success');
-        } catch (err) {
-          console.error('Google Sign In Error:', err);
-          let errTitle = 'Google Sign-In Notice';
-          let errMsg = err.message || 'Google Sign-In failed.';
-          if (err.code === 'auth/unauthorized-domain') {
-            errMsg = 'Domain Authorization Required:\nPlease add your current URL/domain to Firebase Console -> Authentication -> Settings -> Authorized domains.';
-          } else if (err.code === 'auth/popup-blocked') {
-            errMsg = 'Pop-up blocked by browser. Please allow pop-ups for this site and try again.';
-          }
-          if (window.showCustomAlert) {
-            window.showCustomAlert(errMsg, errTitle, 'warning');
+          await firebaseAuth.signInWithRedirect(provider);
+        } catch (redirectErr) {
+          console.error('[Google Redirect Failed]:', redirectErr);
+          resetBtn();
+          if (window.showCustomConfirm) {
+            window.showCustomConfirm(
+              `We couldn't connect to Google/Firebase:\n${redirectErr.message || 'Firebase service unreachable.'}\n\nWould you like to bypass this and enter the studio in Offline/Demo Mode?`,
+              'Firebase Connection Notice',
+              'Enter Offline',
+              'Retry',
+              () => {
+                window.enterStudioQuickAccess();
+                if (window.showCustomToast) window.showCustomToast('Entered in Offline/Demo Mode', 'success');
+              },
+              () => {
+                handleGoogleSignInClick();
+              }
+            );
+          } else if (window.showCustomAlert) {
+            window.showCustomAlert(redirectErr.message || 'Google Sign-In failed.', 'Sign-In Error', 'error');
           }
         }
-      } else {
-        toggleAuthGate(false);
-        if (btnOpenAuthModal) btnOpenAuthModal.classList.add('hidden');
-        if (userProfileMenu) userProfileMenu.classList.remove('hidden');
-        if (userName) userName.textContent = 'Google User';
-        closeAuthModal();
-        if (window.showCustomToast) window.showCustomToast('Signed in with Google (Demo Mode)', 'success');
       }
-    });
+    } else {
+      resetBtn();
+      // local demo/fallback mode if offline or Firebase fails to initialize
+      window.enterStudioQuickAccess();
+      if (window.showCustomToast) window.showCustomToast('Signed in (Demo Mode)', 'success');
+    }
+  };
+
+  if (btnGoogleSignIn) {
+    btnGoogleSignIn.addEventListener('click', handleGoogleSignInClick);
   }
 
   window.triggerGoogleSignIn = function() {
-    if (btnGoogleSignIn) {
-      btnGoogleSignIn.click();
-    }
+    handleGoogleSignInClick();
   };
 
   if (authEmailForm) {
@@ -5823,13 +5954,21 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     }
   }
 
+  function getDhakaDateString() {
+    try {
+      return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Dhaka' }).format(new Date());
+    } catch (e) {
+      return new Date().toISOString().split('T')[0];
+    }
+  }
+
   // ===== Subscription & Daily Credits controller =====
   window.updateUserSubscriptionUI = function() {
     const badge = document.getElementById('userSubscriptionBadge');
-    if (!badge) return;
+    const modal = document.getElementById('subscriptionStatusModal');
 
     if (!firebaseAuth || !firebaseAuth.currentUser) {
-      badge.classList.add('hidden');
+      if (badge) badge.classList.add('hidden');
       return;
     }
 
@@ -5838,7 +5977,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     const u = logs.find(item => item.uid === user.uid || (item.email && user.email && item.email.toLowerCase() === user.email.toLowerCase()));
 
     if (!u) {
-      badge.classList.add('hidden');
+      if (badge) badge.classList.add('hidden');
       return;
     }
 
@@ -5858,32 +5997,143 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       }
     }
 
-    badge.classList.remove('hidden');
-    if (isPro) {
-      const planName = sub === 'monthly' ? 'Monthly Pro' : '6-Months Pro';
-      badge.innerHTML = `⭐ <span>${planName}</span>`;
-      badge.style.color = '#fbbf24'; // Premium Gold
-      badge.style.background = 'rgba(251,191,36,0.15)';
-      badge.style.borderColor = 'rgba(251,191,36,0.3)';
-    } else {
-      // Free User
-      const todayStr = new Date().toISOString().split('T')[0];
-      if (!u.creditsDaily) {
-        u.creditsDaily = { remaining: 30, lastResetDate: todayStr };
+    // 1. Update Topbar Badge
+    if (badge) {
+      badge.classList.remove('hidden');
+      if (isPro) {
+        const planName = sub === 'monthly' ? 'Monthly Pro' : '6-Months Pro';
+        badge.innerHTML = `⭐ <span>${planName}</span>`;
+        badge.style.color = '#fbbf24'; // Premium Gold
+        badge.style.background = 'rgba(251,191,36,0.15)';
+        badge.style.borderColor = 'rgba(251,191,36,0.3)';
+      } else {
+        // Free User
+        const todayStr = getDhakaDateString();
+        if (!u.creditsDaily) {
+          u.creditsDaily = { remaining: 15, lastResetDate: todayStr };
+        }
+        const cd = u.creditsDaily;
+        let needsSave = false;
+        if (cd.lastResetDate !== todayStr) {
+          cd.remaining = 15;
+          cd.lastResetDate = todayStr;
+          needsSave = true;
+        } else if (typeof cd.remaining === 'number' && cd.remaining > 15) {
+          cd.remaining = 15;
+          needsSave = true;
+        }
+        if (needsSave) {
+          saveUserLogs(logs);
+          syncCreditsToDatabase(user.uid, cd.remaining, cd.lastResetDate);
+        }
+        badge.innerHTML = `🌱 <span>Free</span> • <span>${cd.remaining}/15 Credits</span>`;
+        badge.style.color = '#cdfc52'; // Premium Lime Green
+        badge.style.background = 'rgba(205,252,82,0.15)';
+        badge.style.borderColor = 'rgba(205,252,82,0.3)';
       }
-      const cd = u.creditsDaily;
-      if (cd.lastResetDate !== todayStr) {
-        cd.remaining = 30;
-        cd.lastResetDate = todayStr;
+    }
+
+    // 2. Update Modal Elements if modal exists
+    if (modal) {
+      const tierBadge = document.getElementById('subModalTierBadge');
+      const titleText = modal.querySelector('h3');
+      const iconWrapper = modal.querySelector('div[style*="font-size: 32px"]');
+      const creditsCount = document.getElementById('subModalCreditsCount');
+      const creditsSub = document.getElementById('subModalCreditsSub');
+      const progressBar = document.getElementById('subModalProgressBar');
+      const planName = document.getElementById('subModalPlanName');
+      const statusText = document.getElementById('subModalStatusText');
+
+      if (isPro) {
+        if (tierBadge) {
+          tierBadge.textContent = 'Account Tier: Premium';
+          tierBadge.style.color = '#fbbf24';
+          tierBadge.style.background = 'rgba(251, 191, 36, 0.15)';
+          tierBadge.style.borderColor = 'rgba(251, 191, 36, 0.25)';
+        }
+        if (titleText) titleText.textContent = 'Your Premium Status';
+        if (iconWrapper) {
+          iconWrapper.innerHTML = '⭐';
+          iconWrapper.style.color = '#fbbf24';
+          iconWrapper.style.background = 'rgba(251, 191, 36, 0.08)';
+          iconWrapper.style.borderColor = 'rgba(251, 191, 36, 0.25)';
+          iconWrapper.style.boxShadow = '0 0 25px rgba(251, 191, 36, 0.1)';
+        }
+        if (creditsCount) creditsCount.textContent = 'Unlimited';
+        if (creditsSub) {
+          creditsSub.textContent = 'Unlimited Active';
+          creditsSub.style.color = '#cdfc52';
+        }
+        if (progressBar) {
+          progressBar.style.width = '100%';
+          progressBar.style.background = 'linear-gradient(90deg, #cdfc52 0%, #10b981 100%)';
+        }
+        if (planName) planName.textContent = sub === 'monthly' ? 'Monthly Pro' : '6-Months Pro';
+        
+        if (expiry) {
+          const expDate = new Date(expiry);
+          const diffTime = Math.abs(expDate - new Date());
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          if (statusText) {
+            statusText.textContent = `${diffDays} Day${diffDays > 1 ? 's' : ''} Left`;
+            statusText.style.color = '#10b981';
+          }
+        } else {
+          if (statusText) {
+            statusText.textContent = 'Active (No Expiry)';
+            statusText.style.color = '#10b981';
+          }
+        }
+      } else {
+        // Free user
+        if (tierBadge) {
+          tierBadge.textContent = 'Account Tier: Free';
+          tierBadge.style.color = '#cdfc52';
+          tierBadge.style.background = 'rgba(205, 252, 82, 0.15)';
+          tierBadge.style.borderColor = 'rgba(205, 252, 82, 0.25)';
+        }
+        if (titleText) titleText.textContent = 'Your Plan Status';
+        if (iconWrapper) {
+          iconWrapper.innerHTML = '🌱';
+          iconWrapper.style.color = '#cdfc52';
+          iconWrapper.style.background = 'rgba(205, 252, 82, 0.08)';
+          iconWrapper.style.borderColor = 'rgba(205, 252, 82, 0.25)';
+          iconWrapper.style.boxShadow = '0 0 25px rgba(205, 252, 82, 0.1)';
+        }
+
+        const todayStr = getDhakaDateString();
+        if (!u.creditsDaily) {
+          u.creditsDaily = { remaining: 15, lastResetDate: todayStr };
+        }
+        const cd = u.creditsDaily;
+        if (cd.lastResetDate !== todayStr) {
+          cd.remaining = 15;
+          cd.lastResetDate = todayStr;
+        }
+
+        const remaining = typeof cd.remaining === 'number' ? cd.remaining : 15;
+        if (creditsCount) creditsCount.textContent = `${remaining} / 15`;
+        if (creditsSub) {
+          creditsSub.textContent = 'Credits Remaining';
+          creditsSub.style.color = 'var(--on-variant)';
+        }
+
+        if (progressBar) {
+          const percentage = Math.max(0, Math.min(100, (remaining / 15) * 100));
+          progressBar.style.width = `${percentage}%`;
+          progressBar.style.background = remaining < 3 ? '#ef4444' : 'linear-gradient(90deg, #cdfc52 0%, #10b981 100%)';
+        }
+        if (planName) planName.textContent = 'Free Tier';
+        if (statusText) {
+          statusText.textContent = 'Life Time';
+          statusText.style.color = 'var(--on-variant)';
+        }
       }
-      badge.innerHTML = `🌱 <span>Free</span> • <span>${cd.remaining}/30 Credits</span>`;
-      badge.style.color = '#cdfc52'; // Premium Lime Green
-      badge.style.background = 'rgba(205,252,82,0.15)';
-      badge.style.borderColor = 'rgba(205,252,82,0.3)';
     }
   };
 
   window.openSubStatusModal = function() {
+    window.updateUserSubscriptionUI();
     const modal = document.getElementById('subscriptionStatusModal');
     if (!modal) return;
 
@@ -5891,118 +6141,6 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     if (!user) {
       if (window.showCustomToast) window.showCustomToast('Please sign in to view subscription status.', 'warning');
       return;
-    }
-
-    const logs = getUserLogs();
-    const u = logs.find(item => item.uid === user.uid || (item.email && user.email && item.email.toLowerCase() === user.email.toLowerCase()));
-
-    if (!u) {
-      if (window.showCustomToast) window.showCustomToast('Unable to fetch subscription details.', 'warning');
-      return;
-    }
-
-    const sub = u.subscription || 'free';
-    const expiry = u.subscriptionExpiry;
-
-    // Check if Pro subscription is active & not expired
-    let isPro = false;
-    if (sub === 'monthly' || sub === 'six_months') {
-      if (!expiry) {
-        isPro = true;
-      } else {
-        const expDate = new Date(expiry);
-        if (expDate > new Date()) {
-          isPro = true;
-        }
-      }
-    }
-
-    // Populate data
-    const tierBadge = document.getElementById('subModalTierBadge');
-    const titleText = modal.querySelector('h3');
-    const iconWrapper = modal.querySelector('div[style*="font-size: 32px"]');
-    const creditsCount = document.getElementById('subModalCreditsCount');
-    const creditsSub = document.getElementById('subModalCreditsSub');
-    const progressBar = document.getElementById('subModalProgressBar');
-    const planName = document.getElementById('subModalPlanName');
-    const statusText = document.getElementById('subModalStatusText');
-
-    if (isPro) {
-      // Premium user
-      if (tierBadge) {
-        tierBadge.textContent = 'Account Tier: Premium';
-        tierBadge.style.color = '#fbbf24';
-        tierBadge.style.background = 'rgba(251, 191, 36, 0.15)';
-        tierBadge.style.borderColor = 'rgba(251, 191, 36, 0.25)';
-      }
-      if (titleText) titleText.textContent = 'Your Premium Status';
-      if (iconWrapper) {
-        iconWrapper.innerHTML = '⭐';
-        iconWrapper.style.color = '#fbbf24';
-        iconWrapper.style.background = 'rgba(251, 191, 36, 0.08)';
-        iconWrapper.style.borderColor = 'rgba(251, 191, 36, 0.25)';
-        iconWrapper.style.boxShadow = '0 0 25px rgba(251, 191, 36, 0.1)';
-      }
-      if (creditsCount) creditsCount.textContent = 'Unlimited';
-      if (creditsSub) {
-        creditsSub.textContent = 'Unlimited Active';
-        creditsSub.style.color = '#cdfc52';
-      }
-      if (progressBar) {
-        progressBar.style.width = '100%';
-        progressBar.style.background = 'linear-gradient(90deg, #cdfc52 0%, #10b981 100%)';
-      }
-      if (planName) planName.textContent = sub === 'monthly' ? 'Monthly Pro' : '6-Months Pro';
-      
-      if (expiry) {
-        const expDate = new Date(expiry);
-        const diffTime = Math.abs(expDate - new Date());
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        if (statusText) {
-          statusText.textContent = `${diffDays} Day${diffDays > 1 ? 's' : ''} Left`;
-          statusText.style.color = '#10b981';
-        }
-      } else {
-        if (statusText) {
-          statusText.textContent = 'Active (No Expiry)';
-          statusText.style.color = '#10b981';
-        }
-      }
-    } else {
-      // Free user
-      if (tierBadge) {
-        tierBadge.textContent = 'Account Tier: Free';
-        tierBadge.style.color = '#cdfc52';
-        tierBadge.style.background = 'rgba(205, 252, 82, 0.15)';
-        tierBadge.style.borderColor = 'rgba(205, 252, 82, 0.25)';
-      }
-      if (titleText) titleText.textContent = 'Your Plan Status';
-      if (iconWrapper) {
-        iconWrapper.innerHTML = '🌱';
-        iconWrapper.style.color = '#cdfc52';
-        iconWrapper.style.background = 'rgba(205, 252, 82, 0.08)';
-        iconWrapper.style.borderColor = 'rgba(205, 252, 82, 0.25)';
-        iconWrapper.style.boxShadow = '0 0 25px rgba(205, 252, 82, 0.1)';
-      }
-
-      const cd = u.creditsDaily || { remaining: 30 };
-      const remaining = typeof cd.remaining === 'number' ? cd.remaining : 30;
-      if (creditsCount) creditsCount.textContent = `${remaining} / 30`;
-      if (creditsSub) {
-        creditsSub.textContent = 'Credits Remaining';
-        creditsSub.style.color = 'var(--on-variant)';
-      }
-
-      if (progressBar) {
-        const percentage = Math.max(0, Math.min(100, (remaining / 30) * 100));
-        progressBar.style.width = `${percentage}%`;
-        progressBar.style.background = remaining < 5 ? '#ef4444' : 'linear-gradient(90deg, #cdfc52 0%, #10b981 100%)';
-      }
-      if (planName) planName.textContent = 'Free Tier';
-      if (statusText) {
-        statusText.textContent = 'Life Time';
-        statusText.style.color = 'var(--on-variant)';
-      }
     }
 
     modal.classList.remove('hidden');
@@ -6115,14 +6253,14 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
         return true;
       }
 
-      const todayStr = new Date().toISOString().split('T')[0];
+      const todayStr = getDhakaDateString();
       if (!u.creditsDaily) {
-        u.creditsDaily = { remaining: 30, lastResetDate: todayStr };
+        u.creditsDaily = { remaining: 15, lastResetDate: todayStr };
       }
 
       const cd = u.creditsDaily;
       if (cd.lastResetDate !== todayStr) {
-        cd.remaining = 30;
+        cd.remaining = 15;
         cd.lastResetDate = todayStr;
       }
 
@@ -6601,12 +6739,12 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
             </td>
             <td style="padding: 12px 14px;">
               <select class="admin-sub-select" data-uid="${u.uid}" data-email="${email}" style="background: var(--surface); border: 1px solid var(--outline-variant); color: var(--on-surface); font-size: 11px; border-radius: 6px; padding: 4.5px 8px; width: 140px; font-weight: 700; cursor: pointer; outline: none; transition: border-color .2s;">
-                <option value="free" ${sub === 'free' ? 'selected' : ''}>🌱 Free (30cr/day)</option>
+                <option value="free" ${sub === 'free' ? 'selected' : ''}>🌱 Free (15cr/day)</option>
                 <option value="monthly" ${sub === 'monthly' ? 'selected' : ''}>⭐ Monthly (৳100)</option>
                 <option value="six_months" ${sub === 'six_months' ? 'selected' : ''}>👑 6-Months (৳500)</option>
               </select>
               <div style="font-size: 9.5px; color: var(--on-variant); margin-top: 4px; font-family: var(--mono);">
-                ${isPro ? `Exp: ${expiry ? new Date(expiry).toLocaleDateString() : 'Forever'}` : `Credits: ${(u.creditsDaily?.remaining ?? 30)}/30`}
+                ${isPro ? `Exp: ${expiry ? new Date(expiry).toLocaleDateString() : 'Forever'}` : `Credits: ${Math.min((u.creditsDaily?.remaining ?? 15), 15)}/15`}
               </div>
             </td>
             <td style="padding: 12px 14px;">${statusBadge}</td>
@@ -6986,27 +7124,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     btnRefreshAdminPayments.addEventListener('click', window.refreshAdminPayments);
   }
 
-  // Update onAuthStateChanged handler
-  if (window.firebase && firebaseAuth) {
-    firebaseAuth.onAuthStateChanged((user) => {
-      if (user) {
-        if (btnOpenAuthModal) btnOpenAuthModal.classList.add('hidden');
-        if (userProfileMenu) userProfileMenu.classList.remove('hidden');
-        if (userName) userName.textContent = user.displayName || (user.email ? user.email.split('@')[0] : 'User');
-        if (userAvatar) userAvatar.src = user.photoURL || 'https://lh3.googleusercontent.com/a/default-user';
-        closeAuthModal();
-        trackUserActivity(user);
-      } else {
-        if (btnOpenAuthModal) btnOpenAuthModal.classList.remove('hidden');
-        if (userProfileMenu) userProfileMenu.classList.add('hidden');
-      }
-      checkAdminAccess(user);
-      renderAdminUserLogs();
-      if (typeof window.updateUserSubscriptionUI === 'function') {
-        window.updateUserSubscriptionUI();
-      }
-    });
-  }
+
 
   window.openAdminPinModal = function(e) {
     if (e) {
@@ -7864,25 +7982,27 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       if (appBody) appBody.classList.remove('in-tool-view');
       setSidebarActive('dashboard');
     } else if (path === '/pricing') {
-      const views = ['#dashboardView', '#adminPanelView', '#studioView', '#iconSheetSlicerSection', '#checkoutView'];
+      const views = ['#dashboardView', '#adminPanelView', '#studioView', '#tool2View', '#tool3View', '#tool4View', '#iconSheetSlicerSection', '#checkoutView'];
       views.forEach(sel => {
         const el = document.querySelector(sel);
         if (el) el.classList.add('hidden');
       });
       if (pricingView) pricingView.classList.remove('hidden');
       document.body.classList.add('pricing-page-active');
+      if (appBody) appBody.classList.remove('in-tool-view');
       if (pageTitle) pageTitle.textContent = "💳 Pricing Plans";
       const titleBadge = document.getElementById('pageTitleBadge');
       if (titleBadge) titleBadge.classList.add('hidden');
       document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
     } else if (path.startsWith('/checkout')) {
-      const views = ['#dashboardView', '#adminPanelView', '#studioView', '#iconSheetSlicerSection', '#pricingView'];
+      const views = ['#dashboardView', '#adminPanelView', '#studioView', '#tool2View', '#tool3View', '#tool4View', '#iconSheetSlicerSection', '#pricingView'];
       views.forEach(sel => {
         const el = document.querySelector(sel);
         if (el) el.classList.add('hidden');
       });
       if (checkoutView) checkoutView.classList.remove('hidden');
       document.body.classList.add('checkout-page-active');
+      if (appBody) appBody.classList.remove('in-tool-view');
 
       let checkoutPlan = 'six_months';
       if (path.includes('monthly')) {
@@ -7915,6 +8035,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
 
   // Scroll Reveal Observer for Landing Page
   const revealElements = document.querySelectorAll('.reveal-on-scroll');
+  revealElements.forEach(el => el.classList.add('revealed'));
   if ('IntersectionObserver' in window && revealElements.length > 0) {
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
@@ -7924,8 +8045,6 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       });
     }, { threshold: 0.08 });
     revealElements.forEach(el => observer.observe(el));
-  } else {
-    revealElements.forEach(el => el.classList.add('revealed'));
   }
 
   // --- Subscription Purchase Checkout Modal Logic (Overridden to full page checkout) ---
@@ -8101,8 +8220,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       if (instructionsEl) {
         instructionsEl.innerHTML = `
           ১. স্ক্রিল (Skrill), রকেট (Rocket), উপায় (Upay) বা অন্য কোনো মাধ্যমে পেমেন্ট করতে চাইলে আমাদের সাথে হোয়াটসঅ্যাপে যোগাযোগ করুন।<br>
-          ২. সরাসরি চ্যাট করতে পাশে দেওয়া <b>💬 WhatsApp</b> বাটনে ক্লিক করুন।<br>
-          ৩. পেমেন্টের টাকার পরিমাণ দিন: <b>${priceText}</b>
+          ২. সরাসরি চ্যাট করতে পাশে দেওয়া <b>💬 WhatsApp</b> বাটনে ক্লিক করুন।
         `;
       }
     }

@@ -368,7 +368,7 @@ const server = http.createServer((req, res) => {
           } else {
             userObj.subscription = 'free';
             userObj.subscriptionExpiry = null;
-            userObj.creditsDaily = { remaining: 15, lastResetDate: now.split('T')[0] };
+            userObj.creditsDaily = { remaining: 30, lastResetDate: now.split('T')[0] };
             await col.insertOne(userObj);
           }
           count = await col.countDocuments();
@@ -393,7 +393,7 @@ const server = http.createServer((req, res) => {
           } else {
             userObj.subscription = 'free';
             userObj.subscriptionExpiry = null;
-            userObj.creditsDaily = { remaining: 15, lastResetDate: now.split('T')[0] };
+            userObj.creditsDaily = { remaining: 30, lastResetDate: now.split('T')[0] };
             users.unshift(userObj);
           }
           saveMongoUsersLocal(users);
@@ -526,7 +526,7 @@ const server = http.createServer((req, res) => {
           await col.updateOne({ uid: uid }, {
             $set: {
               creditsDaily: {
-                remaining: remaining ?? 30,
+                remaining: remaining ?? 15,
                 lastResetDate: lastResetDate || new Date().toISOString().split('T')[0]
               }
             }
@@ -537,7 +537,7 @@ const server = http.createServer((req, res) => {
           let index = users.findIndex(u => u.uid === uid);
           if (index >= 0) {
             users[index].creditsDaily = {
-              remaining: remaining ?? 30,
+              remaining: remaining ?? 15,
               lastResetDate: lastResetDate || new Date().toISOString().split('T')[0]
             };
             saveMongoUsersLocal(users);
