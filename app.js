@@ -3839,6 +3839,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     propColor: document.getElementById('propColor'),
     propColorHex: document.getElementById('propColorHex'),
     propRadius: document.getElementById('propRadius'),
+    propRadiusSlider: document.getElementById('propRadiusSlider'),
     propFont: document.getElementById('propFont'),
     propText: document.getElementById('propText'),
     btnResetLayoutColors: document.getElementById('btnResetLayoutColors'),
@@ -3982,6 +3983,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     uiElements.propW.value = '';
     uiElements.propH.value = '';
     uiElements.propRadius.value = '';
+    if (uiElements.propRadiusSlider) uiElements.propRadiusSlider.value = 0;
     uiElements.propColor.value = '#000000';
     uiElements.propColorHex.value = '#000000';
     if (uiElements.propText) uiElements.propText.value = '';
@@ -4043,12 +4045,22 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     if (layer.type === 'rect') {
       document.getElementById('propRadiusField').style.display = 'block';
       document.getElementById('lblPropRadius').textContent = 'Corner Radius (rx)';
-      uiElements.propRadius.value = layer.radius || 0;
+      const r = layer.radius || 0;
+      uiElements.propRadius.value = r;
+      if (uiElements.propRadiusSlider) {
+        uiElements.propRadiusSlider.max = 600;
+        uiElements.propRadiusSlider.value = r;
+      }
     } 
     else if (layer.type === 'grid') {
       document.getElementById('propRadiusField').style.display = 'block';
       document.getElementById('lblPropRadius').textContent = 'Grid Padding (px)';
-      uiElements.propRadius.value = layer.padding || 0;
+      const p = layer.padding || 0;
+      uiElements.propRadius.value = p;
+      if (uiElements.propRadiusSlider) {
+        uiElements.propRadiusSlider.max = 500;
+        uiElements.propRadiusSlider.value = p;
+      }
     }
 
     // Color fields visibility
@@ -4129,6 +4141,17 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     const el = document.getElementById(id);
     if (el) el.addEventListener('input', saveCurrentFieldsToActivePreset);
   });
+
+  if (uiElements.propRadiusSlider) {
+    uiElements.propRadiusSlider.addEventListener('input', () => {
+      uiElements.propRadius.value = uiElements.propRadiusSlider.value;
+      saveCurrentFieldsToActivePreset();
+    });
+    // Add input listener on numeric to sync slider back
+    uiElements.propRadius.addEventListener('input', () => {
+      uiElements.propRadiusSlider.value = uiElements.propRadius.value || 0;
+    });
+  }
 
   if (uiElements.propColor && uiElements.propColorHex) {
     uiElements.propColor.addEventListener('input', () => {

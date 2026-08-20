@@ -1119,7 +1119,10 @@
 
                     <div class="prop-field" id="propRadiusField">
                       <label style="display: block; font-size: 9.5px; color: var(--on-variant); margin-bottom: 3px;" id="lblPropRadius">Corner Radius (rx)</label>
-                      <input type="number" class="ctl-input" id="propRadius" value="0" style="height: 30px; padding: 4px 8px; font-size: 11px;" />
+                      <div style="display: flex; align-items: center; gap: 8px;">
+                        <input type="range" id="propRadiusSlider" min="0" max="600" value="0" style="flex: 1; accent-color: var(--primary); height: 6px; cursor: pointer;" />
+                        <input type="number" class="ctl-input" id="propRadius" value="0" style="width: 65px; height: 30px; padding: 4px 8px; font-size: 11px;" />
+                      </div>
                     </div>
 
                     <div class="prop-field" id="propFontField" style="display: none;">
