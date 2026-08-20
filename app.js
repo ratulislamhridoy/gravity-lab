@@ -3451,74 +3451,74 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
 
   const defaultTemplateGeometries = {
     metal: [
-      { id: 'leftBg', type: 'rect', name: 'Left Sidebar BG', x: 0, y: 0, w: 1600, h: 2600, radius: 0, fill: '#5bb98c' },
-      { id: 'featBg', type: 'rect', name: 'Featured Icon Box BG', x: 180, y: 180, w: 1240, h: 1240, radius: 120, fill: '#45a677' },
+      { id: 'leftBg', type: 'rect', name: 'Left Sidebar BG', x: 0, y: 0, w: 1600, h: 2600, radius: 0, fill: 'url(#grad-metal)' },
+      { id: 'featBg', type: 'rect', name: 'Featured Icon Box BG', x: 180, y: 180, w: 1240, h: 1240, radius: 120, fill: '#2c6b4e' },
       { id: 'featIcon', type: 'featured', name: 'Featured Preview Icon', x: 180, y: 180, w: 1240, h: 1240 },
-      { id: 'titleText', type: 'text', name: 'Title Text', x: 800, y: 1600, fontSize: 104, fontFamily: 'Outfit', fill: '#12382b', text: 'METAL' },
-      { id: 'subText', type: 'text', name: 'Subtitle Text', x: 800, y: 1730, fontSize: 44, fontFamily: 'Outfit', fill: '#12382b', text: '[COUNT] LINE ICONS' },
+      { id: 'titleText', type: 'text', name: 'Title Text', x: 800, y: 1600, fontSize: 104, fontFamily: 'Outfit', fill: '#ffffff', text: 'METAL' },
+      { id: 'subText', type: 'text', name: 'Subtitle Text', x: 800, y: 1730, fontSize: 44, fontFamily: 'Outfit', fill: '#a3d9bc', text: '[COUNT] LINE ICONS' },
       { id: 'badgeBg', type: 'rect', name: 'Bottom Accent Box', x: 0, y: 1950, w: 1600, h: 650, radius: 0, fill: '#12382b' },
       { id: 'badgeText', type: 'text', name: 'Badge Text', x: 800, y: 2270, fontSize: 58, fontFamily: 'Outfit', fill: '#ffffff', text: '[COUNT] LINE ICONS' },
-      { id: 'rightBg', type: 'rect', name: 'Right Panel BG', x: 1600, y: 0, w: 4400, h: 2600, radius: 0, fill: '#f1fbf6' },
+      { id: 'rightBg', type: 'rect', name: 'Right Panel BG', x: 1600, y: 0, w: 4400, h: 2600, radius: 0, fill: '#f0faf5' },
       { id: 'iconGrid', type: 'grid', name: 'Icons Grid Area', x: 1680, y: 100, w: 4240, h: 2400, padding: 140, fill: '#12382b' }
     ],
     accounting: [
-      { id: 'leftBg', type: 'rect', name: 'Left Sidebar BG', x: 0, y: 0, w: 1600, h: 2600, radius: 0, fill: '#fff7ed' },
-      { id: 'featBg', type: 'rect', name: 'Featured Icon Box BG', x: 180, y: 180, w: 1240, h: 1240, radius: 120, fill: '#ffedd5' },
+      { id: 'leftBg', type: 'rect', name: 'Left Sidebar BG', x: 0, y: 0, w: 1600, h: 2600, radius: 0, fill: 'url(#grad-accounting)' },
+      { id: 'featBg', type: 'rect', name: 'Featured Icon Box BG', x: 180, y: 180, w: 1240, h: 1240, radius: 120, fill: '#fff2e6' },
       { id: 'featIcon', type: 'featured', name: 'Featured Preview Icon', x: 180, y: 180, w: 1240, h: 1240 },
       { id: 'titleText', type: 'text', name: 'Title Text', x: 800, y: 1600, fontSize: 96, fontFamily: 'Outfit', fill: '#1c1917', text: 'ACCOUNTING' },
       { id: 'subText', type: 'text', name: 'Subtitle Text', x: 800, y: 1730, fontSize: 44, fontFamily: 'Outfit', fill: '#78350f', text: '[COUNT] EDITABLE STROKE' },
-      { id: 'badgeBg', type: 'rect', name: 'Bottom Accent Box', x: 0, y: 1950, w: 1600, h: 650, radius: 0, fill: '#f95738' },
+      { id: 'badgeBg', type: 'rect', name: 'Bottom Accent Box', x: 0, y: 1950, w: 1600, h: 650, radius: 0, fill: 'url(#grad-accounting-badge)' },
       { id: 'badgeText', type: 'text', name: 'Badge Text', x: 800, y: 2270, fontSize: 56, fontFamily: 'Outfit', fill: '#ffffff', text: '[COUNT] STROKE ICONS' },
-      { id: 'rightBg', type: 'rect', name: 'Right Panel BG', x: 1600, y: 0, w: 4400, h: 2600, radius: 0, fill: '#ffffff' },
+      { id: 'rightBg', type: 'rect', name: 'Right Panel BG', x: 1600, y: 0, w: 4400, h: 2600, radius: 0, fill: '#fffdfa' },
       { id: 'iconGrid', type: 'grid', name: 'Icons Grid Area', x: 1680, y: 100, w: 4240, h: 2400, padding: 140, fill: '#27272a' }
     ],
     clipboard: [
-      { id: 'leftBg', type: 'rect', name: 'Left Sidebar BG', x: 0, y: 0, w: 1600, h: 2600, radius: 0, fill: '#e0f2fe' },
-      { id: 'featBg', type: 'rect', name: 'Featured Icon Box BG', x: 180, y: 240, w: 1240, h: 1240, radius: 120, fill: '#bae6fd' },
+      { id: 'leftBg', type: 'rect', name: 'Left Sidebar BG', x: 0, y: 0, w: 1600, h: 2600, radius: 0, fill: 'url(#grad-clipboard)' },
+      { id: 'featBg', type: 'rect', name: 'Featured Icon Box BG', x: 180, y: 240, w: 1240, h: 1240, radius: 120, fill: '#cbe5ff' },
       { id: 'featIcon', type: 'featured', name: 'Featured Preview Icon', x: 180, y: 240, w: 1240, h: 1240 },
       { id: 'titleText', type: 'text', name: 'Title Text', x: 800, y: 1640, fontSize: 92, fontFamily: 'Outfit', fill: '#0f172a', text: 'CLIPBOARD' },
       { id: 'subText', type: 'text', name: 'Subtitle Text', x: 800, y: 1760, fontSize: 44, fontFamily: 'Outfit', fill: '#0369a1', text: '[COUNT] LINE ICONS' },
-      { id: 'badgeBg', type: 'rect', name: 'Orange Accent Badge', x: 400, y: 1880, w: 800, h: 140, radius: 70, fill: '#ea580c' },
+      { id: 'badgeBg', type: 'rect', name: 'Orange Accent Badge', x: 400, y: 1880, w: 800, h: 140, radius: 70, fill: 'url(#grad-clipboard-badge)' },
       { id: 'badgeText', type: 'text', name: 'Badge Text', x: 800, y: 1960, fontSize: 48, fontFamily: 'Outfit', fill: '#ffffff', text: 'LINE ICONS' },
-      { id: 'rightBg', type: 'rect', name: 'Right Panel BG', x: 1600, y: 0, w: 4400, h: 2600, radius: 0, fill: '#ffffff' },
+      { id: 'rightBg', type: 'rect', name: 'Right Panel BG', x: 1600, y: 0, w: 4400, h: 2600, radius: 0, fill: '#fafeff' },
       { id: 'iconGrid', type: 'grid', name: 'Icons Grid Area', x: 1680, y: 100, w: 4240, h: 2400, padding: 140, fill: '#0f172a' }
     ],
     document: [
-      { id: 'leftBg', type: 'rect', name: 'Left Sidebar BG', x: 0, y: 0, w: 1600, h: 2600, radius: 0, fill: '#18181b' },
+      { id: 'leftBg', type: 'rect', name: 'Left Sidebar BG', x: 0, y: 0, w: 1600, h: 2600, radius: 0, fill: 'url(#grad-document)' },
       { id: 'featBg', type: 'rect', name: 'Featured Icon Box BG', x: 180, y: 180, w: 1240, h: 1240, radius: 120, fill: '#27272a' },
       { id: 'featIcon', type: 'featured', name: 'Featured Preview Icon', x: 180, y: 180, w: 1240, h: 1240 },
-      { id: 'badgeBg', type: 'rect', name: 'Red Accent Divider', x: 200, y: 1540, w: 1200, h: 12, radius: 6, fill: '#ef4444' },
+      { id: 'badgeBg', type: 'rect', name: 'Red Accent Divider', x: 200, y: 1540, w: 1200, h: 12, radius: 6, fill: '#ff4d4d' },
       { id: 'titleText', type: 'text', name: 'Title Text', x: 800, y: 1670, fontSize: 96, fontFamily: 'Outfit', fill: '#ffffff', text: 'DOCUMENT' },
-      { id: 'subText', type: 'text', name: 'Subtitle Text', x: 800, y: 1780, fontSize: 48, fontFamily: 'Outfit', fill: '#ef4444', text: 'ICONS · VECTOR SVG' },
-      { id: 'badgeText', type: 'text', name: 'Badge Text', x: 800, y: 2270, fontSize: 52, fontFamily: 'Outfit', fill: '#ef4444', text: '[COUNT] ICONS' },
-      { id: 'rightBg', type: 'rect', name: 'Right Panel BG', x: 1600, y: 0, w: 4400, h: 2600, radius: 0, fill: '#ffffff' },
+      { id: 'subText', type: 'text', name: 'Subtitle Text', x: 800, y: 1780, fontSize: 48, fontFamily: 'Outfit', fill: '#ff4d4d', text: 'ICONS · VECTOR SVG' },
+      { id: 'badgeText', type: 'text', name: 'Badge Text', x: 800, y: 2270, fontSize: 52, fontFamily: 'Outfit', fill: '#ff4d4d', text: '[COUNT] ICONS' },
+      { id: 'rightBg', type: 'rect', name: 'Right Panel BG', x: 1600, y: 0, w: 4400, h: 2600, radius: 0, fill: '#fdfdfd' },
       { id: 'iconGrid', type: 'grid', name: 'Icons Grid Area', x: 1680, y: 100, w: 4240, h: 2400, padding: 140, fill: '#27272a' }
     ],
     breakeven: [
-      { id: 'leftBg', type: 'rect', name: 'Left Sidebar BG', x: 0, y: 0, w: 1600, h: 2600, radius: 0, fill: '#f8fafc' },
-      { id: 'topBanner', type: 'rect', name: 'Top Banner BG', x: 0, y: 0, w: 1600, h: 220, radius: 0, fill: '#2563eb' },
+      { id: 'leftBg', type: 'rect', name: 'Left Sidebar BG', x: 0, y: 0, w: 1600, h: 2600, radius: 0, fill: 'url(#grad-breakeven)' },
+      { id: 'topBanner', type: 'rect', name: 'Top Banner BG', x: 0, y: 0, w: 1600, h: 220, radius: 0, fill: '#1d4ed8' },
       { id: 'badgeText', type: 'text', name: 'Banner Text', x: 800, y: 140, fontSize: 64, fontFamily: 'Outfit', fill: '#ffffff', text: '[COUNT] ICONS' },
-      { id: 'featBg', type: 'rect', name: 'Featured Icon Box BG', x: 180, y: 320, w: 1240, h: 1240, radius: 120, fill: '#e2e8f0' },
+      { id: 'featBg', type: 'rect', name: 'Featured Icon Box BG', x: 180, y: 320, w: 1240, h: 1240, radius: 120, fill: '#cbd5e1' },
       { id: 'featIcon', type: 'featured', name: 'Featured Preview Icon', x: 180, y: 320, w: 1240, h: 1240 },
       { id: 'titleText', type: 'text', name: 'Title Text', x: 800, y: 1680, fontSize: 84, fontFamily: 'Outfit', fill: '#0f172a', text: 'BREAK EVEN POINT' },
       { id: 'subText', type: 'text', name: 'Subtitle Text', x: 800, y: 1790, fontSize: 44, fontFamily: 'Outfit', fill: '#475569', text: '[COUNT] VECTOR ICONS' },
       { id: 'badgeBg', type: 'rect', name: 'Bottom Accent Box', x: 0, y: 2150, w: 1600, h: 450, radius: 0, fill: '#2563eb' },
-      { id: 'rightBg', type: 'rect', name: 'Right Panel BG', x: 1600, y: 0, w: 4400, h: 2600, radius: 0, fill: '#ffffff' },
+      { id: 'rightBg', type: 'rect', name: 'Right Panel BG', x: 1600, y: 0, w: 4400, h: 2600, radius: 0, fill: '#fafbff' },
       { id: 'iconGrid', type: 'grid', name: 'Icons Grid Area', x: 1680, y: 100, w: 4240, h: 2400, padding: 140, fill: '#1e293b' }
     ],
     healthcare: [
-      { id: 'leftBg', type: 'rect', name: 'Left Sidebar BG', x: 0, y: 0, w: 1600, h: 2600, radius: 0, fill: '#2a4436' },
-      { id: 'featBg', type: 'rect', name: 'Featured Icon Box BG', x: 180, y: 180, w: 1240, h: 1240, radius: 120, fill: '#a3b18a' },
+      { id: 'leftBg', type: 'rect', name: 'Left Sidebar BG', x: 0, y: 0, w: 1600, h: 2600, radius: 0, fill: 'url(#grad-healthcare)' },
+      { id: 'featBg', type: 'rect', name: 'Featured Icon Box BG', x: 180, y: 180, w: 1240, h: 1240, radius: 120, fill: '#355946' },
       { id: 'featIcon', type: 'featured', name: 'Featured Preview Icon', x: 180, y: 180, w: 1240, h: 1240 },
       { id: 'titleText', type: 'text', name: 'Title Text', x: 800, y: 1620, fontSize: 92, fontFamily: 'Outfit', fill: '#ffffff', text: 'HEALTHCARE ICON' },
       { id: 'subText', type: 'text', name: 'Subtitle Text', x: 800, y: 1740, fontSize: 48, fontFamily: 'Outfit', fill: 'rgba(255,255,255,0.7)', text: '[COUNT] ICONS · VECTOR SVG' },
       { id: 'badgeBg', type: 'rect', name: 'Count Badge BG', x: 560, y: 2180, w: 480, h: 140, radius: 70, fill: '#ffffff' },
       { id: 'badgeText', type: 'text', name: 'Badge Text', x: 800, y: 2270, fontSize: 52, fontFamily: 'Outfit', fill: '#2a4436', text: '[COUNT] ICONS' },
-      { id: 'rightBg', type: 'rect', name: 'Right Panel BG', x: 1600, y: 0, w: 4400, h: 2600, radius: 0, fill: '#f7f4fa' },
-      { id: 'iconGrid', type: 'grid', name: 'Icons Grid Area', x: 1680, y: 100, w: 4240, h: 2400, padding: 140, fill: '#344e41' }
+      { id: 'rightBg', type: 'rect', name: 'Right Panel BG', x: 1600, y: 0, w: 4400, h: 2600, radius: 0, fill: '#f8faf7' },
+      { id: 'iconGrid', type: 'grid', name: 'Icons Grid Area', x: 1680, y: 100, w: 4240, h: 2400, padding: 140, fill: '#2a4436' }
     ],
     slate: [
-      { id: 'leftBg', type: 'rect', name: 'Left Sidebar BG', x: 0, y: 0, w: 1600, h: 2600, radius: 0, fill: '#0f172a' },
+      { id: 'leftBg', type: 'rect', name: 'Left Sidebar BG', x: 0, y: 0, w: 1600, h: 2600, radius: 0, fill: 'url(#grad-slate)' },
       { id: 'featBg', type: 'rect', name: 'Featured Icon Box BG', x: 180, y: 180, w: 1240, h: 1240, radius: 120, fill: '#1e293b' },
       { id: 'featIcon', type: 'featured', name: 'Featured Preview Icon', x: 180, y: 180, w: 1240, h: 1240 },
       { id: 'titleText', type: 'text', name: 'Title Text', x: 800, y: 1620, fontSize: 92, fontFamily: 'Outfit', fill: '#ffffff', text: 'SLATE VECTOR ICONS' },
@@ -3529,26 +3529,26 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       { id: 'iconGrid', type: 'grid', name: 'Icons Grid Area', x: 1680, y: 100, w: 4240, h: 2400, padding: 140, fill: '#0f172a' }
     ],
     purple: [
-      { id: 'leftBg', type: 'rect', name: 'Left Sidebar BG', x: 0, y: 0, w: 1600, h: 2600, radius: 0, fill: '#2e1065' },
-      { id: 'featBg', type: 'rect', name: 'Featured Icon Box BG', x: 180, y: 180, w: 1240, h: 1240, radius: 120, fill: '#5b21b6' },
+      { id: 'leftBg', type: 'rect', name: 'Left Sidebar BG', x: 0, y: 0, w: 1600, h: 2600, radius: 0, fill: 'url(#grad-purple)' },
+      { id: 'featBg', type: 'rect', name: 'Featured Icon Box BG', x: 180, y: 180, w: 1240, h: 1240, radius: 120, fill: '#4c1d95' },
       { id: 'featIcon', type: 'featured', name: 'Featured Preview Icon', x: 180, y: 180, w: 1240, h: 1240 },
       { id: 'titleText', type: 'text', name: 'Title Text', x: 800, y: 1620, fontSize: 92, fontFamily: 'Outfit', fill: '#ffffff', text: 'CYBER PURPLE' },
       { id: 'subText', type: 'text', name: 'Subtitle Text', x: 800, y: 1740, fontSize: 48, fontFamily: 'Outfit', fill: 'rgba(255,255,255,0.7)', text: '[COUNT] ICONS · VECTOR SVG' },
       { id: 'badgeBg', type: 'rect', name: 'Count Badge BG', x: 560, y: 2180, w: 480, h: 140, radius: 70, fill: '#c084fc' },
       { id: 'badgeText', type: 'text', name: 'Badge Text', x: 800, y: 2270, fontSize: 52, fontFamily: 'Outfit', fill: '#2e1065', text: '[COUNT] ICONS' },
-      { id: 'rightBg', type: 'rect', name: 'Right Panel BG', x: 1600, y: 0, w: 4400, h: 2600, radius: 0, fill: '#faf5ff' },
-      { id: 'iconGrid', type: 'grid', name: 'Icons Grid Area', x: 1680, y: 100, w: 4240, h: 2400, padding: 140, fill: '#4c1d95' }
+      { id: 'rightBg', type: 'rect', name: 'Right Panel BG', x: 1600, y: 0, w: 4400, h: 2600, radius: 0, fill: '#fdfbfe' },
+      { id: 'iconGrid', type: 'grid', name: 'Icons Grid Area', x: 1680, y: 100, w: 4240, h: 2400, padding: 140, fill: '#2e1065' }
     ],
     dark: [
-      { id: 'leftBg', type: 'rect', name: 'Left Sidebar BG', x: 0, y: 0, w: 1600, h: 2600, radius: 0, fill: '#09090b' },
+      { id: 'leftBg', type: 'rect', name: 'Left Sidebar BG', x: 0, y: 0, w: 1600, h: 2600, radius: 0, fill: 'url(#grad-dark)' },
       { id: 'featBg', type: 'rect', name: 'Featured Icon Box BG', x: 180, y: 180, w: 1240, h: 1240, radius: 120, fill: '#18181b' },
       { id: 'featIcon', type: 'featured', name: 'Featured Preview Icon', x: 180, y: 180, w: 1240, h: 1240 },
       { id: 'titleText', type: 'text', name: 'Title Text', x: 800, y: 1620, fontSize: 92, fontFamily: 'Outfit', fill: '#ffffff', text: 'MINIMAL DARK' },
       { id: 'subText', type: 'text', name: 'Subtitle Text', x: 800, y: 1740, fontSize: 48, fontFamily: 'Outfit', fill: 'rgba(255,255,255,0.7)', text: '[COUNT] ICONS · VECTOR SVG' },
-      { id: 'badgeBg', type: 'rect', name: 'Count Badge BG', x: 560, y: 2180, w: 480, h: 140, radius: 70, fill: '#eab308' },
+      { id: 'badgeBg', type: 'rect', name: 'Count Badge BG', x: 560, y: 2180, w: 480, h: 140, radius: 70, fill: '#f59e0b' },
       { id: 'badgeText', type: 'text', name: 'Badge Text', x: 800, y: 2270, fontSize: 52, fontFamily: 'Outfit', fill: '#09090b', text: '[COUNT] ICONS' },
-      { id: 'rightBg', type: 'rect', name: 'Right Panel BG', x: 1600, y: 0, w: 4400, h: 2600, radius: 0, fill: '#121216' },
-      { id: 'iconGrid', type: 'grid', name: 'Icons Grid Area', x: 1680, y: 100, w: 4240, h: 2400, padding: 140, fill: '#f4f4f5' }
+      { id: 'rightBg', type: 'rect', name: 'Right Panel BG', x: 1600, y: 0, w: 4400, h: 2600, radius: 0, fill: '#0f0f12' },
+      { id: 'iconGrid', type: 'grid', name: 'Icons Grid Area', x: 1680, y: 100, w: 4240, h: 2400, padding: 140, fill: '#ffffff' }
     ]
   };
 
@@ -3651,6 +3651,13 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       buildBrandedSvgSheet();
     });
   });
+
+  const sheetCardSidebar = document.getElementById('sheetCardSidebar');
+  if (sheetCardSidebar) {
+    sheetCardSidebar.addEventListener('change', () => {
+      buildBrandedSvgSheet();
+    });
+  }
 
   // Rebuild template preset select options
   function rebuildPresetDropdown(preferredVal) {
@@ -5573,6 +5580,61 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       `;
     } else {
       let layersHtml = '';
+      const sidebarCardChecked = document.getElementById('sheetCardSidebar')?.checked || false;
+
+      layersHtml += `  <defs>\n`;
+      if (sidebarCardChecked) {
+        layersHtml += `    <clipPath id="sidebarClip">\n      <rect x="60" y="60" width="1480" height="2480" rx="80" ry="80" />\n    </clipPath>\n`;
+      }
+      
+      // Inject all our beautiful linear gradients here
+      layersHtml += `    <!-- Premium Gradients -->
+    <linearGradient id="grad-metal" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#5bb98c" />
+      <stop offset="100%" stop-color="#2c6b4e" />
+    </linearGradient>
+    <linearGradient id="grad-accounting" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fff8f0" />
+      <stop offset="100%" stop-color="#ffeeda" />
+    </linearGradient>
+    <linearGradient id="grad-accounting-badge" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#f95738" />
+      <stop offset="100%" stop-color="#ff7a5a" />
+    </linearGradient>
+    <linearGradient id="grad-clipboard" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e0f2fe" />
+      <stop offset="100%" stop-color="#bae6fd" />
+    </linearGradient>
+    <linearGradient id="grad-clipboard-badge" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ea580c" />
+      <stop offset="100%" stop-color="#f97316" />
+    </linearGradient>
+    <linearGradient id="grad-document" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1f1f23" />
+      <stop offset="100%" stop-color="#0f0f11" />
+    </linearGradient>
+    <linearGradient id="grad-breakeven" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f8fafc" />
+      <stop offset="100%" stop-color="#f1f5f9" />
+    </linearGradient>
+    <linearGradient id="grad-healthcare" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#2a4436" />
+      <stop offset="100%" stop-color="#1a2d23" />
+    </linearGradient>
+    <linearGradient id="grad-slate" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#090d16" />
+    </linearGradient>
+    <linearGradient id="grad-purple" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#2e1065" />
+      <stop offset="100%" stop-color="#1d0745" />
+    </linearGradient>
+    <linearGradient id="grad-dark" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#09090b" />
+      <stop offset="100%" stop-color="#020203" />
+    </linearGradient>
+  </defs>\n`;
+
       activeLayers.forEach(layer => {
         let layerText = layer.text || '';
         if (layerText.includes('[COUNT]')) {
@@ -5582,20 +5644,36 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
           layerText = layerText.replace('[NAME]', setNameText);
         }
 
+        const isSidebarLayer = (layer.x < 1600);
+        const clipAttr = (sidebarCardChecked && isSidebarLayer && layer.id !== 'leftBg') ? ' clip-path="url(#sidebarClip)"' : '';
+
         if (layer.type === 'rect') {
-          const radiusAttr = layer.radius ? `rx="${layer.radius}"` : '';
-          layersHtml += `    <!-- Rect: ${layer.name} -->\n    <rect data-id="${layer.id}" x="${layer.x}" y="${layer.y}" width="${layer.w}" height="${layer.h}" ${radiusAttr} fill="${layer.fill}" style="cursor: move;"/>\n`;
+          let rxAttr = layer.radius ? `rx="${layer.radius}"` : '';
+          let lx = layer.x;
+          let ly = layer.y;
+          let lw = layer.w;
+          let lh = layer.h;
+          
+          if (layer.id === 'leftBg' && sidebarCardChecked) {
+            lx = 60;
+            ly = 60;
+            lw = 1480;
+            lh = 2480;
+            rxAttr = 'rx="80"';
+          }
+
+          layersHtml += `    <!-- Rect: ${layer.name} -->\n    <rect data-id="${layer.id}" x="${lx}" y="${ly}" width="${lw}" height="${lh}" ${rxAttr} fill="${layer.fill}"${clipAttr} style="cursor: move;"/>\n`;
         }
         else if (layer.type === 'ellipse') {
           const cx = layer.x + layer.w / 2;
           const cy = layer.y + layer.h / 2;
           const rx = layer.w / 2;
           const ry = layer.h / 2;
-          layersHtml += `    <!-- Ellipse: ${layer.name} -->\n    <ellipse data-id="${layer.id}" cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${layer.fill}" style="cursor: move;"/>\n`;
+          layersHtml += `    <!-- Ellipse: ${layer.name} -->\n    <ellipse data-id="${layer.id}" cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${layer.fill}"${clipAttr} style="cursor: move;"/>\n`;
         }
         else if (layer.type === 'text') {
           const fontName = layer.fontFamily || 'Outfit';
-          layersHtml += `    <!-- Text: ${layer.name} -->\n    <text data-id="${layer.id}" x="${layer.x}" y="${layer.y}" text-anchor="middle" fill="${layer.fill}" font-family="'${fontName}', sans-serif" font-weight="900" font-size="${layer.fontSize}" style="cursor: move; user-select: none;">${layerText}</text>\n`;
+          layersHtml += `    <!-- Text: ${layer.name} -->\n    <text data-id="${layer.id}" x="${layer.x}" y="${layer.y}" text-anchor="middle" fill="${layer.fill}" font-family="'${fontName}', sans-serif" font-weight="900" font-size="${layer.fontSize}"${clipAttr} style="cursor: move; user-select: none;">${layerText}</text>\n`;
         }
         else if (layer.type === 'featured') {
           const featTile = tilesToRender[0];
@@ -5609,7 +5687,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
           const innerX = layer.x + pad;
           const innerY = layer.y + pad;
 
-          layersHtml += `    <!-- Featured Icon: ${layer.name} -->\n    <svg data-id="${layer.id}" x="${innerX}" y="${innerY}" width="${innerW}" height="${innerH}" viewBox="0 0 ${ftw} ${fth}" preserveAspectRatio="xMidYMid meet" fill="#ffffff" style="cursor: move; overflow: visible;">\n      ${featSvgContent}\n    </svg>\n`;
+          layersHtml += `    <!-- Featured Icon: ${layer.name} -->\n    <svg data-id="${layer.id}" x="${innerX}" y="${innerY}" width="${innerW}" height="${innerH}" viewBox="0 0 ${ftw} ${fth}" preserveAspectRatio="xMidYMid meet" fill="#ffffff"${clipAttr} style="cursor: move; overflow: visible;">\n      ${featSvgContent}\n    </svg>\n`;
         }
         else if (layer.type === 'grid') {
           const gridPad = layer.padding !== undefined ? layer.padding : 140;
