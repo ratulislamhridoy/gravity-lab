@@ -6167,6 +6167,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
   let dragStartX = 0;
   let dragStartY = 0;
   let dragLayerId = null;
+  let dragStartSelectedLayers = [];
 
   if (tool4SheetCard) {
     tool4SheetCard.addEventListener('mousedown', (e) => {
@@ -6205,6 +6206,22 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       dragStartLayerW = layer.w || 0;
       dragStartLayerH = layer.h || 0;
       dragStartFontSize = layer.fontSize || 72;
+
+      dragStartSelectedLayers = [];
+      if (selectedLayerIds.includes(layerId)) {
+        selectedLayerIds.forEach(id => {
+          const l = activeLayers.find(al => al.id === id);
+          if (l) {
+            dragStartSelectedLayers.push({
+              id: l.id,
+              startX: l.x || 0,
+              startY: l.y || 0,
+              w: l.w || 0,
+              h: l.h || 0
+            });
+          }
+        });
+      }
 
       if (handle) {
         isResizingLayer = true;
@@ -6348,12 +6365,35 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
           }
         }
       } else if (isDraggingLayer) {
-        if (layer.type === 'text') {
-          layer.x = Math.max(0, Math.min(6000, Math.round(dragStartLayerX + dx)));
-          layer.y = Math.max(0, Math.min(2600, Math.round(dragStartLayerY + dy)));
+        if (dragStartSelectedLayers.length > 0) {
+          // Multi-dragging: move all selected layers together
+          dragStartSelectedLayers.forEach(startInfo => {
+            const selectL = activeLayers.find(al => al.id === startInfo.id);
+            if (!selectL) return;
+
+            let targetX = Math.round(startInfo.startX + dx);
+            let targetY = Math.round(startInfo.startY + dy);
+
+            // Clamp coordinates to artboard limits (6000x2600 px)
+            if (selectL.type === 'text') {
+              targetX = Math.max(0, Math.min(6000, targetX));
+              targetY = Math.max(0, Math.min(2600, targetY));
+            } else {
+              targetX = Math.max(0, Math.min(6000 - (startInfo.w || 0), targetX));
+              targetY = Math.max(0, Math.min(2600 - (startInfo.h || 0), targetY));
+            }
+            selectL.x = targetX;
+            selectL.y = targetY;
+          });
         } else {
-          layer.x = Math.max(0, Math.min(6000 - (layer.w || 0), Math.round(dragStartLayerX + dx)));
-          layer.y = Math.max(0, Math.min(2600 - (layer.h || 0), Math.round(dragStartLayerY + dy)));
+          // Normal single-drag
+          if (layer.type === 'text') {
+            layer.x = Math.max(0, Math.min(6000, Math.round(dragStartLayerX + dx)));
+            layer.y = Math.max(0, Math.min(2600, Math.round(dragStartLayerY + dy)));
+          } else {
+            layer.x = Math.max(0, Math.min(6000 - (layer.w || 0), Math.round(dragStartLayerX + dx)));
+            layer.y = Math.max(0, Math.min(2600 - (layer.h || 0), Math.round(dragStartLayerX + dx)));
+          }
         }
       }
 
