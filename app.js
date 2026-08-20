@@ -4068,14 +4068,36 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     const layer = activeLayers.find(l => l.id === currentDesignerLayerId);
     if (!layer) return;
 
-    const x = parseInt(uiElements.propX.value) || 0;
-    const y = parseInt(uiElements.propY.value) || 0;
-    const w = parseInt(uiElements.propW.value) || 0;
-    const h = parseInt(uiElements.propH.value) || 0;
+    let x = parseInt(uiElements.propX.value) || 0;
+    let y = parseInt(uiElements.propY.value) || 0;
+    let w = parseInt(uiElements.propW.value) || 0;
+    let h = parseInt(uiElements.propH.value) || 0;
     const radius = parseInt(uiElements.propRadius.value) || 0;
     const color = uiElements.propColor.value;
     const font = uiElements.propFont.value;
     const textVal = uiElements.propText ? uiElements.propText.value : '';
+
+    // Enforce artboard boundary constraints (6000x2600 px)
+    if (layer.type === 'text') {
+      x = Math.max(0, Math.min(6000, x));
+      y = Math.max(0, Math.min(2600, y));
+      w = Math.max(12, w); // fontSize is represented by w in properties panel for text
+    } else {
+      w = Math.max(50, Math.min(6000, w));
+      h = Math.max(50, Math.min(2600, h));
+      x = Math.max(0, Math.min(6000 - w, x));
+      y = Math.max(0, Math.min(2600 - h, y));
+    }
+
+    // Sync elements values back to fields if they were modified/clamped
+    if (uiElements.propX && uiElements.propX.value !== String(x)) uiElements.propX.value = x;
+    if (uiElements.propY && uiElements.propY.value !== String(y)) uiElements.propY.value = y;
+    if (layer.type !== 'text') {
+      if (uiElements.propW && uiElements.propW.value !== String(w)) uiElements.propW.value = w;
+      if (uiElements.propH && uiElements.propH.value !== String(h)) uiElements.propH.value = h;
+    } else {
+      if (uiElements.propW && uiElements.propW.value !== String(w)) uiElements.propW.value = w;
+    }
 
     layer.x = x;
     layer.y = y;
@@ -6067,42 +6089,116 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
           layer.fontSize = Math.max(12, Math.round(dragStartFontSize * scaleFactor));
         } else {
           // Shape or Grid/Featured resizing
-          if (resizeHandle === 'br') {
-            layer.w = Math.max(50, Math.round(dragStartLayerW + dx));
-            layer.h = Math.max(50, Math.round(dragStartLayerH + dy));
-          }
-          else if (resizeHandle === 'tr') {
-            const newH = dragStartLayerH - dy;
-            if (newH >= 50) {
-              layer.h = Math.round(newH);
-              layer.y = Math.round(dragStartLayerY + dy);
+          if (e.shiftKey) {
+            // Keep aspect ratio (like Illustrator)
+            let scale = 1.0;
+            let scaleX = 1.0;
+            let scaleY = 1.0;
+
+            if (resizeHandle === 'br') {
+              scaleX = (dragStartLayerW + dx) / dragStartLayerW;
+              scaleY = (dragStartLayerH + dy) / dragStartLayerH;
+              if (Math.abs(scaleX - 1) > Math.abs(scaleY - 1)) { scale = scaleX; } else { scale = scaleY; }
+
+              const maxW = 6000 - layer.x;
+              const maxH = 2600 - layer.y;
+              const maxScale = Math.min(maxW / dragStartLayerW, maxH / dragStartLayerH);
+              const minScale = Math.max(50 / dragStartLayerW, 50 / dragStartLayerH);
+              scale = Math.max(minScale, Math.min(scale, maxScale));
+
+              layer.w = Math.round(dragStartLayerW * scale);
+              layer.h = Math.round(dragStartLayerH * scale);
             }
-            layer.w = Math.max(50, Math.round(dragStartLayerW + dx));
-          }
-          else if (resizeHandle === 'bl') {
-            const newW = dragStartLayerW - dx;
-            if (newW >= 50) {
-              layer.w = Math.round(newW);
-              layer.x = Math.round(dragStartLayerX + dx);
+            else if (resizeHandle === 'tr') {
+              const y_bottom = dragStartLayerY + dragStartLayerH;
+              scaleX = (dragStartLayerW + dx) / dragStartLayerW;
+              scaleY = (dragStartLayerH - dy) / dragStartLayerH;
+              if (Math.abs(scaleX - 1) > Math.abs(scaleY - 1)) { scale = scaleX; } else { scale = scaleY; }
+
+              const maxW = 6000 - layer.x;
+              const maxH = y_bottom;
+              const maxScale = Math.min(maxW / dragStartLayerW, maxH / dragStartLayerH);
+              const minScale = Math.max(50 / dragStartLayerW, 50 / dragStartLayerH);
+              scale = Math.max(minScale, Math.min(scale, maxScale));
+
+              layer.w = Math.round(dragStartLayerW * scale);
+              layer.h = Math.round(dragStartLayerH * scale);
+              layer.y = Math.round(y_bottom - layer.h);
             }
-            layer.h = Math.max(50, Math.round(dragStartLayerH + dy));
-          }
-          else if (resizeHandle === 'tl') {
-            const newW = dragStartLayerW - dx;
-            const newH = dragStartLayerH - dy;
-            if (newW >= 50) {
-              layer.w = Math.round(newW);
-              layer.x = Math.round(dragStartLayerX + dx);
+            else if (resizeHandle === 'bl') {
+              const x_right = dragStartLayerX + dragStartLayerW;
+              scaleX = (dragStartLayerW - dx) / dragStartLayerW;
+              scaleY = (dragStartLayerH + dy) / dragStartLayerH;
+              if (Math.abs(scaleX - 1) > Math.abs(scaleY - 1)) { scale = scaleX; } else { scale = scaleY; }
+
+              const maxW = x_right;
+              const maxH = 2600 - layer.y;
+              const maxScale = Math.min(maxW / dragStartLayerW, maxH / dragStartLayerH);
+              const minScale = Math.max(50 / dragStartLayerW, 50 / dragStartLayerH);
+              scale = Math.max(minScale, Math.min(scale, maxScale));
+
+              layer.w = Math.round(dragStartLayerW * scale);
+              layer.h = Math.round(dragStartLayerH * scale);
+              layer.x = Math.round(x_right - layer.w);
             }
-            if (newH >= 50) {
-              layer.h = Math.round(newH);
-              layer.y = Math.round(dragStartLayerY + dy);
+            else if (resizeHandle === 'tl') {
+              const x_right = dragStartLayerX + dragStartLayerW;
+              const y_bottom = dragStartLayerY + dragStartLayerH;
+              scaleX = (dragStartLayerW - dx) / dragStartLayerW;
+              scaleY = (dragStartLayerH - dy) / dragStartLayerH;
+              if (Math.abs(scaleX - 1) > Math.abs(scaleY - 1)) { scale = scaleX; } else { scale = scaleY; }
+
+              const maxW = x_right;
+              const maxH = y_bottom;
+              const maxScale = Math.min(maxW / dragStartLayerW, maxH / dragStartLayerH);
+              const minScale = Math.max(50 / dragStartLayerW, 50 / dragStartLayerH);
+              scale = Math.max(minScale, Math.min(scale, maxScale));
+
+              layer.w = Math.round(dragStartLayerW * scale);
+              layer.h = Math.round(dragStartLayerH * scale);
+              layer.x = Math.round(x_right - layer.w);
+              layer.y = Math.round(y_bottom - layer.h);
+            }
+          } else {
+            // Shape or Grid/Featured resizing within artboard boundary
+            if (resizeHandle === 'br') {
+              layer.w = Math.max(50, Math.min(6000 - layer.x, Math.round(dragStartLayerW + dx)));
+              layer.h = Math.max(50, Math.min(2600 - layer.y, Math.round(dragStartLayerH + dy)));
+            }
+            else if (resizeHandle === 'tr') {
+              const y_bottom = dragStartLayerY + dragStartLayerH;
+              let newY = Math.max(0, Math.min(y_bottom - 50, Math.round(dragStartLayerY + dy)));
+              layer.y = newY;
+              layer.h = y_bottom - newY;
+              layer.w = Math.max(50, Math.min(6000 - layer.x, Math.round(dragStartLayerW + dx)));
+            }
+            else if (resizeHandle === 'bl') {
+              const x_right = dragStartLayerX + dragStartLayerW;
+              let newX = Math.max(0, Math.min(x_right - 50, Math.round(dragStartLayerX + dx)));
+              layer.x = newX;
+              layer.w = x_right - newX;
+              layer.h = Math.max(50, Math.min(2600 - layer.y, Math.round(dragStartLayerH + dy)));
+            }
+            else if (resizeHandle === 'tl') {
+              const x_right = dragStartLayerX + dragStartLayerW;
+              const y_bottom = dragStartLayerY + dragStartLayerH;
+              let newX = Math.max(0, Math.min(x_right - 50, Math.round(dragStartLayerX + dx)));
+              layer.x = newX;
+              layer.w = x_right - newX;
+              let newY = Math.max(0, Math.min(y_bottom - 50, Math.round(dragStartLayerY + dy)));
+              layer.y = newY;
+              layer.h = y_bottom - newY;
             }
           }
         }
       } else if (isDraggingLayer) {
-        layer.x = Math.round(dragStartLayerX + dx);
-        layer.y = Math.round(dragStartLayerY + dy);
+        if (layer.type === 'text') {
+          layer.x = Math.max(0, Math.min(6000, Math.round(dragStartLayerX + dx)));
+          layer.y = Math.max(0, Math.min(2600, Math.round(dragStartLayerY + dy)));
+        } else {
+          layer.x = Math.max(0, Math.min(6000 - (layer.w || 0), Math.round(dragStartLayerX + dx)));
+          layer.y = Math.max(0, Math.min(2600 - (layer.h || 0), Math.round(dragStartLayerY + dy)));
+        }
       }
 
       // Sync field inputs
