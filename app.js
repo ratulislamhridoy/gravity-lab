@@ -4397,29 +4397,77 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     });
   }
 
+  const btnClearLoadedSheets = document.getElementById('btnClearLoadedSheets');
+  if (btnClearLoadedSheets) {
+    btnClearLoadedSheets.addEventListener('click', () => {
+      loadedSheetImgs = [];
+      slicedTilesData = [];
+      if (sheetFileInput) sheetFileInput.value = '';
+      if (sheetFileName) sheetFileName.textContent = 'Upload Icon Sheet Image(s)';
+      if (tool4TilesGrid) tool4TilesGrid.innerHTML = '';
+
+      const tileCountEl = document.getElementById('sheetTileCount');
+      if (tileCountEl) tileCountEl.textContent = '0';
+
+      const btnSliceVectorize = document.getElementById('btnSliceVectorize');
+      if (btnSliceVectorize) {
+        btnSliceVectorize.textContent = '⚡ Convert 0 Icons to Vector';
+      }
+
+      btnClearLoadedSheets.style.display = 'none';
+    });
+  }
+
   function loadSheetImageFiles(files) {
     const validFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
     if (!validFiles.length) return;
 
-    if (sheetFileName) {
-      if (validFiles.length === 1) {
-        sheetFileName.textContent = validFiles[0].name;
+    const duplicates = [];
+    const nonDuplicates = [];
+    validFiles.forEach(file => {
+      const isDuplicate = loadedSheetImgs.some(existing => existing.name === file.name);
+      if (isDuplicate) {
+        duplicates.push(file.name);
       } else {
-        sheetFileName.textContent = `📦 ${validFiles.length} Icon Sheets Loaded (Bulk Processing Ready)`;
+        nonDuplicates.push(file);
+      }
+    });
+
+    if (duplicates.length > 0) {
+      if (typeof showGravityToast === 'function') {
+        showGravityToast(`Duplicate skipped: ${duplicates.length === 1 ? `"${duplicates[0]}"` : `${duplicates.length} sheets`} already loaded.`, 'warning');
+      } else {
+        console.warn('Duplicate skipped:', duplicates.join(', '));
       }
     }
 
-    loadedSheetImgs = [];
-    let loadedCount = 0;
+    if (nonDuplicates.length === 0) {
+      if (sheetFileInput) sheetFileInput.value = '';
+      return;
+    }
 
-    validFiles.forEach(file => {
+    let loadedCount = 0;
+    const targetCount = nonDuplicates.length;
+
+    nonDuplicates.forEach(file => {
       const reader = new FileReader();
       reader.onload = (evt) => {
         const img = new Image();
         img.onload = () => {
           loadedSheetImgs.push({ name: file.name, img: img });
           loadedCount++;
-          if (loadedCount === validFiles.length) {
+          if (loadedCount === targetCount) {
+            if (sheetFileName) {
+              if (loadedSheetImgs.length === 1) {
+                sheetFileName.textContent = loadedSheetImgs[0].name;
+              } else {
+                sheetFileName.textContent = `📦 ${loadedSheetImgs.length} Icon Sheets Loaded (Bulk Processing Ready)`;
+              }
+            }
+            if (btnClearLoadedSheets) {
+              btnClearLoadedSheets.style.display = 'flex';
+            }
+            if (sheetFileInput) sheetFileInput.value = '';
             // Instantly slice & render preview tiles for ALL loaded sheets
             processIconSheetSlicingOnly();
           }
