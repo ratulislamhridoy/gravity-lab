@@ -3745,6 +3745,17 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
 
   // Define designer properties inputs
   let currentDesignerLayerId = 'leftBg';
+  let selectedLayerIds = [];
+
+  function updateAlignmentCardVisibility() {
+    const card = document.getElementById('studioAlignmentCard');
+    if (!card) return;
+    if (selectedLayerIds.length >= 2) {
+      card.classList.remove('hidden');
+    } else {
+      card.classList.add('hidden');
+    }
+  }
 
   // History Undo/Redo States
   let undoStack = [];
@@ -3870,6 +3881,25 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       btn.style.borderRadius = '8px';
       btn.style.cursor = 'pointer';
       btn.style.transition = 'all 0.2s';
+
+      // Checkbox for Alignment Multi-Selection
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.style.marginRight = '8px';
+      checkbox.style.cursor = 'pointer';
+      checkbox.checked = selectedLayerIds.includes(layer.id);
+      checkbox.addEventListener('click', (e) => e.stopPropagation());
+      checkbox.addEventListener('change', () => {
+        if (checkbox.checked) {
+          if (!selectedLayerIds.includes(layer.id)) {
+            selectedLayerIds.push(layer.id);
+          }
+        } else {
+          selectedLayerIds = selectedLayerIds.filter(id => id !== layer.id);
+        }
+        updateAlignmentCardVisibility();
+      });
+      btn.appendChild(checkbox);
       
       let emoji = '▭';
       if (layer.type === 'ellipse') emoji = '⬭';
@@ -3987,6 +4017,10 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     uiElements.propColor.value = '#000000';
     uiElements.propColorHex.value = '#000000';
     if (uiElements.propText) uiElements.propText.value = '';
+    
+    // Clear selection
+    selectedLayerIds = [];
+    updateAlignmentCardVisibility();
     
     document.getElementById('propTextField').style.display = 'none';
     document.getElementById('propFontField').style.display = 'none';
@@ -4152,6 +4186,109 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       uiElements.propRadiusSlider.value = uiElements.propRadius.value || 0;
     });
   }
+
+  // Alignment Actions Math Helper
+  function alignSelectedLayers(type) {
+    if (selectedLayerIds.length < 2) return;
+    saveHistoryState();
+
+    const selectedLayers = activeLayers.filter(l => selectedLayerIds.includes(l.id));
+    if (selectedLayers.length < 2) return;
+
+    if (type === 'left') {
+      const minX = Math.min(...selectedLayers.map(l => l.x || 0));
+      selectedLayers.forEach(l => {
+        l.x = minX;
+      });
+    }
+    else if (type === 'right') {
+      const maxRight = Math.max(...selectedLayers.map(l => l.type === 'text' ? (l.x || 0) : ((l.x || 0) + (l.w || 0))));
+      selectedLayers.forEach(l => {
+        if (l.type === 'text') {
+          l.x = maxRight;
+        } else {
+          l.x = maxRight - (l.w || 0);
+        }
+      });
+    }
+    else if (type === 'centerX') {
+      const minX = Math.min(...selectedLayers.map(l => l.x || 0));
+      const maxRight = Math.max(...selectedLayers.map(l => l.type === 'text' ? (l.x || 0) : ((l.x || 0) + (l.w || 0))));
+      const centerX = minX + (maxRight - minX) / 2;
+      selectedLayers.forEach(l => {
+        if (l.type === 'text') {
+          l.x = Math.round(centerX);
+        } else {
+          l.x = Math.round(centerX - (l.w || 0) / 2);
+        }
+      });
+    }
+    else if (type === 'top') {
+      const minY = Math.min(...selectedLayers.map(l => l.y || 0));
+      selectedLayers.forEach(l => {
+        l.y = minY;
+      });
+    }
+    else if (type === 'bottom') {
+      const maxBottom = Math.max(...selectedLayers.map(l => l.type === 'text' ? (l.y || 0) : ((l.y || 0) + (l.h || 0))));
+      selectedLayers.forEach(l => {
+        if (l.type === 'text') {
+          l.y = maxBottom;
+        } else {
+          l.y = maxBottom - (l.h || 0);
+        }
+      });
+    }
+    else if (type === 'centerY') {
+      const minY = Math.min(...selectedLayers.map(l => l.y || 0));
+      const maxBottom = Math.max(...selectedLayers.map(l => l.type === 'text' ? (l.y || 0) : ((l.y || 0) + (l.h || 0))));
+      const centerY = minY + (maxBottom - minY) / 2;
+      selectedLayers.forEach(l => {
+        if (l.type === 'text') {
+          l.y = Math.round(centerY);
+        } else {
+          l.y = Math.round(centerY - (l.h || 0) / 2);
+        }
+      });
+    }
+
+    // Clip position constraints to artboard for each modified layer (6000x2600 px)
+    selectedLayers.forEach(layer => {
+      if (layer.type === 'text') {
+        layer.x = Math.max(0, Math.min(6000, layer.x));
+        layer.y = Math.max(0, Math.min(2600, layer.y));
+      } else {
+        layer.x = Math.max(0, Math.min(6000 - (layer.w || 0), layer.x));
+        layer.y = Math.max(0, Math.min(2600 - (layer.h || 0), layer.y));
+      }
+    });
+
+    // Sync input properties fields for current layer if it's selected
+    if (currentDesignerLayerId && selectedLayerIds.includes(currentDesignerLayerId)) {
+      loadDesignerLayerFields(currentDesignerLayerId);
+    }
+
+    buildBrandedSvgSheet();
+  }
+
+  // Bind alignment action buttons click events
+  const alignButtonsConfig = [
+    { id: 'btnAlignLeft', type: 'left' },
+    { id: 'btnAlignCenterX', type: 'centerX' },
+    { id: 'btnAlignRight', type: 'right' },
+    { id: 'btnAlignTop', type: 'top' },
+    { id: 'btnAlignCenterY', type: 'centerY' },
+    { id: 'btnAlignBottom', type: 'bottom' }
+  ];
+
+  alignButtonsConfig.forEach(cfg => {
+    const btn = document.getElementById(cfg.id);
+    if (btn) {
+      btn.addEventListener('click', () => {
+        alignSelectedLayers(cfg.type);
+      });
+    }
+  });
 
   if (uiElements.propColor && uiElements.propColorHex) {
     uiElements.propColor.addEventListener('input', () => {
