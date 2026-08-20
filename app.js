@@ -6178,8 +6178,8 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       if (!layerId) {
         // Deselect active layer when clicking on empty background
         currentDesignerLayerId = null;
-        document.querySelectorAll('.layer-item').forEach(li => li.classList.remove('active'));
         clearDesignerLayerFields();
+        renderDesignerLayersTree();
         buildBrandedSvgSheet();
         return;
       }
@@ -6192,14 +6192,10 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       // Save history BEFORE drag or resize modification begins
       saveHistoryState();
 
-      // Select this layer visually
+      // Select this layer visually and update tree
+      currentDesignerLayerId = layerId;
       loadDesignerLayerFields(layerId);
-      
-      const listItem = document.querySelector(`.layer-item[data-layer-id="${layerId}"]`);
-      if (listItem) {
-        document.querySelectorAll('.layer-item').forEach(li => li.classList.remove('active'));
-        listItem.classList.add('active');
-      }
+      renderDesignerLayersTree();
 
       dragStartX = e.clientX;
       dragStartY = e.clientY;
