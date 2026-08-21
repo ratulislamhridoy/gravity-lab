@@ -4012,8 +4012,46 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       btn.style.fontSize = '12px';
       btn.style.padding = '6px 10px';
       btn.style.borderRadius = '8px';
-      btn.style.cursor = 'pointer';
+      btn.style.cursor = 'grab';
       btn.style.transition = 'all 0.2s';
+
+      // HTML5 Drag and Drop Handlers
+      btn.setAttribute('draggable', 'true');
+      btn.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/plain', layer.id);
+        btn.style.opacity = '0.4';
+      });
+      btn.addEventListener('dragend', () => {
+        btn.style.opacity = '1';
+        renderDesignerLayersTree();
+      });
+      btn.addEventListener('dragover', (e) => {
+        e.preventDefault();
+      });
+      btn.addEventListener('dragenter', () => {
+        btn.style.border = '1px dashed var(--accent)';
+        btn.style.background = 'rgba(255, 255, 255, 0.05)';
+      });
+      btn.addEventListener('dragleave', () => {
+        btn.style.border = '1px solid ' + (currentDesignerLayerId === layer.id ? 'var(--outline-variant)' : 'transparent');
+        btn.style.background = currentDesignerLayerId === layer.id ? 'var(--surface)' : 'transparent';
+      });
+      btn.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const draggedId = e.dataTransfer.getData('text/plain');
+        if (draggedId && draggedId !== layer.id) {
+          const fromIdx = activeLayers.findIndex(l => l.id === draggedId);
+          const toIdx = activeLayers.findIndex(l => l.id === layer.id);
+          if (fromIdx !== -1 && toIdx !== -1) {
+            saveHistoryState();
+            const [draggedLayer] = activeLayers.splice(fromIdx, 1);
+            const newToIdx = activeLayers.findIndex(l => l.id === layer.id);
+            activeLayers.splice(newToIdx, 0, draggedLayer);
+            renderDesignerLayersTree();
+            buildBrandedSvgSheet();
+          }
+        }
+      });
 
       // Checkbox for Alignment Multi-Selection
       const checkbox = document.createElement('input');
@@ -4044,6 +4082,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       nameSpan.style.flex = '1';
       nameSpan.style.textAlign = 'left';
       nameSpan.textContent = `${emoji} ${layer.name}`;
+      nameSpan.style.opacity = (layer.visible !== false) ? '1' : '0.4';
       nameSpan.addEventListener('click', () => {
         currentDesignerLayerId = layer.id;
         loadDesignerLayerFields(layer.id);
@@ -4127,8 +4166,48 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
         }
       });
 
+      // Hide/Show Toggle
+      const btnEye = document.createElement('button');
+      btnEye.type = 'button';
+      btnEye.textContent = '👁';
+      btnEye.style.opacity = (layer.visible !== false) ? '1' : '0.25';
+      btnEye.title = (layer.visible !== false) ? 'Hide Layer' : 'Show Layer';
+      btnEye.addEventListener('click', (e) => {
+        e.stopPropagation();
+        saveHistoryState();
+        layer.visible = (layer.visible !== false) ? false : true;
+        renderDesignerLayersTree();
+        buildBrandedSvgSheet();
+      });
+
+      // Lock/Unlock Toggle
+      const btnLock = document.createElement('button');
+      btnLock.type = 'button';
+      btnLock.textContent = layer.locked ? '🔒' : '🔓';
+      btnLock.style.opacity = layer.locked ? '1' : '0.25';
+      btnLock.title = layer.locked ? 'Unlock Layer' : 'Lock Layer';
+      btnLock.addEventListener('click', (e) => {
+        e.stopPropagation();
+        saveHistoryState();
+        layer.locked = !layer.locked;
+        renderDesignerLayersTree();
+        buildBrandedSvgSheet();
+      });
+
+      // Style Eye and Lock buttons consistently
+      [btnEye, btnLock].forEach(b => {
+        b.style.border = 'none';
+        b.style.background = 'transparent';
+        b.style.color = 'rgba(255,255,255,0.8)';
+        b.style.cursor = 'pointer';
+        b.style.padding = '2px 4px';
+        b.style.fontSize = '10px';
+      });
+
       controlsWrap.appendChild(btnUp);
       controlsWrap.appendChild(btnDown);
+      controlsWrap.appendChild(btnEye);
+      controlsWrap.appendChild(btnLock);
       controlsWrap.appendChild(btnDel);
 
       btn.appendChild(nameSpan);
@@ -5889,6 +5968,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     } else {
       let layersHtml = '';
       activeLayers.forEach(layer => {
+        if (layer.visible === false) return;
         let layerText = layer.text || '';
         if (layerText.includes('[COUNT]')) {
           layerText = layerText.replace('[COUNT]', tilesToRender.length);
@@ -5972,7 +6052,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       });
 
       const activeLayer = activeLayers.find(l => l.id === currentDesignerLayerId);
-      if (activeLayer) {
+      if (activeLayer && activeLayer.visible !== false) {
         const al = activeLayer;
         let ax = al.x || 0;
         let ay = al.y || 0;
@@ -6323,13 +6403,18 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       const layer = activeLayers.find(l => l.id === layerId);
       if (!layer) return;
 
-      // Save history BEFORE drag or resize modification begins
-      saveHistoryState();
-
       // Select this layer visually and update tree
       currentDesignerLayerId = layerId;
       loadDesignerLayerFields(layerId);
       renderDesignerLayersTree();
+
+      if (layer.locked) {
+        buildBrandedSvgSheet();
+        return;
+      }
+
+      // Save history BEFORE drag or resize modification begins
+      saveHistoryState();
 
       dragStartX = e.clientX;
       dragStartY = e.clientY;
@@ -6370,7 +6455,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     window.addEventListener('mousemove', (e) => {
       if ((!isDraggingLayer && !isResizingLayer) || !dragLayerId) return;
       const layer = activeLayers.find(l => l.id === dragLayerId);
-      if (!layer) return;
+      if (!layer || layer.locked) return;
 
       const svgEl = tool4SheetCard.querySelector('svg');
       if (!svgEl) return;
@@ -6502,7 +6587,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
           // Multi-dragging: move all selected layers together
           dragStartSelectedLayers.forEach(startInfo => {
             const selectL = activeLayers.find(al => al.id === startInfo.id);
-            if (!selectL) return;
+            if (!selectL || selectL.locked) return;
 
             let targetX = Math.round(startInfo.startX + dx);
             let targetY = Math.round(startInfo.startY + dy);
