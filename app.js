@@ -3999,7 +3999,8 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     if (!listEl) return;
     listEl.innerHTML = '';
 
-    activeLayers.forEach((layer, idx) => {
+    [...activeLayers].reverse().forEach((layer) => {
+      const idx = activeLayers.findIndex(l => l.id === layer.id);
       const btn = document.createElement('div');
       btn.style.display = 'flex';
       btn.style.alignItems = 'center';
@@ -4061,17 +4062,17 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       btnUp.title = 'Move Up';
       btnUp.style.border = 'none';
       btnUp.style.background = 'transparent';
-      btnUp.style.color = idx === 0 ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.7)';
-      btnUp.style.cursor = idx === 0 ? 'default' : 'pointer';
+      btnUp.style.color = idx === activeLayers.length - 1 ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.7)';
+      btnUp.style.cursor = idx === activeLayers.length - 1 ? 'default' : 'pointer';
       btnUp.style.padding = '2px 4px';
       btnUp.style.fontSize = '10px';
-      btnUp.disabled = idx === 0;
+      btnUp.disabled = idx === activeLayers.length - 1;
       btnUp.addEventListener('click', (e) => {
         e.stopPropagation();
         saveHistoryState();
         const temp = activeLayers[idx];
-        activeLayers[idx] = activeLayers[idx - 1];
-        activeLayers[idx - 1] = temp;
+        activeLayers[idx] = activeLayers[idx + 1];
+        activeLayers[idx + 1] = temp;
         renderDesignerLayersTree();
         buildBrandedSvgSheet();
       });
@@ -4083,17 +4084,17 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       btnDown.title = 'Move Down';
       btnDown.style.border = 'none';
       btnDown.style.background = 'transparent';
-      btnDown.style.color = idx === activeLayers.length - 1 ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.7)';
-      btnDown.style.cursor = idx === activeLayers.length - 1 ? 'default' : 'pointer';
+      btnDown.style.color = idx === 0 ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.7)';
+      btnDown.style.cursor = idx === 0 ? 'default' : 'pointer';
       btnDown.style.padding = '2px 4px';
       btnDown.style.fontSize = '10px';
-      btnDown.disabled = idx === activeLayers.length - 1;
+      btnDown.disabled = idx === 0;
       btnDown.addEventListener('click', (e) => {
         e.stopPropagation();
         saveHistoryState();
         const temp = activeLayers[idx];
-        activeLayers[idx] = activeLayers[idx + 1];
-        activeLayers[idx + 1] = temp;
+        activeLayers[idx] = activeLayers[idx - 1];
+        activeLayers[idx - 1] = temp;
         renderDesignerLayersTree();
         buildBrandedSvgSheet();
       });
@@ -5824,7 +5825,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
           idx: i + 1,
           svgWidth: 100,
           svgHeight: 100,
-          svgPath: `<circle cx="50" cy="50" r="30" fill="none" stroke="currentColor" stroke-width="4" stroke-dasharray="6,4"/><path d="M50 25 L55 38 L68 38 L57 46 L61 58 L50 50 L39 58 L43 46 L32 38 L45 38 Z" fill="currentColor"/>`
+          svgPath: `<circle cx="50" cy="50" r="30" fill="none" stroke="rgba(0, 0, 0, 0.2)" stroke-width="6" stroke-dasharray="6,4"/><circle cx="50" cy="50" r="30" fill="none" stroke="currentColor" stroke-width="4" stroke-dasharray="6,4"/><path d="M50 25 L55 38 L68 38 L57 46 L61 58 L50 50 L39 58 L43 46 L32 38 L45 38 Z" fill="none" stroke="rgba(0, 0, 0, 0.25)" stroke-width="4" stroke-linejoin="round"/><path d="M50 25 L55 38 L68 38 L57 46 L61 58 L50 50 L39 58 L43 46 L32 38 L45 38 Z" fill="currentColor"/>`
         });
       }
     }
@@ -6524,7 +6525,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
             layer.y = Math.max(0, Math.min(2600, Math.round(dragStartLayerY + dy)));
           } else {
             layer.x = Math.max(0, Math.min(6000 - (layer.w || 0), Math.round(dragStartLayerX + dx)));
-            layer.y = Math.max(0, Math.min(2600 - (layer.h || 0), Math.round(dragStartLayerX + dx)));
+            layer.y = Math.max(0, Math.min(2600 - (layer.h || 0), Math.round(dragStartLayerY + dy)));
           }
         }
       }
