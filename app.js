@@ -4835,14 +4835,6 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     const validFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
     if (!validFiles.length) return;
 
-    // Reset everything for the new batch
-    loadedSheetImgs = [];
-    slicedTilesData = [];
-    isGridSizeManuallyOverridden = false;
-    generatedBrandedSheetsMap = {};
-    generatedAssembledSvg = '';
-    activePreviewSheetName = '';
-
     const duplicates = [];
     const nonDuplicates = [];
     validFiles.forEach(file => {
@@ -5217,6 +5209,11 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
 
     activeSliceRunId++;
     const currentRunId = activeSliceRunId;
+
+    // Clear previously generated presentation templates based on old slices
+    generatedBrandedSheetsMap = {};
+    generatedAssembledSvg = '';
+    activePreviewSheetName = '';
 
     const cols = parseInt(sheetCols.value) || 5;
     const rows = parseInt(sheetRows.value) || 3;
