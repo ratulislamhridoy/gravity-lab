@@ -1493,6 +1493,42 @@ Do not include any markdown formatting outside the json codeblock. Output valid 
       }
     }
 
+    // Check remaining credits for free users
+    let maxAllowed = Infinity;
+    let isPro = false;
+    const userObj = firebaseAuth.currentUser;
+    if (userObj && userObj.uid) {
+      const logs = getUserLogs();
+      const existingIndex = logs.findIndex(u => u.uid === userObj.uid || (u.email && userObj.email && u.email.toLowerCase() === userObj.email.toLowerCase()));
+      if (existingIndex >= 0) {
+        const u = logs[existingIndex];
+        const sub = u.subscription || 'free';
+        const expiry = u.subscriptionExpiry;
+        if (sub === 'monthly' || sub === 'six_months') {
+          if (!expiry) {
+            isPro = true;
+          } else {
+            const expDate = new Date(expiry);
+            if (expDate > new Date()) {
+              isPro = true;
+            }
+          }
+        }
+        if (!isPro) {
+          const todayStr = getDhakaDateString();
+          if (!u.creditsDaily) {
+            u.creditsDaily = { remaining: 15, lastResetDate: todayStr };
+          }
+          const cd = u.creditsDaily;
+          if (cd.lastResetDate !== todayStr) {
+            cd.remaining = 15;
+            cd.lastResetDate = todayStr;
+          }
+          maxAllowed = cd.remaining;
+        }
+      }
+    }
+
     const allowed = await window.checkAndConsumeCredit('prompts', 1, false);
     if (!allowed) return;
 
@@ -1599,22 +1635,30 @@ Do not include any markdown formatting outside the json codeblock. Output valid 
         return;
       }
 
+      // Limit missing images to remaining credits
+      let allowedImages = missingImages;
+      let skippedImages = [];
+      if (!isPro && missingImages.length > maxAllowed) {
+        allowedImages = missingImages.slice(0, maxAllowed);
+        skippedImages = missingImages.slice(maxAllowed);
+      }
+
       const chunkSize = 3;
       const imageBatches = [];
-      for (let b = 0; b < missingImages.length; b += chunkSize) {
-        imageBatches.push(missingImages.slice(b, b + chunkSize));
+      for (let b = 0; b < allowedImages.length; b += chunkSize) {
+        imageBatches.push(allowedImages.slice(b, b + chunkSize));
       }
 
       const totalBatchCount = imageBatches.length;
       const totalCount = uploadedPromptImages.length;
       let doneCount = existingPrompts.length;
-      let errorCount = 0;
-      let pendingCount = missingImages.length;
+      let errorCount = skippedImages.length;
+      let pendingCount = allowedImages.length;
 
       updateProgressWidgetState(doneCount, pendingCount, errorCount, totalCount);
 
       const progressLabel = document.getElementById('progressBarLabel');
-      if (progressLabel) progressLabel.textContent = `Batch Processing image(s): ${missingImages.length} remaining in ${totalBatchCount} API call(s)...`;
+      if (progressLabel) progressLabel.textContent = `Batch Processing image(s): ${allowedImages.length} remaining in ${totalBatchCount} API call(s)...`;
 
       let nicheCard = promptResultBox.querySelector('.bulk-niche-card');
       let listContainer;
@@ -1630,13 +1674,27 @@ Do not include any markdown formatting outside the json codeblock. Output valid 
         promptResultBox.appendChild(nicheCard);
       }
 
-      // Create loading skeletons upfront for the missing images
+      // Create loading skeletons upfront for the allowed images
       const skeletonElements = {};
-      missingImages.forEach(item => {
+      allowedImages.forEach(item => {
         const skeleton = createSkeletonPromptItem(true);
         listContainer.appendChild(skeleton);
         skeletonElements[item.originalIndex] = skeleton;
       });
+
+      // Render skipped warning cards immediately
+      skippedImages.forEach(item => {
+        const promptItem = document.createElement('div');
+        promptItem.className = 'bulk-prompt-item fade-in-up-prompt'; // Add anim
+        promptItem.innerHTML = `
+          <div class="bulk-prompt-header" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px;">
+            <span style="font-weight: 700; color: #ef4444; font-size: 13px; line-height: 1.3;">⚠️ Credits Exhausted</span>
+          </div>
+          <pre class="bulk-prompt-text" style="color: var(--on-variant); font-style: italic;">Daily credit limit reached. Please upgrade to Pro for unlimited prompt generation!</pre>
+        `;
+        listContainer.appendChild(promptItem);
+      });
+
 
       for (let bIdx = 0; bIdx < imageBatches.length; bIdx++) {
         if (cancelPromptGeneration) break;
@@ -1662,7 +1720,8 @@ Do not include any markdown formatting outside the json codeblock. Output valid 
             window.trackUserMetric('prompts', batchResults.length);
           }
 
-          batchResults.forEach((res, itemIdx) => {
+          for (let itemIdx = 0; itemIdx < batchResults.length; itemIdx++) {
+            const res = batchResults[itemIdx];
             const originalIdx = currentBatch[itemIdx].originalIndex;
             const promptText = res.prompt;
             let rawTitle = (res.title || `Reference Image #${originalIdx + 1}`).trim();
@@ -1670,6 +1729,7 @@ Do not include any markdown formatting outside the json codeblock. Output valid 
             const keywords = res.keywords || [];
 
             promptResults.push({ niche: promptTitle, variation: 1, promptText, imageIndex: originalIdx });
+            await window.checkAndConsumeCredit('prompts', 1, true); // Deduct credit per success
 
             const promptItem = document.createElement('div');
             promptItem.className = 'bulk-prompt-item fade-in-up-prompt'; // Add anim
@@ -1712,7 +1772,7 @@ Do not include any markdown formatting outside the json codeblock. Output valid 
 
             doneCount++;
             pendingCount--;
-          });
+          }
 
           updateProgressWidgetState(doneCount, pendingCount, errorCount, totalCount);
         } catch (err) {
@@ -1737,13 +1797,33 @@ Do not include any markdown formatting outside the json codeblock. Output valid 
         labelEl.textContent = cancelPromptGeneration ? 'Generation Stopped.' : 'Generation Completed.';
       }
 
-      if (promptResults.length > 0) {
-        await window.checkAndConsumeCredit('prompts', 1, true);
-      }
-
       resetGenerateBtn();
       if (bulkActions) bulkActions.style.display = 'flex';
       promptResultBox.dataset.generatedPrompts = JSON.stringify(promptResults);
+
+      // Show credit exhaust popup if they ran out of credits at the end of the batch
+      if (!isPro) {
+        const logs = getUserLogs();
+        const existingIndex = logs.findIndex(u => u.uid === userObj.uid || (u.email && userObj.email && u.email.toLowerCase() === userObj.email.toLowerCase()));
+        if (existingIndex >= 0) {
+          const u = logs[existingIndex];
+          if (u.creditsDaily && u.creditsDaily.remaining <= 0) {
+            setTimeout(() => {
+              if (window.showCustomConfirm) {
+                window.showCustomConfirm(
+                  `আপনার রিকোয়েস্ট অনুযায়ী প্রম্পট জেনারেশন সম্পন্ন হয়েছে। কিন্তু আপনার আজকের ফ্রি লিমিট সম্পূর্ণ শেষ হয়ে গেছে! কোনো লিমিট ছাড়াই অল প্রিমিয়াম ফিচার আনলিমিটেড ব্যবহার করতে আমাদের একটি সাবস্ক্রিপশন প্ল্যান বেছে নিন।`,
+                  'দৈনিক লিমিট শেষ!',
+                  'প্ল্যান দেখুন 👑',
+                  'পরে করব',
+                  () => {
+                    window.navigateTo('/pricing');
+                  }
+                );
+              }
+            }, 600);
+          }
+        }
+      }
       return;
     }
     // Construct generation queue
@@ -1815,6 +1895,7 @@ Do not include any markdown formatting outside the json codeblock. Output valid 
     }
 
     // Launch parallel requests for the missing niches and variations
+    let creditsReserved = 0;
     for (const item of generationQueue) {
       const { nicheIndex, niche, variationIndex } = item;
       const listContainer = listContainers[nicheIndex];
@@ -1828,6 +1909,21 @@ Do not include any markdown formatting outside the json codeblock. Output valid 
 
         try {
           if (cancelPromptGeneration) throw new Error('Cancelled');
+
+          // Limit prompt creations depending on daily credit bounds
+          let hasCredit = false;
+          if (isPro) {
+            hasCredit = true;
+          } else {
+            if (creditsReserved < maxAllowed) {
+              creditsReserved++;
+              hasCredit = true;
+            }
+          }
+
+          if (!hasCredit) {
+            throw new Error('Credits Exhausted');
+          }
 
           let keyIndex = (i * promptsPerNicheCount + j) % apiKeys.length;
           const seedInt = Math.floor(Math.random() * 1000000);
@@ -1935,6 +2031,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
 
           // Save result object
           promptResults.push({ niche, variation: j + 1, promptText: generatedText });
+          await window.checkAndConsumeCredit('prompts', 1, true); // Deduct credit per success
 
           // Build individual variation item
           const promptItem = document.createElement('div');
@@ -1997,7 +2094,19 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
         } catch (execErr) {
           const targetSkeleton = skeletons[i] ? skeletons[i][j] : null;
           if (targetSkeleton && targetSkeleton.parentNode) {
-            targetSkeleton.remove();
+            if (execErr.message === 'Credits Exhausted') {
+              const promptItem = document.createElement('div');
+              promptItem.className = 'bulk-prompt-item fade-in-up-prompt';
+              promptItem.innerHTML = `
+                <div class="bulk-prompt-header" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px;">
+                  <span style="font-weight: 700; color: #ef4444; font-size: 13px; line-height: 1.3;">⚠️ Credits Exhausted</span>
+                </div>
+                <pre class="bulk-prompt-text" style="color: var(--on-variant); font-style: italic;">Daily credit limit reached. Please upgrade to Pro for unlimited prompt generation!</pre>
+              `;
+              targetSkeleton.replaceWith(promptItem);
+            } else {
+              targetSkeleton.remove();
+            }
           }
           if (execErr.message === 'Cancelled') {
             pendingCount--;
@@ -2030,13 +2139,33 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       labelEl.textContent = cancelPromptGeneration ? 'Generation Stopped.' : 'Generation Completed.';
     }
 
-    if (promptResults.length > 0) {
-      await window.checkAndConsumeCredit('prompts', 1, true);
-    }
-
     resetGenerateBtn();
     if (bulkActions) bulkActions.style.display = 'flex';
     promptResultBox.dataset.generatedPrompts = JSON.stringify(promptResults);
+
+    // Show credit exhaust popup if they ran out of credits at the end of the batch
+    if (!isPro) {
+      const logs = getUserLogs();
+      const existingIndex = logs.findIndex(u => u.uid === userObj.uid || (u.email && userObj.email && u.email.toLowerCase() === userObj.email.toLowerCase()));
+      if (existingIndex >= 0) {
+        const u = logs[existingIndex];
+        if (u.creditsDaily && u.creditsDaily.remaining <= 0) {
+          setTimeout(() => {
+            if (window.showCustomConfirm) {
+              window.showCustomConfirm(
+                `আপনার রিকোয়েস্ট অনুযায়ী প্রম্পট জেনারেশন সম্পন্ন হয়েছে। কিন্তু আপনার আজকের ফ্রি লিমিট সম্পূর্ণ শেষ হয়ে গেছে! কোনো লিমিট ছাড়াই অল প্রিমিয়াম ফিচার আনলিমিটেড ব্যবহার করতে আমাদের একটি সাবস্ক্রিপশন প্ল্যান বেছে নিন।`,
+                'দৈনিক লিমিট শেষ!',
+                'প্ল্যান দেখুন 👑',
+                'পরে করব',
+                () => {
+                  window.navigateTo('/pricing');
+                }
+              );
+            }
+          }, 600);
+        }
+      }
+    }
   });
 
   // Send All to Flow Action
@@ -7154,7 +7283,17 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       }
 
       if (cd.remaining < count) {
-        if (window.showCustomAlert) {
+        if (window.showCustomConfirm) {
+          window.showCustomConfirm(
+            `দুঃখিত, আজ আপনার ব্যবহারের জন্য বরাদ্দকৃত ফ্রি ক্রেডিট সম্পূর্ণ শেষ হয়ে গেছে! কোনো লিমিট ছাড়াই সব প্রিমিয়াম ফিচার আনলিমিটেড ব্যবহার করতে আমাদের একটি সাবস্ক্রিপশন প্ল্যান বেছে নিন।`,
+            'দৈনিক লিমিট শেষ!',
+            'প্ল্যান দেখুন 👑',
+            'পরে করব',
+            () => {
+              window.navigateTo('/pricing');
+            }
+          );
+        } else if (window.showCustomAlert) {
           window.showCustomAlert(
             `You need ${count} credit(s) to perform this action, but you only have ${cd.remaining} credit(s) remaining for today. Please upgrade your subscription to Pro for unlimited access!`,
             'Daily Credit Limit Reached',
