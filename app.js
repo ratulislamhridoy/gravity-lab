@@ -26,6 +26,7 @@ window.showCustomAlert = function(message, title = 'Notice', type = 'warning') {
   const titleEl = document.getElementById('customAlertTitle');
   const msgEl = document.getElementById('customAlertMessage');
   const okBtn = document.getElementById('customAlertOkBtn');
+  const cancelBtn = document.getElementById('customAlertCancelBtn');
   if (!modal || !msgEl) {
     console.log('[ALERT]:', message);
     return;
@@ -33,6 +34,8 @@ window.showCustomAlert = function(message, title = 'Notice', type = 'warning') {
 
   titleEl.textContent = title;
   msgEl.textContent = message;
+  if (okBtn) okBtn.textContent = 'Got It';
+  if (cancelBtn) cancelBtn.classList.add('hidden');
 
   const msgLower = (typeof message === 'string') ? message.toLowerCase() : '';
 
