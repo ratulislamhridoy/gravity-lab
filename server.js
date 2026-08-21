@@ -1161,7 +1161,14 @@ wss.on('connection', (ws) => {
             const sheetFilename = `icon_sheet_${timestamp}.svg`;
             const sheetPath = path.join(targetDir, sheetFilename);
 
-            if (payload.sheetSvg) {
+            if (Array.isArray(payload.allSheets)) {
+              payload.allSheets.forEach((sheetObj, index) => {
+                const safeName = sheetObj.name.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
+                const sheetFilename = `Branded_Sheet_${index + 1}_${safeName}.svg`;
+                const sheetPath = path.join(targetDir, sheetFilename);
+                fs.writeFileSync(sheetPath, sheetObj.svg, 'utf8');
+              });
+            } else if (payload.sheetSvg) {
               fs.writeFileSync(sheetPath, payload.sheetSvg, 'utf8');
             }
 
@@ -1173,11 +1180,31 @@ wss.on('connection', (ws) => {
 
             const savedIcons = [];
             if (Array.isArray(payload.iconSvgs)) {
-              payload.iconSvgs.forEach((svgContent, idx) => {
-                const iconFilename = `icon_${timestamp}_${idx + 1}.svg`;
-                const iconPath = path.join(targetDir, iconFilename);
+              payload.iconSvgs.forEach((item, idx) => {
+                let svgContent = '';
+                let sheetName = 'default';
+                let iconIdx = idx + 1;
+                
+                if (item && typeof item === 'object') {
+                  svgContent = item.svgContent || '';
+                  sheetName = item.sheetName || 'default';
+                  iconIdx = item.idx || (idx + 1);
+                } else {
+                  svgContent = item || '';
+                }
+
+                if (!svgContent) return;
+
+                const safeSheetName = sheetName.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
+                const sheetDir = path.join(targetDir, safeSheetName);
+                if (!fs.existsSync(sheetDir)) {
+                  fs.mkdirSync(sheetDir, { recursive: true });
+                }
+
+                const iconFilename = `icon_${iconIdx}.svg`;
+                const iconPath = path.join(sheetDir, iconFilename);
                 fs.writeFileSync(iconPath, svgContent, 'utf8');
-                savedIcons.push(iconFilename);
+                savedIcons.push(path.join(safeSheetName, iconFilename));
               });
             }
 

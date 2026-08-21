@@ -4768,6 +4768,20 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
   let loadedSheetImgs = []; // Holds array of { name: string, img: ImageElement }
   let generatedBrandedSheetsMap = {};
   let activePreviewSheetName = '';
+  let isGridSizeManuallyOverridden = false;
+
+  if (sheetCols) {
+    sheetCols.addEventListener('input', () => {
+      isGridSizeManuallyOverridden = true;
+      processIconSheetSlicingOnly();
+    });
+  }
+  if (sheetRows) {
+    sheetRows.addEventListener('input', () => {
+      isGridSizeManuallyOverridden = true;
+      processIconSheetSlicingOnly();
+    });
+  }
 
   rebuildPresetDropdown();
   renderDesignerLayersTree();
@@ -4796,6 +4810,10 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     btnClearLoadedSheets.addEventListener('click', () => {
       loadedSheetImgs = [];
       slicedTilesData = [];
+      isGridSizeManuallyOverridden = false;
+      generatedBrandedSheetsMap = {};
+      generatedAssembledSvg = '';
+      activePreviewSheetName = '';
       if (sheetFileInput) sheetFileInput.value = '';
       if (sheetFileName) sheetFileName.textContent = 'Upload Icon Sheet Image(s)';
       if (tool4TilesGrid) tool4TilesGrid.innerHTML = '';
@@ -4809,12 +4827,21 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       }
 
       btnClearLoadedSheets.style.display = 'none';
+      buildBrandedSvgSheet();
     });
   }
 
   function loadSheetImageFiles(files) {
     const validFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
     if (!validFiles.length) return;
+
+    // Reset everything for the new batch
+    loadedSheetImgs = [];
+    slicedTilesData = [];
+    isGridSizeManuallyOverridden = false;
+    generatedBrandedSheetsMap = {};
+    generatedAssembledSvg = '';
+    activePreviewSheetName = '';
 
     const duplicates = [];
     const nonDuplicates = [];
@@ -4848,7 +4875,18 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       reader.onload = (evt) => {
         const img = new Image();
         img.onload = () => {
-          loadedSheetImgs.push({ name: file.name, img: img });
+          let estimatedGrid = null;
+          try {
+            const detected = autoDetectIconBounds(img);
+            const grid = estimateGridDimensions(detected, img.naturalWidth || img.width, img.naturalHeight || img.height);
+            if (grid.cols > 0 && grid.rows > 0) {
+              estimatedGrid = grid;
+            }
+          } catch(e) {
+            console.warn('Grid auto-detect failed on load for ' + file.name, e);
+          }
+
+          loadedSheetImgs.push({ name: file.name, img: img, detectedGrid: estimatedGrid });
           loadedCount++;
           if (loadedCount === targetCount) {
             if (sheetFileName) {
@@ -4862,6 +4900,20 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
               btnClearLoadedSheets.style.display = 'flex';
             }
             if (sheetFileInput) sheetFileInput.value = '';
+
+            // Auto-populate inputs if a single sheet is uploaded and grid detected successfully
+            if (loadedSheetImgs.length === 1) {
+              const singleSheet = loadedSheetImgs[0];
+              if (singleSheet.detectedGrid) {
+                if (sheetCols) sheetCols.value = singleSheet.detectedGrid.cols;
+                if (sheetRows) sheetRows.value = singleSheet.detectedGrid.rows;
+                const tileCountEl = document.getElementById('sheetTileCount');
+                if (tileCountEl) {
+                  tileCountEl.textContent = singleSheet.detectedGrid.cols * singleSheet.detectedGrid.rows;
+                }
+              }
+            }
+
             // Instantly slice & render preview tiles for ALL loaded sheets
             processIconSheetSlicingOnly();
           }
@@ -5045,6 +5097,7 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     }
 
     // Merge overlapping or close-by bounding boxes
+    const scanMergeDist = Math.min(8, Math.max(2, Math.round(mergeDist * ratio)));
     let mergedAny = true;
     while (mergedAny) {
       mergedAny = false;
@@ -5053,12 +5106,12 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
           const b1 = boxes[i];
           const b2 = boxes[j];
 
-          // Check if distance between boxes is less than mergeDist
+          // Check if distance between boxes is less than scanMergeDist
           const close = !(
-            b1.x + b1.w + mergeDist < b2.x ||
-            b2.x + b2.w + mergeDist < b1.x ||
-            b1.y + b1.h + mergeDist < b2.y ||
-            b2.y + b2.h + mergeDist < b1.y
+            b1.x + b1.w + scanMergeDist < b2.x ||
+            b2.x + b2.w + scanMergeDist < b1.x ||
+            b1.y + b1.h + scanMergeDist < b2.y ||
+            b2.y + b2.h + scanMergeDist < b1.y
           );
 
           if (close) {
@@ -5128,6 +5181,36 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
 
     return sortedBoxes;
   }
+
+  function estimateGridDimensions(boxes, imgW, imgH) {
+    if (!boxes || boxes.length === 0) return { cols: 5, rows: 5 };
+    
+    // Sort boxes by X center to find columns
+    const xCenters = boxes.map(b => b.x + b.w / 2).sort((a, b) => a - b);
+    const avgW = boxes.reduce((sum, b) => sum + b.w, 0) / boxes.length;
+    const xThreshold = avgW * 0.5; // Gap threshold for columns
+    
+    let colCount = 1;
+    for (let i = 1; i < xCenters.length; i++) {
+      if (xCenters[i] - xCenters[i - 1] > xThreshold) {
+        colCount++;
+      }
+    }
+
+    // Sort boxes by Y center to find rows
+    const yCenters = boxes.map(b => b.y + b.h / 2).sort((a, b) => a - b);
+    const avgH = boxes.reduce((sum, b) => sum + b.h, 0) / boxes.length;
+    const yThreshold = avgH * 0.5; // Gap threshold for rows
+    
+    let rowCount = 1;
+    for (let i = 1; i < yCenters.length; i++) {
+      if (yCenters[i] - yCenters[i - 1] > yThreshold) {
+        rowCount++;
+      }
+    }
+
+    return { cols: colCount, rows: rowCount };
+  }
   // Slice & Show raw crop preview immediately for ALL loaded icon sheets (Bulk Support)
   async function processIconSheetSlicingOnly() {
     if (!loadedSheetImgs || loadedSheetImgs.length === 0) return;
@@ -5162,7 +5245,13 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       const imgH = img.naturalHeight || img.height;
 
       let boxes = [];
-      let tileCount = totalTiles;
+      let sCols = cols;
+      let sRows = rows;
+      if (!isGridSizeManuallyOverridden && sheetObj.detectedGrid) {
+        sCols = sheetObj.detectedGrid.cols;
+        sRows = sheetObj.detectedGrid.rows;
+      }
+      let tileCount = sCols * sRows;
 
       if (isAutoDetect) {
         boxes = autoDetectIconBounds(img);
@@ -5200,14 +5289,14 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
               }
             }
           }
-          gridX = snapAxis(cols, colInk, aw, imgW);
-          gridY = snapAxis(rows, rowInk, ah, imgH);
+          gridX = snapAxis(sCols, colInk, aw, imgW);
+          gridY = snapAxis(sRows, rowInk, ah, imgH);
         } catch (e) {
           console.warn('[slicer] Smart boundary snapping failed, falling back to even cuts', e);
           gridX = [];
           gridY = [];
-          for (let i = 0; i <= cols; i++) gridX.push(Math.round(i * imgW / cols));
-          for (let i = 0; i <= rows; i++) gridY.push(Math.round(i * imgH / rows));
+          for (let i = 0; i <= sCols; i++) gridX.push(Math.round(i * imgW / sCols));
+          for (let i = 0; i <= sRows; i++) gridY.push(Math.round(i * imgH / sRows));
         }
       }
 
@@ -5229,8 +5318,8 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
           sy = box.y;
           sh = box.h;
         } else {
-          const c = srcIdx % cols;
-          const r = Math.floor(srcIdx / cols);
+          const c = srcIdx % sCols;
+          const r = Math.floor(srcIdx / sCols);
           sx = gridX[c];
           sw = gridX[c + 1] - sx;
           sy = gridY[r];
@@ -5891,9 +5980,9 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
   }
 
   // Helper to build a single Branded Presentation SVG Sheet for a given tile subset
-  function buildSingleBrandedSvgSheet(tilesToRender, sheetLabel = '') {
-    const cols = parseInt(sheetCols.value) || 5;
-    const rows = parseInt(sheetRows.value) || 3;
+  function buildSingleBrandedSvgSheet(tilesToRender, sheetLabel = '', gridCols = null, gridRows = null) {
+    const cols = gridCols || parseInt(sheetCols.value) || 5;
+    const rows = gridRows || parseInt(sheetRows.value) || 3;
     const isMockup = (!tilesToRender || tilesToRender.length === 0);
 
     if (isMockup) {
@@ -6099,7 +6188,18 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       loadedSheetImgs.forEach((sheetObj, index) => {
         const sheetName = sheetObj.name;
         const tilesForThisSheet = slicedTilesData.filter(t => t.sheetName === sheetName);
-        const svg = buildSingleBrandedSvgSheet(tilesForThisSheet.length ? tilesForThisSheet : slicedTilesData, loadedSheetImgs.length > 1 ? `Sheet ${index + 1}` : '');
+        let sCols = null;
+        let sRows = null;
+        if (!isGridSizeManuallyOverridden && sheetObj.detectedGrid) {
+          sCols = sheetObj.detectedGrid.cols;
+          sRows = sheetObj.detectedGrid.rows;
+        }
+        const svg = buildSingleBrandedSvgSheet(
+          tilesForThisSheet.length ? tilesForThisSheet : slicedTilesData, 
+          loadedSheetImgs.length > 1 ? `Sheet ${index + 1}` : '',
+          sCols,
+          sRows
+        );
         generatedBrandedSheetsMap[sheetName] = svg;
       });
 
@@ -6234,7 +6334,11 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
           outputDir: outputDir,
           sheetSvg: getCleanSvgForExport(generatedAssembledSvg),
           allSheets: allCleanSheets,
-          iconSvgs: slicedTilesData.map(t => t.svgContent)
+          iconSvgs: slicedTilesData.map(t => ({
+            sheetName: t.sheetName,
+            idx: t.idx,
+            svgContent: t.svgContent
+          }))
         });
       } else {
         // Fallback: Direct browser download of the currently selected Branded Presentation Sheet SVG!
