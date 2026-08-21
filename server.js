@@ -553,11 +553,18 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  function escapeHtml(text) {
+    return String(text || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
   // Helper for Telegram notifications
   function sendTelegramAlert(payload) {
     return new Promise((resolve) => {
-      const token = process.env.TELEGRAM_BOT_TOKEN;
-      const chatId = process.env.TELEGRAM_CHAT_ID;
+      const token = process.env.TELEGRAM_BOT_TOKEN || '8856059931:AAGT3or3oauYDSd7a43maOq3Av3cth_rEek';
+      const chatId = process.env.TELEGRAM_CHAT_ID || '5366183134';
       if (!token || !chatId) {
         resolve(false);
         return;
@@ -566,18 +573,18 @@ const server = http.createServer((req, res) => {
       const amount = payload.plan === 'monthly' ? '৳১০০' : (payload.plan === 'six_months' ? '৳৫০০' : payload.plan);
       const dhakaTime = new Date().toLocaleString('en-US', { timeZone: 'Asia/Dhaka', hour12: true });
 
-      const message = `🔔 *New Purchase Alert* 🔔\n\n` +
-        `📧 *User:* ${payload.email}\n` +
-        `💳 *Method:* ${payload.method.toUpperCase()}\n` +
-        `💰 *Amount:* ${amount}\n` +
-        `📞 *Sender:* \`${payload.phone || 'N/A'}\`\n` +
-        `🆔 *UID:* \`${payload.uid}\`\n` +
-        `📅 *Date & Time:* ${dhakaTime}`;
+      const message = `🔔 <b>New Purchase Alert</b> 🔔\n\n` +
+        `📧 <b>User:</b> ${escapeHtml(payload.email)}\n` +
+        `💳 <b>Method:</b> ${escapeHtml(payload.method.toUpperCase())}\n` +
+        `💰 <b>Amount:</b> ${escapeHtml(amount)}\n` +
+        `📞 <b>Sender:</b> <code>${escapeHtml(payload.phone || 'N/A')}</code>\n` +
+        `🆔 <b>UID:</b> <code>${escapeHtml(payload.uid)}</code>\n` +
+        `📅 <b>Date & Time:</b> ${escapeHtml(dhakaTime)}`;
 
       const postData = JSON.stringify({
         chat_id: chatId,
         text: message,
-        parse_mode: 'Markdown'
+        parse_mode: 'HTML'
       });
 
       const options = {
