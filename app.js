@@ -8101,15 +8101,12 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
 
             if (sourceList === latestSources.local) {
               // Local is being merged over database.
-              // ONLY keep local subscription if database has no active plan
-              const dbSubActive = (mergedSubscription === 'monthly' || mergedSubscription === 'six_months');
-              const localSubActive = (u.subscription === 'monthly' || u.subscription === 'six_months');
+              // ONLY keep local subscription details if no database record (Mongo or Firestore) is present
+              const hasDbRecord = (latestSources.mongo && latestSources.mongo.some(mUser => (mUser.uid || mUser.email || '').toLowerCase() === key)) ||
+                                  (latestSources.firestore && latestSources.firestore.some(fUser => (fUser.uid || fUser.email || '').toLowerCase() === key));
               
-              if (dbSubActive) {
-                // Keep database subscription details
-              } else if (localSubActive) {
-                mergedSubscription = u.subscription;
-                mergedExpiry = u.subscriptionExpiry;
+              if (hasDbRecord) {
+                // Keep the database subscription details already compiled in mergedSubscription
               } else {
                 mergedSubscription = u.subscription || 'free';
                 mergedExpiry = u.subscriptionExpiry || null;
@@ -8129,14 +8126,21 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
               }
             } else {
               // Database is being merged over database (mongo / firestore)
-              // If u has an active plan, override existing
-              const newSubActive = (u.subscription === 'monthly' || u.subscription === 'six_months');
-              if (newSubActive) {
-                mergedSubscription = u.subscription;
-                mergedExpiry = u.subscriptionExpiry;
-              } else if (mergedSubscription === 'free') {
-                mergedSubscription = u.subscription || 'free';
-                mergedExpiry = u.subscriptionExpiry || null;
+              // Since MongoDB is the master authority for subscriptions, we do not let Firestore override MongoDB.
+              const isFirestoreSource = (sourceList === latestSources.firestore);
+              const hasMongoRecord = latestSources.mongo && latestSources.mongo.some(mUser => (mUser.uid || mUser.email || '').toLowerCase() === key);
+              
+              if (isFirestoreSource && hasMongoRecord) {
+                // Skip updating plan details from Firestore if MongoDB record is present
+              } else {
+                const newSubActive = (u.subscription === 'monthly' || u.subscription === 'six_months');
+                if (newSubActive) {
+                  mergedSubscription = u.subscription;
+                  mergedExpiry = u.subscriptionExpiry;
+                } else if (mergedSubscription === 'free') {
+                  mergedSubscription = u.subscription || 'free';
+                  mergedExpiry = u.subscriptionExpiry || null;
+                }
               }
 
               if (u.creditsDaily) {
