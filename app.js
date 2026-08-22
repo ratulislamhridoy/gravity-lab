@@ -2838,11 +2838,11 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
               <span>Model: ${msg.model || 'Flow'}</span>
             </div>
             <div style="display: flex; gap: 6px; margin-top: 6px;">
-              <a href="${msg.dataUrl}" download="${fileName}" class="btn btn-primary small" style="flex: 1; text-align: center; text-decoration: none; padding: 7px 10px; font-size: 11.5px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 4px;">
-                📥 Save Image
+              <a href="${msg.dataUrl}" download="${fileName}" class="btn btn-primary small" style="flex: 1.2; text-align: center; text-decoration: none; padding: 7px 10px; font-size: 11.5px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 4px;">
+                📥 Save
               </a>
-              <button class="btn btn-dark small btn-regenerate-flow" data-index="${msg.index}" data-prompt="${(msg.prompt || '').replace(/"/g, '&quot;')}" style="padding: 7px 10px; font-size: 11.5px; font-weight: 700;" title="Regenerate Image">
-                🔄
+              <button class="btn btn-dark small btn-regenerate-flow" data-index="${msg.index}" data-prompt="${(msg.prompt || '').replace(/"/g, '&quot;')}" style="flex: 1.5; padding: 7px 10px; font-size: 11.5px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 4px;" title="Regenerate Image">
+                🔄 Regenerate
               </button>
               <button class="btn btn-dark small btn-copy-prompt" data-prompt="${(msg.prompt || '').replace(/"/g, '&quot;')}" style="padding: 7px 10px; font-size: 11.5px; font-weight: 700;" title="Copy Prompt">
                 📋
