@@ -1001,7 +1001,11 @@ wss.on('connection', (ws) => {
             rawPrompts.forEach((p, idx) => {
               for (let k = 0; k < imagesPerPrompt; k++) {
                 prompts.push(p);
-                requestedIndices.push(idx * 100 + k);
+                if (Array.isArray(payload.customIndices)) {
+                  requestedIndices.push(payload.customIndices[idx * imagesPerPrompt + k] || (idx * 100 + k));
+                } else {
+                  requestedIndices.push(idx * 100 + k);
+                }
               }
             });
 
@@ -1102,7 +1106,8 @@ wss.on('connection', (ws) => {
                         seed: genResult.seed || null,
                         model: genResult.model || null,
                         width: genResult.width || null,
-                        height: genResult.height || null
+                        height: genResult.height || null,
+                        prompt: job.prompt
                       });
                     } else {
                       const error = genResult && genResult.error || 'failed';
@@ -1114,7 +1119,8 @@ wss.on('connection', (ws) => {
                         index: job.index,
                         status: 'error',
                         error,
-                        message: errMsg
+                        message: errMsg,
+                        prompt: job.prompt
                       });
                     }
                   },

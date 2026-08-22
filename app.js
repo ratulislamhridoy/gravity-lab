@@ -811,6 +811,16 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
+      const regenBtn = e.target.closest('.btn-regenerate-flow');
+      if (regenBtn) {
+        const indexAttr = regenBtn.getAttribute('data-index');
+        const prompt = regenBtn.getAttribute('data-prompt');
+        if (indexAttr && prompt) {
+          regenerateSingleFlowItem(prompt, Number(indexAttr));
+        }
+        return;
+      }
+
       const deleteBtn = e.target.closest('.btn-delete-flow-card');
       if (deleteBtn) {
         const idxAttr = deleteBtn.getAttribute('data-index');
@@ -2513,7 +2523,8 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
             type: 'flow-item',
             index: cardIndex,
             status: 'error',
-            error: err.message || String(err)
+            error: err.message || String(err),
+            prompt: promptText
           });
         }
 
@@ -2830,6 +2841,9 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
               <a href="${msg.dataUrl}" download="${fileName}" class="btn btn-primary small" style="flex: 1; text-align: center; text-decoration: none; padding: 7px 10px; font-size: 11.5px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 4px;">
                 📥 Save Image
               </a>
+              <button class="btn btn-dark small btn-regenerate-flow" data-index="${msg.index}" data-prompt="${(msg.prompt || '').replace(/"/g, '&quot;')}" style="padding: 7px 10px; font-size: 11.5px; font-weight: 700;" title="Regenerate Image">
+                🔄
+              </button>
               <button class="btn btn-dark small btn-copy-prompt" data-prompt="${(msg.prompt || '').replace(/"/g, '&quot;')}" style="padding: 7px 10px; font-size: 11.5px; font-weight: 700;" title="Copy Prompt">
                 📋
               </button>
@@ -2854,6 +2868,14 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
                 <div style="margin-top: 6px; font-weight: 700;">Generation Error</div>
                 <div style="font-size: 11px; opacity: 0.85; margin-top: 4px; line-height: 1.3; word-break: break-word;">${msg.message || msg.error}</div>
               </div>
+            </div>
+            <div style="display: flex; gap: 6px; margin-top: 6px;">
+              <button class="btn btn-primary small btn-regenerate-flow" data-index="${msg.index}" data-prompt="${(msg.prompt || '').replace(/"/g, '&quot;')}" style="flex: 1; text-align: center; justify-content: center; gap: 4px; font-weight: 700; font-size: 11.5px; padding: 7px 10px;">
+                🔄 Regenerate
+              </button>
+              <button class="btn btn-dark small btn-delete-flow-card" data-index="${msg.index}" style="padding: 7px 10px; font-size: 11.5px; font-weight: 700; color: var(--error); border-color: rgba(239, 68, 68, 0.3);" title="Delete Image">
+                🗑️
+              </button>
             </div>
             `;
           }
@@ -3203,6 +3225,79 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
     }
     sendFlowAction('stop');
   });
+
+  async function regenerateSingleFlowItem(promptText, cardIndex) {
+    const allowed = await window.checkAndConsumeCredit('flowImages', 1, false);
+    if (!allowed) return;
+
+    const activeIds = flowProfilesCached
+      .filter(p => localStorage.getItem(`flow_use_profile_${p.id}`) !== 'false')
+      .map(p => p.id);
+
+    if (!activeIds.length) {
+      alert('Please select at least one active connected browser profile.');
+      return;
+    }
+
+    handleFlowServerMessage({
+      type: 'flow-item',
+      index: cardIndex,
+      status: 'processing'
+    });
+
+    const options = {
+      model: flowModel.value,
+      aspectRatio: flowAspectRatio.value
+    };
+
+    if (activeIds.includes('chrome_extension')) {
+      try {
+        const response = await sendExtensionGenerate(promptText, options);
+        if (response && response.ok && response.media && response.media.length > 0) {
+          await window.checkAndConsumeCredit('flowImages', 1, true);
+          const mediaItem = response.media[0];
+          const dataUrl = `data:image/png;base64,${mediaItem.encodedImage}`;
+          
+          handleFlowServerMessage({
+            type: 'flow-item',
+            index: cardIndex,
+            status: 'done',
+            dataUrl: dataUrl,
+            seed: options.seed || Math.floor(Math.random() * 2147483648),
+            model: options.model,
+            prompt: promptText
+          });
+        } else {
+          throw new Error((response && response.error) || 'Empty backend media payload returned');
+        }
+      } catch (err) {
+        handleFlowServerMessage({
+          type: 'flow-item',
+          index: cardIndex,
+          status: 'error',
+          error: err.message || String(err),
+          prompt: promptText
+        });
+      }
+    } else {
+      const flowAutoSaveToggle = document.getElementById('flowAutoSaveToggle');
+      const autoSaveEnabled = flowAutoSaveToggle ? flowAutoSaveToggle.checked : true;
+      const targetOutputDir = autoSaveEnabled ? (flowOutputDir.value.trim() || 'Downloads/Gravity_Flow') : null;
+
+      sendFlowActionSpecific('generate', 'default', {
+        prompts: [promptText],
+        runId: Date.now(),
+        profileIds: activeIds,
+        imagesPerPrompt: 1,
+        customIndices: [cardIndex],
+        options: {
+          model: flowModel.value,
+          aspectRatio: flowAspectRatio.value
+        },
+        outputDir: targetOutputDir
+      });
+    }
+  }
 
   if (btnFlowDownloadAll) {
     btnFlowDownloadAll.addEventListener('click', () => {
