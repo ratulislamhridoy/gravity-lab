@@ -545,6 +545,52 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // How to Use Video Modal Listeners
+  const howToUseBtn = document.getElementById('howToUseBtn');
+  const howToUseBtn2 = document.getElementById('howToUseBtn2');
+  const howToUseBtn3 = document.getElementById('howToUseBtn3');
+  const howToUseModal = document.getElementById('howToUseModal');
+  const btnCloseHowToUseModal = document.getElementById('btnCloseHowToUseModal');
+  const howToUseVideoIframe = document.getElementById('howToUseVideoIframe');
+
+  if (howToUseBtn && howToUseModal && howToUseVideoIframe) {
+    howToUseBtn.addEventListener('click', () => {
+      howToUseVideoIframe.src = 'https://drive.google.com/file/d/1ShCy_3nmg-sGMYafE48Vk6HJi5cLbIVJ/preview';
+      howToUseModal.classList.remove('hidden');
+    });
+  }
+
+  if (howToUseBtn2 && howToUseModal && howToUseVideoIframe) {
+    howToUseBtn2.addEventListener('click', () => {
+      howToUseVideoIframe.src = 'https://drive.google.com/file/d/1oBpjwX_9pXsZGXdHPKrG8cUlqogs5hHk/preview';
+      howToUseModal.classList.remove('hidden');
+    });
+  }
+
+  if (howToUseBtn3 && howToUseModal && howToUseVideoIframe) {
+    howToUseBtn3.addEventListener('click', () => {
+      howToUseVideoIframe.src = 'https://drive.google.com/file/d/13c43aZkDcomw1LYuoCD63-9yTFnVJB1P/preview';
+      howToUseModal.classList.remove('hidden');
+    });
+  }
+
+  const closeHowToUseModal = () => {
+    if (howToUseModal) howToUseModal.classList.add('hidden');
+    if (howToUseVideoIframe) howToUseVideoIframe.src = '';
+  };
+
+  if (btnCloseHowToUseModal) {
+    btnCloseHowToUseModal.addEventListener('click', closeHowToUseModal);
+  }
+
+  if (howToUseModal) {
+    howToUseModal.addEventListener('click', (e) => {
+      if (e.target === howToUseModal) {
+        closeHowToUseModal();
+      }
+    });
+  }
+
   if (saveApiKeyBtn) {
     saveApiKeyBtn.addEventListener('click', () => {
       const inputs = document.querySelectorAll('.api-key-row-input');
