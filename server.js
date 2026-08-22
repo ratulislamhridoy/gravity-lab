@@ -230,7 +230,8 @@ const MIME_TYPES = {
   '.gif': 'image/gif',
   '.ico': 'image/x-icon',
   '.webp': 'image/webp',
-  '.svg': 'image/svg+xml'
+  '.svg': 'image/svg+xml',
+  '.xml': 'application/xml'
 };
 
 // --- MongoDB Storage Engine ---
