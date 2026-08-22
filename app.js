@@ -7380,17 +7380,50 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
 
     if (firebaseAuth && firebaseAuth.currentUser) {
       try {
-        if (firebaseDb) {
-          const user = firebaseAuth.currentUser;
-          const docRef = firebaseDb.collection('users').doc(user.uid);
-          const docSnap = await docRef.get();
-          if (docSnap.exists) {
-            const freshData = docSnap.data();
-            const localLogs = getUserLogs();
-            const idx = localLogs.findIndex(item => item.uid === user.uid);
-            if (idx !== -1) {
-              localLogs[idx] = { ...localLogs[idx], ...freshData };
-              localStorage.setItem('gravity_user_activity_logs', JSON.stringify(localLogs));
+        const user = firebaseAuth.currentUser;
+        const providerId = (user.providerData && user.providerData[0] && user.providerData[0].providerId) 
+          ? user.providerData[0].providerId 
+          : (user.email ? 'google.com' : 'password');
+        
+        const userData = {
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName || (user.email ? user.email.split('@')[0] : 'User'),
+          photoURL: user.photoURL || 'https://lh3.googleusercontent.com/a/default-user',
+          lastActive: new Date().toISOString(),
+          provider: providerId,
+          status: 'active'
+        };
+
+        const res = await fetch('/api/users/track', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(userData)
+        });
+        const data = await res.json();
+        
+        if (data && data.ok && data.user) {
+          const freshLogs = getUserLogs();
+          const targetIdx = freshLogs.findIndex(u => u.uid === user.uid || (u.email && user.email && u.email.toLowerCase() === user.email.toLowerCase()));
+          if (targetIdx >= 0) {
+            freshLogs[targetIdx].subscription = data.user.subscription || 'free';
+            freshLogs[targetIdx].subscriptionExpiry = data.user.subscriptionExpiry || null;
+            if (data.user.creditsDaily) {
+              freshLogs[targetIdx].creditsDaily = data.user.creditsDaily;
+            }
+            saveUserLogs(freshLogs);
+
+            // Parallel sync to Firebase Firestore to keep records aligned globally
+            if (firebaseDb) {
+              try {
+                await firebaseDb.collection('users').doc(user.uid).set({
+                  subscription: data.user.subscription || 'free',
+                  subscriptionExpiry: data.user.subscriptionExpiry || null
+                }, { merge: true });
+                console.log('[Firestore Sync]: Successfully synced user plan to Firestore in syncSubscriptionStatus');
+              } catch (err) {
+                console.warn('[Firestore Sync Error]:', err);
+              }
             }
           }
         }
@@ -7752,6 +7785,14 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
             }
             saveUserLogs(freshLogs);
             window.updateUserSubscriptionUI();
+
+            // Parallel sync to Firebase Firestore to keep records aligned globally
+            if (firebaseDb) {
+              firebaseDb.collection('users').doc(user.uid).set({
+                subscription: data.user.subscription || 'free',
+                subscriptionExpiry: data.user.subscriptionExpiry || null
+              }, { merge: true }).catch(err => console.warn('[Firestore Sync Error in trackUserActivity]:', err));
+            }
           }
         }
       })
@@ -8320,9 +8361,23 @@ Synthesize these visual properties and stylistic DNA into your generated prompt 
       body: JSON.stringify({ requestId, action })
     })
     .then(res => res.json())
-    .then(data => {
+    .then(async (data) => {
       if (data && data.ok) {
         showCustomAlert(`Subscription request has been successfully ${action}d!`, 'Success');
+        
+        // Parallel write to Firestore for active synchronization across devices
+        if (firebaseDb && action === 'approve' && data.uid) {
+          try {
+            await firebaseDb.collection('users').doc(data.uid).set({
+              subscription: data.plan || 'free',
+              subscriptionExpiry: data.expiry || null
+            }, { merge: true });
+            console.log('[Firestore Sync]: Successfully synced user plan to Firestore in verifyPaymentRequest');
+          } catch (err) {
+            console.warn('[Firestore Sync Error]:', err);
+          }
+        }
+
         window.refreshAdminPayments();
         // Refresh User logs too, to sync and fetch updated subscription fields
         if (typeof renderAdminUserLogs === 'function') {

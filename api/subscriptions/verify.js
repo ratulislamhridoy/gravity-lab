@@ -93,7 +93,14 @@ module.exports = async (req, res) => {
       }
     }
 
-    res.status(200).json({ ok: true, message: `Payment request successfully ${finalStatus}` });
+    res.status(200).json({ 
+      ok: true, 
+      message: `Payment request successfully ${finalStatus}`,
+      uid: isApprove ? requestObj.uid : null,
+      email: isApprove ? requestObj.email : null,
+      plan: isApprove ? requestObj.plan : null,
+      expiry: isApprove ? expiryStr : null
+    });
   } catch (err) {
     console.error('[Verify Billing Endpoint Error]:', err);
     res.status(500).json({ ok: false, error: err.message });

@@ -725,11 +725,19 @@ const server = http.createServer((req, res) => {
         }
 
         // Update User if Approved
+        let userUid = null;
+        let userEmail = null;
+        let planVal = null;
+        let expiryStr = null;
+
         if (isApprove) {
           const days = requestObj.plan === 'monthly' ? 30 : 180;
           const expiryDate = new Date();
           expiryDate.setDate(expiryDate.getDate() + days);
-          const expiryStr = expiryDate.toISOString();
+          expiryStr = expiryDate.toISOString();
+          userUid = requestObj.uid;
+          userEmail = requestObj.email;
+          planVal = requestObj.plan;
 
           if (useRealMongo && dbInstance) {
             const query = {
@@ -756,7 +764,14 @@ const server = http.createServer((req, res) => {
         }
 
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ ok: true, message: `Request successfully ${finalStatus}` }));
+        res.end(JSON.stringify({ 
+          ok: true, 
+          message: `Request successfully ${finalStatus}`,
+          uid: userUid,
+          email: userEmail,
+          plan: planVal,
+          expiry: expiryStr
+        }));
       } catch (err) {
         res.statusCode = 500;
         res.end(JSON.stringify({ ok: false, error: err.message }));
